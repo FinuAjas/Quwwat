@@ -29,7 +29,8 @@ export function setupLighting(scene, renderer) {
   sun.target.position.copy(center);
   if (QUALITY.shadows) {
     sun.castShadow = true;
-    sun.shadow.mapSize.set(QUALITY.shadowMapSize, QUALITY.shadowMapSize);
+    const mapSize = Math.min(QUALITY.shadowMapSize, renderer.capabilities.maxTextureSize);
+    sun.shadow.mapSize.set(mapSize, mapSize);
     const e = s.shadowExtent;
     Object.assign(sun.shadow.camera, { left: -e, right: e, top: e, bottom: -e, near: 20, far: s.shadowFar });
     sun.shadow.bias = -0.0003;

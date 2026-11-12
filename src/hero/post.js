@@ -93,7 +93,7 @@ export function createPost(renderer, scene, camera) {
   if (QUALITY.ao) {
     ao = new GTAOPass(scene, camera, w0, h0);
     const a = CONFIG.ao;
-    ao.updateGtaoMaterial({ radius: a.radius, distanceExponent: 1, thickness: a.thickness, scale: 1, samples: a.samples, distanceFallOff: 1, screenSpaceRadius: false });
+    ao.updateGtaoMaterial({ radius: a.radius, distanceExponent: 1, thickness: a.thickness, scale: 1, samples: QUALITY.aoSamples, distanceFallOff: 1, screenSpaceRadius: false });
     ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, radiusExponent: 1, rings: 2, samples: 12 });
     ao.blendIntensity = a.intensity;
     // Overlays (mist sprites, selection ring) are on layer 1: hide them while AO renders its depth/normal buffers.

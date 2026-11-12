@@ -18,7 +18,7 @@
   </script>
 </head>
 <body>
-  <section class="hero" id="hero">
+  <section class="hero is-loading" id="hero">
     <!-- WebGL canvas + CSS2D label layer are injected here -->
     <div class="hero__stage" id="stage" aria-label="Interactive 3D model of Mountain Courtyard"></div>
     <div class="hero__vignette" aria-hidden="true"></div>
@@ -95,9 +95,17 @@
       <button class="shots__arrow" data-dir="1" aria-label="Next">›</button>
     </div>
 
-    <div class="loader" id="loader" role="status" aria-live="polite">
-      <div class="loader__bar"><i id="loader-fill"></i></div>
-      <p id="loader-text">Loading 3D model…</p>
+    <!-- Poster: a still of the 3D scene, on screen from the first paint; it stays when the 3D cannot or should not load -->
+    <div class="loader" id="loader">
+      <picture class="loader__poster">
+        <source media="(max-width: 760px), (orientation: portrait)" srcset="./public/assets/images/hero-poster-mobile.webp" />
+        <img src="./public/assets/images/hero-poster.webp" width="1920" height="1200" fetchpriority="high"
+          alt="Aerial view of Mountain Courtyard: the convention centre, pool and amphitheatre in a forested valley" />
+      </picture>
+      <div class="loader__status" role="status" aria-live="polite">
+        <div class="loader__bar"><i id="loader-fill"></i></div>
+        <p id="loader-text">Loading 3D model…</p>
+      </div>
     </div>
   </section>
 

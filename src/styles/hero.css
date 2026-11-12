@@ -77,13 +77,24 @@ button { font: inherit; color: inherit; }
 .shot span { position: absolute; left: 10px; bottom: 8px; font-size: 13px; text-shadow: 0 1px 6px rgba(0, 0, 0, .7); }
 .shots__arrow { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: rgba(0, 0, 0, .25); cursor: pointer; font-size: 18px; }
 
-/* ---------- loader ---------- */
-.loader { position: absolute; z-index: 5; inset: 0; display: grid; place-content: center; justify-items: center; gap: 14px;
-  background: radial-gradient(circle at 50% 45%, #2c4a2a, #121c13); transition: opacity .8s ease, visibility .8s; }
+/* ---------- loader / poster ---------- */
+/* The poster (a still of the 3D scene) sits where the canvas will be, under the vignette, nav and hero copy,
+   so the page looks complete from the first paint. It fades out when the 3D scene is ready and stays put
+   (.is-static) when 3D is unavailable or data saver is on. */
+.loader { position: absolute; z-index: 0; inset: 0; background: radial-gradient(circle at 50% 45%, #2c4a2a, #121c13);
+  transition: opacity .9s ease, visibility .9s; }
 .loader.is-done { opacity: 0; visibility: hidden; }
+.loader__poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.loader__status { position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); display: grid; justify-items: center; gap: 12px;
+  padding: 14px 22px; border-radius: 16px; background: var(--glass-strong); backdrop-filter: blur(8px); }
 .loader__bar { width: 220px; height: 3px; border-radius: 3px; background: rgba(255, 255, 255, .15); overflow: hidden; }
 .loader__bar i { display: block; height: 100%; width: 0; background: var(--sand); transition: width .2s; }
-.loader p { margin: 0; font-size: 13px; letter-spacing: .12em; color: var(--ink-soft); }
+.loader p { margin: 0; font-size: 13px; letter-spacing: .12em; color: var(--ink-soft); text-align: center; }
+.loader__action { border: 0; cursor: pointer; padding: 9px 18px; font-size: 14px; }
+/* 3D controls only make sense once the scene is running */
+.hero.is-loading .shots, .hero.is-loading .map-controls, .hero.is-static .shots, .hero.is-static .map-controls { visibility: hidden; }
+.hero.is-static .loader__bar { display: none; }
+.hero.view-2d .loader { display: none; }
 
 /* ---------- responsive ---------- */
 @media (max-width: 1100px) {

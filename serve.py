@@ -4,18 +4,22 @@
     python serve.py --port 8080
 
 Serves the project folder with correct MIME types (incl. .js modules / .glb / .wasm)
-and accepts POST /api/save-model from tools/model-builder.html, writing
-public/models/mountain-courtyard.glb.
+and accepts two uploads from the project's own tools:
+  POST /api/save-model            from tools/model-builder.html → public/models/mountain-courtyard.glb
+  POST /api/save-image?name=...   from the page opened with ?poster → public/assets/images/<poster>.webp
 """
 import argparse
 import gzip
 import http.server
 import socketserver
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 ROOT = Path(__file__).resolve().parent
 MODEL_PATH = ROOT / "public" / "models" / "mountain-courtyard.glb"
 MAX_UPLOAD = 80 * 1024 * 1024
+IMAGE_DIR = ROOT / "public" / "assets" / "images"
+POSTER_NAMES = {"hero-poster.webp", "hero-poster-mobile.webp"}  # the only images the server will write
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -66,7 +70,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
-        if self.path != "/api/save-model":
+        url = urlsplit(self.path)
+        if url.path == "/api/save-model":
+            target, check = MODEL_PATH, lambda d: d[:4] == b"glTF"
+        elif url.path == "/api/save-image":
+            name = parse_qs(url.query).get("name", [""])[0]
+            if name not in POSTER_NAMES:
+                self.send_error(400, "unknown image name")
+                return
+            target, check = IMAGE_DIR / name, lambda d: d[:4] == b"RIFF" and d[8:12] == b"WEBP"
+        else:
             self.send_error(404)
             return
         length = int(self.headers.get("Content-Length", 0))
@@ -74,12 +87,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_error(413)
             return
         data = self.rfile.read(length)
-        if data[:4] != b"glTF":
-            self.send_error(400, "not a GLB")
+        if not check(data):
+            self.send_error(400, "unexpected file type")
             return
-        MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-        MODEL_PATH.write_bytes(data)
-        body = str(MODEL_PATH.relative_to(ROOT)).replace("\\", "/").encode()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+        body = str(target.relative_to(ROOT)).replace("\\", "/").encode()
         self.send_response(200)
         self.send_header("Content-Type", "text/plain")
         self.send_header("Content-Length", str(len(body)))

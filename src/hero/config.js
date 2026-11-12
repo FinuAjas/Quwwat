@@ -1,13 +1,16 @@
 // Central tuning for the hero scene. World units are metres; site centre ≈ (15, 0, 0).
-const coarse = matchMedia('(pointer: coarse)').matches;
-const small = Math.min(screen.width, screen.height) < 820;
-// Force a tier for testing from the address bar: ?tier=high or ?tier=low
-const forcedTier = new URLSearchParams(location.search).get('tier');
-export const TIER = forcedTier === 'high' || forcedTier === 'low' ? forcedTier : coarse || small ? 'low' : 'high';
+import { getTier } from './tier.js';
 
+// 'ultra' | 'high' | 'low' — chosen by a GPU benchmark before this file loads (see tier.js).
+// Force one for testing from the address bar: ?tier=ultra, ?tier=high or ?tier=low
+export const TIER = getTier();
+
+// ultra = strong desktop GPUs: smoother edges, finer shadows and ambient occlusion, a little more mist and traffic.
+// high = ordinary desktops and the fastest phones. low = phones and weak GPUs (no AO / bloom / blur).
 export const QUALITY = {
-  high: { pixelRatio: 2, antialias: true, msaa: 4, ao: true, bloom: true, dof: true, shadows: true, shadowMapSize: 4096, mistCount: 26 },
-  low: { pixelRatio: 1.5, antialias: true, msaa: 2, ao: false, bloom: false, dof: false, shadows: true, shadowMapSize: 2048, mistCount: 14 },
+  ultra: { pixelRatio: 2, antialias: true, msaa: 8, ao: true, aoSamples: 16, bloom: true, dof: true, shadows: true, shadowMapSize: 6144, mistCount: 34, cars: 7 },
+  high: { pixelRatio: 2, antialias: true, msaa: 4, ao: true, aoSamples: 12, bloom: true, dof: true, shadows: true, shadowMapSize: 4096, mistCount: 26, cars: 5 },
+  low: { pixelRatio: 1.5, antialias: true, msaa: 2, ao: false, bloom: false, dof: false, shadows: true, shadowMapSize: 2048, mistCount: 14, cars: 3 },
 }[TIER];
 
 // ---------- time-of-day looks ----------
@@ -61,7 +64,7 @@ export const CONFIG = {
 
   siteCenter: [15, 0, 0],
   // Low tier: only buildings/cars cast shadows (trees still receive them).
-  shadowsFor: (mesh) => TIER === 'high' || !mesh.userData.vegetation,
+  shadowsFor: (mesh) => TIER !== 'low' || !mesh.userData.vegetation,
   perf: { minPixelRatio: 1, step: 0.25, slowMs: 24, fastMs: 13, sampleFrames: 90 },
   camera: {
     fov: 35, near: 1, far: 3000,
@@ -106,7 +109,7 @@ export const CONFIG = {
   // round `loop`, and leave the way they came on the other side of the road. lane = offset to the left of travel (m).
   // Junction corners and the hairpin carry extra points so the driving line is a round arc, not a sharp corner.
   traffic: {
-    count: TIER === 'high' ? 5 : 3, speed: 7.5, cornerSpeed: 3, lane: 1.75,
+    count: QUALITY.cars, speed: 7.5, cornerSpeed: 3, lane: 1.75,
     inbound: [[37.5, 78.75], [39, 58.5], [45, 42], [55.5, 22.5], [67.5, 0], [78, -19.2], [87, -36],
       [88.5, -38.9], [89.3, -42], [88.5, -45.2], [86.2, -47.5], [83, -48.3], [79.9, -47.5], [77.5, -45.2], // hairpin
       [67.5, -37.2], [52.5, -21.75], [36, -7.5], [22.5, -1.8], [6, 3], [-3.8, 6.4], [-8.1, 6], [-11.3, 3.2], [-13.2, -1.2]],
@@ -128,8 +131,8 @@ export const CONFIG = {
   // heightFalloff: metres over which the distance haze thins with altitude.
   // valley: ground-hugging mist below `top` (world Y), fading over `falloff` metres, thickening over `reach` metres of view distance.
   atmosphere: { heightFalloff: 140, valley: { top: -10, falloff: 6, reach: 260 }, ridges: true },
-  // Ambient occlusion (desktop tier): radius in metres, intensity 0–1
-  ao: { radius: 3.2, intensity: 0.85, samples: 12, thickness: 1.2 },
+  // Ambient occlusion (ultra / high tiers): radius in metres, intensity 0–1; sample count comes from the tier
+  ao: { radius: 3.2, intensity: 0.85, thickness: 1.2 },
   // sky / fog / sun / hemi / env / exposure / grade come from the active look (see LOOKS below)
   ...LOOK,
   toneMapping: 'agx', // 'agx' | 'neutral' | 'aces'

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
+import { frameCamera } from './scene.js';
 
 /**
  * Renders still images of the 3D scene from the camera presets (desktop framing), used as the
@@ -41,5 +42,47 @@ export async function capturePresets(renderer, scene, camera, names, { thumb = [
   camera.aspect = saved.aspect; camera.fov = saved.fov;
   if (saved.view?.enabled) camera.setViewOffset(saved.view.fullWidth, saved.view.fullHeight, saved.view.offsetX, saved.view.offsetY, saved.view.width, saved.view.height);
   camera.updateProjectionMatrix();
+  return out;
+}
+
+// Poster stills shown before the 3D loads (and instead of it without WebGL / with data saver on).
+// Desktop frame = the aerial preset as the page opens; mobile = the portrait aerial preset.
+const POSTERS = [
+  { file: 'hero-poster.webp', size: [1920, 1200], preset: (p) => p },
+  { file: 'hero-poster-mobile.webp', size: [900, 1600], preset: (p) => p.mobile ?? p },
+];
+
+/**
+ * Developer tool (page opened with ?poster): renders each poster at its fixed size through the full
+ * post-processing chain and posts it to serve.py, which writes it into public/assets/images/.
+ * Run it before the animation loop starts. Returns [{ file, kb, ok }].
+ */
+export async function savePosters(renderer, camera, post, quality = 0.8) {
+  const canvas = renderer.domElement;
+  const saved = { size: renderer.getSize(new THREE.Vector2()), ratio: renderer.getPixelRatio(), pos: camera.position.clone(), quat: camera.quaternion.clone() };
+  const setFrame = (w, h) => { renderer.setSize(w, h, false); post.setSize(w, h); frameCamera(camera, w, h); };
+  const target = new THREE.Vector3(), out = [];
+  renderer.setPixelRatio(1);
+  try {
+    for (const { file, size: [w, h], preset } of POSTERS) {
+      const p = preset(CONFIG.presets.aerial);
+      setFrame(w, h);
+      camera.position.fromArray(p.position);
+      camera.lookAt(target.fromArray(p.target));
+      camera.updateMatrixWorld();
+      post.update(0, target, camera.position.distanceTo(target));
+      post.render(); // the copy below must run in the same task, before the drawing buffer is cleared
+      const copy = document.createElement('canvas'); copy.width = w; copy.height = h;
+      copy.getContext('2d').drawImage(canvas, 0, 0);
+      const blob = await new Promise((res) => copy.toBlob(res, 'image/webp', quality));
+      const res = await fetch(`/api/save-image?name=${file}`, { method: 'POST', body: blob, headers: { 'Content-Type': 'image/webp' } });
+      out.push({ file, kb: Math.round(blob.size / 1024), ok: res.ok });
+    }
+  } finally {
+    renderer.setPixelRatio(saved.ratio);
+    setFrame(saved.size.x, saved.size.y);
+    camera.position.copy(saved.pos); camera.quaternion.copy(saved.quat);
+    camera.updateMatrixWorld();
+  }
   return out;
 }

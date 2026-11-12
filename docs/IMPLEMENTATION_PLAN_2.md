@@ -19,11 +19,11 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 | R6 Vegetation | Artist + code | 🟡 1 · 🎨 4 | Wind/back-light shader ready; real trees, LODs, placement and hedges are the artist's. |
 | R7 Architecture detail | Artist | 🟡 1 · 🎨 7 | Only the animated water exists. Everything else is the artist's; caustics is a code task. |
 | R8 Life & motion | Code | ✅ 4 | Spline fly-in (skippable), drifting cloud shadows, moving cars and birds, settling camera moves. |
-| R9 Pipeline & performance | Both | 🟡 2 · ⏳ 3 · 🎨 1 | Loader and tiers partly ready; build script, poster image and final verification pending. |
+| R9 Pipeline & performance | Both | ✅ 2 · 🟡 2 · ⏳ 1 · 🎨 1 | Poster image and three benchmark-picked tiers done; load size checked. Build script (needs Node.js), real-phone test and Lighthouse pending. |
 
-**Task count:** 26 done · 6 partial · 4 pending (code) · 17 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
+**Task count:** 28 done · 6 partial · 2 pending (code) · 17 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
 
-### Completed so far (R0–R4, R8)
+### Completed so far (R0–R4, R8, R9.4, R9.5)
 - The page accepts an artist-built model without code changes, and `tools/validate-model.html` checks a model against the brief.
 - Golden-hour look by default, with midday and overcast available (`?look=`).
 - Real-world colours, per-tree tints, lawn mottling; model re-exported (2.6 MB, 95 parked cars).
@@ -31,14 +31,14 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 - Bloom, tilt-shift blur, vignette, film grain and a slight colour fringe.
 - Distance haze, valley mist, softer mist banks and three layers of horizon hills; camera can tilt to 80°.
 - A 6.5 s opening flight over the forest (skippable), cloud shadows drifting across the land, cars driving the access road and ring, a flock of birds, and camera moves that ease into place.
+- A poster image of the scene is on screen from the first paint and stays when 3D is unavailable or data saver is on; the 3D code is only downloaded when it will be used.
+- Three quality tiers (ultra / high / low), picked by a short GPU benchmark on the first visit.
 
 ### Pending — code (can be done now)
-1. **R9.5** Poster image shown before the 3D loads and when WebGL is unavailable.
-2. **R9.4** Ultra tier and GPU benchmark for automatic tier choice (the rest of this task is done).
-3. **R9.6** Real-phone test, Lighthouse run, final budget check.
-4. **R2.3** PCSS-style soft shadows (optional polish; the rest of this task is done).
-5. **R7.4** Pool caustics and **R5.5** grass tufts (both better after the artist's model).
-6. **R9.1** Asset build script (needs Node.js installed).
+1. **R9.6** Real-phone test and Lighthouse run (the load-size check is done).
+2. **R2.3** PCSS-style soft shadows (optional polish; the rest of this task is done).
+3. **R7.4** Pool caustics and **R5.5** grass tufts (both better after the artist's model).
+4. **R9.1** Asset build script (needs Node.js installed).
 
 ### Pending — artist (see [BLENDER_ARTIST_BRIEF.md](BLENDER_ARTIST_BRIEF.md))
 - **R5** Textured terrain, roads and paving, soft edges, rocks.
@@ -50,6 +50,7 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 ### Blocked until the artist delivers
 - **R0.7** Re-tune camera presets, pan bounds and hotspot focus distances.
 - **R9.2** Decide the file split (core / vegetation / details).
+- **R9.5** re-render the poster images from the artist's model (open the page with `?tier=ultra&poster` while `serve.py` is running).
 - **R8** re-tune on the artist's model: intro flight path, car route (`CONFIG.intro`, `CONFIG.traffic`).
 
 ### Known gaps in what is marked done
@@ -59,6 +60,9 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 - Frame rate in the preview pane read 72–144 fps with all desktop effects on; the pane throttles unevenly, so treat it as rough.
 - Lighthouse has not been run.
 - R8 was checked in the desktop preview pane only (both tiers load without errors); the portrait/phone intro path and the cloud shadows under the midday and overcast looks were not checked by eye.
+- The tier benchmark's thresholds were calibrated on one machine only (RTX 5050 laptop, 0.8 ms → ultra); integrated-GPU desktops and phones are untested, so their tier choice is a best guess. `?debug` logs the measurement.
+- The no-WebGL and data-saver paths were exercised only through the `?3d=off` preview switch, not on a real device with those conditions.
+- The mobile poster was rendered from the portrait preset but not viewed on a phone.
 - Moving cars do not cast real shadows (the shadow map is rendered once); each carries a soft blob shadow instead.
 
 ## Where the realism gap was at the start of Plan 2
@@ -182,15 +186,15 @@ The asset tasks in R5–R7 below now describe **what the artist delivers** (see 
 | R8.3 | ✅ Done | A few moving cars on the access road, birds over the forest (optional) | Scene feels alive | 5 cars (3 on phones) drive gate → hairpin → ring road → back out, keeping left and slowing in bends (`src/hero/life.js`, route in `CONFIG.traffic`). The 3 static cars on the hairpin road were removed from the model. A flock of 7 birds circles the valley. |
 | R8.4 | ✅ Done | Smoother preset transitions (eased arcs, slight camera "settle") | No mechanical moves | New ease with a long soft tail; the look-at point arrives just before the camera; long moves pull back slightly mid-flight; duration grows with distance (1.3–3 s). |
 
-## Phase R9 — Asset pipeline & performance · 2 partial, 4 pending
+## Phase R9 — Asset pipeline & performance · 2 done, 2 partial, 2 pending
 | # | Status | Task | Done when | Notes |
 |---|---|---|---|---|
 | R9.1 | ⏳ Pending — code | `assets/` source folder + `tools/build-assets` script: textures → KTX2 (Basis), meshes → Meshopt/Draco via `gltf-transform` | One command rebuilds | Needs Node.js installed. The artist can already export Draco + WebP straight from Blender. |
 | R9.2 | 🟡 Partial | Split GLB: `site-core.glb` (terrain/buildings, loads first) + `vegetation.glb` + `details.glb` (stream in after first frame) | First view < 2 s on 4G | Loader side done (R0.2). Splitting the model into files is pending and depends on the artist's delivery. |
 | R9.3 | 🎨 Pending — artist | Texture budget: 2k max, atlases for small props, mipmaps, anisotropy | GPU memory < 300 MB desktop | Anisotropic filtering is applied on load; the validator page flags oversized textures. |
-| R9.4 | 🟡 Partial | Quality tiers extended (Ultra / High / Low) + auto-detect via a 1 s GPU benchmark | Right tier picked automatically | Done: two tiers (desktop / phone), `?tier=` override, automatic resolution scaling. **Not done:** Ultra tier, GPU benchmark. |
-| R9.5 | ⏳ Pending — code | Static poster image (rendered from the scene) shown instantly and for no-WebGL / reduced-data users | Never a blank screen |  |
-| R9.6 | ⏳ Pending — code | Re-verify: fps (debug HUD), load size, mobile test on a real phone, Lighthouse | Budgets met | No real-phone test and no Lighthouse run yet. |
+| R9.4 | ✅ Done | Quality tiers extended (Ultra / High / Low) + auto-detect via a 1 s GPU benchmark | Right tier picked automatically | `src/hero/tier.js`: a ~0.35 s shader benchmark on the first visit (result remembered) picks ultra / high / low on desktops and high / low on phones; `?tier=` still overrides. Ultra adds 8× MSAA, a 6144 px shadow map, 16-sample AO, more mist and cars. Thresholds calibrated on one machine only. |
+| R9.5 | ✅ Done | Static poster image (rendered from the scene) shown instantly and for no-WebGL / reduced-data users | Never a blank screen | `hero-poster.webp` (1920×1200, 132 KB) and `hero-poster-mobile.webp` (900×1600, 87 KB) show from the first paint under the hero copy. Without WebGL 2 the poster stays; with data saver it stays behind a "Load 3D model" button. `main.js` is now a small bootstrap and the 3D code (`app.js`, three.js, the model) is fetched only when needed. Preview with `?3d=off`. |
+| R9.6 | 🟡 Partial | Re-verify: fps (debug HUD), load size, mobile test on a real phone, Lighthouse | Budgets met | Done: first load is 1.85 MB compressed (model 1.23 MB, three.js 0.36 MB, images 0.15 MB) against the 6 MB budget; the HUD read 144 fps on the high tier in the preview pane. **Not done:** real-phone test, Lighthouse run. |
 
 ---
 

@@ -1,113 +1,63 @@
-import * as THREE from 'three';
-import { createScene } from './scene.js';
-import { setupLighting } from './lighting.js';
-import { createMist, createRidges } from './atmosphere.js';
-import { loadSite } from './loader.js';
-import { createPerformance } from './performance.js';
-import { createHeightSampler } from './terrainHeight.js';
-import { createCameraRig } from './controls.js';
-import { bindUI } from './ui.js';
-import { createHotspots } from './hotspots.js';
-import { createPopups } from './popups.js';
-import { bindPage, applyThumbnails } from './page.js';
-import { capturePresets } from './capture.js';
-import { createFoliage } from './foliage.js';
-import { createPost } from './post.js';
-import { createTraffic, createBirds } from './life.js';
+import { bindPage } from './page.js';
+import { hasWebGL2, pickTier } from './tier.js';
 
+/**
+ * Bootstrap (small, no three.js). The poster image in the loader is on screen from the first paint;
+ * this script then decides whether the interactive scene should replace it:
+ *  - no WebGL 2                → poster stays, with a short note
+ *  - data saver / reduced data → poster stays until the visitor asks for the 3D model
+ *  - otherwise                 → pick a quality tier, download the 3D code and model, fade the poster out
+ * Menu, view tabs and gallery work in every case.
+ */
 const hero = document.getElementById('hero');
-const stage = document.getElementById('stage');
 const loaderEl = document.getElementById('loader');
 const fill = document.getElementById('loader-fill');
 const text = document.getElementById('loader-text');
-const setProgress = (p) => { fill.style.width = `${Math.round(p * 100)}%`; };
+const params = new URLSearchParams(location.search);
 
-const { renderer, scene, camera, onResize } = createScene(stage);
-const lights = setupLighting(scene, renderer);
-const mist = createMist(scene);
-createRidges(scene);
-const foliage = createFoliage(lights.sun);
-const post = createPost(renderer, scene, camera);
-onResize((w, h) => post.setSize(w, h));
-const perf = createPerformance(renderer, stage, { onPixelRatio: () => post.setSize(stage.clientWidth, stage.clientHeight) });
+let app = null;
+const page = bindPage(hero, { onViewChange: (view) => app?.onViewChange(view) });
 
-// The scenery is static and the sun never moves: render the shadow map once, on demand.
-// (Moving cars carry their own blob shadows instead of casting into it.)
-renderer.shadowMap.autoUpdate = false;
-renderer.info.autoReset = false;
-
-let site = null, rig = null, hotspots = null, popups = null, traffic = null;
-const birds = createBirds(scene);
-
-// Page UI (menu, view tabs, gallery) works even while/if the model is loading.
-const page = bindPage(hero, {
-  onViewChange: (view) => {
-    perf.setPaused(view !== '3d'); // no GPU work while a 2D panel covers the scene
-    if (view !== '3d') hotspots?.clear();
-  },
-});
-const clock = new THREE.Clock();
-function frame() {
-  if (!perf.tick()) return;
-  renderer.info.reset(); // count draw calls across all post-processing passes of this frame
-  const t = clock.getElapsedTime();
-  mist.update(t, camera);
-  lights.update(t);
-  traffic.update(t);
-  birds.update(t);
-  site.update(t);
-  foliage.update(t, camera);
-  rig.update();
-  hotspots.update(t);
-  post.update(t, rig.controls.target, camera.position.distanceTo(rig.controls.target));
-  post.render();
-  popups.update();
+/** Keep the poster as the hero image. `action` adds a button (by default it starts the 3D scene). */
+function showStatic(message, action, run = start) {
+  hero.classList.remove('is-loading');
+  hero.classList.add('is-static');
+  text.textContent = message;
+  loaderEl.querySelector('.loader__action')?.remove();
+  if (action) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn--sand loader__action';
+    btn.textContent = action;
+    btn.addEventListener('click', () => { btn.remove(); run(); });
+    text.after(btn);
+  }
 }
 
-try {
-  site = await loadSite(renderer, (p) => setProgress(p * 0.8));
-  foliage.apply(site.root);
-  scene.add(site.root);
-  const heightAt = createHeightSampler(site.terrain);
-  traffic = createTraffic(scene, site, heightAt, lights.sun);
-  rig = createCameraRig(camera, renderer.domElement, heightAt);
-  bindUI(rig, { hero });
-  hotspots = createHotspots({ camera, dom: renderer.domElement, hero, site, rig, heightAt });
-  popups = createPopups({ scene, camera, stage, hero, hotspots, onResize });
-
-  text.textContent = 'Preparing scene…';
-  setProgress(0.85);
-  // Compile every shader (incl. shadow depth variants) while the loader is still visible,
-  // so the first interactive frame doesn't hitch.
-  await renderer.compileAsync(scene, camera);
-  // Spend the whole shadow map on the plot (buildings + roads), not the surrounding forest.
-  lights.fitShadows([site.root.getObjectByName('Structures'), site.root.getObjectByName('Roads'), ...site.clickable]);
-  renderer.shadowMap.needsUpdate = true;
-  // Render stills from the camera presets for the thumbnails and the Site Images gallery (optional: never block the scene).
+async function start() {
+  hero.classList.remove('is-static');
+  hero.classList.add('is-loading');
+  text.textContent = 'Loading 3D model…';
   try {
-    const captures = await capturePresets(renderer, scene, camera, ['aerial', 'main-building', 'recreation'], { large: [1280, 800], render: post.render });
-    applyThumbnails(hero, captures);
-    const shots = [['aerial', '3D aerial view'], ['main-building', 'Convention centre — 3D view'], ['recreation', 'Pool & play area — 3D view']];
-    page.addImages(shots.filter(([k]) => captures[k]).map(([k, caption]) => ({ src: captures[k].large, caption })));
-  } catch (err) {
-    console.warn('Preset thumbnails could not be rendered', err);
-  }
-  setProgress(1);
-  loaderEl.classList.add('is-done');
-  rig.intro();
-  renderer.setAnimationLoop(frame);
-
-  // Remaining model parts (vegetation, details) stream in after the first interactive frame.
-  if (site.hasExtras) {
-    site.loadExtras(async (part) => {
-      foliage.apply(part);
-      await renderer.compileAsync(part, camera, scene); // compile off-screen first, so adding it doesn't hitch
-      scene.add(part);
-      renderer.shadowMap.needsUpdate = true;
+    const tier = pickTier();
+    if (params.has('debug')) console.info('Quality tier', tier);
+    const { startHero } = await import('./app.js');
+    app = await startHero({
+      hero, page,
+      onProgress: (p) => { fill.style.width = `${Math.round(p * 100)}%`; },
+      onStatus: (msg) => { text.textContent = msg; },
     });
+    hero.classList.remove('is-loading');
+    loaderEl.classList.add('is-done');
+  } catch (err) {
+    console.error(err);
+    showStatic('The 3D model could not be loaded.', 'Try again', () => location.reload());
   }
-  window.__hero = { renderer, scene, camera, rig, lights, site, perf, heightAt, hotspots, popups, page, post, traffic, birds };
-} catch (err) {
-  console.error(err);
-  text.textContent = 'The 3D model could not be loaded.';
 }
+
+// ?3d=off previews the poster-only page (as data-saver visitors see it); ?3d forces the scene on.
+const saveData = navigator.connection?.saveData === true || matchMedia('(prefers-reduced-data: reduce)').matches;
+const want3d = params.get('3d');
+if (!hasWebGL2()) showStatic('Interactive 3D is not available in this browser.');
+else if (want3d === 'off' || (saveData && want3d === null)) showStatic(saveData ? 'Data saver is on — showing a still image.' : 'Showing a still image.', 'Load 3D model');
+else start();
