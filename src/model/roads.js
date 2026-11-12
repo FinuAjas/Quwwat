@@ -80,9 +80,9 @@ export function buildRoads() {
         }
       }
     }
-    // a few moving cars on the access roads
-    if (def.id === 'hairpin-road' || def.id === 'west-road') {
-      for (const f of def.id === 'hairpin-road' ? [0.18, 0.62, 0.83] : [0.45]) {
+    // one car stopped on the west road (the cars driving the hairpin road are added live: src/hero/life.js)
+    if (def.id === 'west-road') {
+      for (const f of [0.45]) {
         const p = interp(samples, closed, f * length), q = interp(samples, closed, f * length + 1);
         const side = rand() < 0.5 ? 1 : -1;
         carSlots.push({ x: p.x + p.nx * side * 1.8, z: p.z + p.nz * side * 1.8, y: toY(p.h) + Y_ROAD, yaw: Math.atan2(q.x - p.x, q.z - p.z) + (side > 0 ? Math.PI : 0) });

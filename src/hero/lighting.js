@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { CONFIG, QUALITY } from './config.js';
 
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 /**
  * Outdoor lighting for the active look:
  *  - warm directional sun with soft shadows (fitted to the site once the model is loaded)
@@ -9,6 +11,7 @@ import { CONFIG, QUALITY } from './config.js';
  *    background and, pre-filtered, as the image-based lighting / reflection environment —
  *    so glass, water and car paint reflect a sky whose sun matches the real light direction
  *  - distance fog matched to the horizon
+ *  - slow cloud shadows drifting over the land (sunlight only; see installAtmosphere)
  */
 export function setupLighting(scene, renderer) {
   installAtmosphere(); // must run before any material is compiled
@@ -47,7 +50,9 @@ export function setupLighting(scene, renderer) {
   scene.environmentIntensity = CONFIG.env.intensity;
   pmrem.dispose();
 
-  scene.fog = new THREE.Fog(CONFIG.fog.color, CONFIG.fog.near, CONFIG.fog.far);
+  // The atmosphere shader ignores the fog distances, so `near` / `far` carry the cloud-shadow drift instead:
+  // they are the only values three.js already sends to every fogged material each frame.
+  scene.fog = new THREE.Fog(CONFIG.fog.color, 0, 0);
   scene.background = new THREE.Color(CONFIG.fog.color);
 
   /**
@@ -78,7 +83,15 @@ export function setupLighting(scene, renderer) {
     return { width: b.max.x - b.min.x, height: b.max.y - b.min.y, texel };
   }
 
-  return { sun, hemi, dome, fitShadows };
+  /** Per-frame: move the cloud shadows with the wind. */
+  const cl = CONFIG.clouds;
+  function update(t) {
+    if (reducedMotion) return;
+    scene.fog.near = (t * cl.wind[0]) / cl.size;
+    scene.fog.far = (t * cl.wind[1]) / cl.size;
+  }
+
+  return { sun, hemi, dome, fitShadows, update };
 }
 
 function createSkyDome(sunDir, boost) {
@@ -123,13 +136,16 @@ function createSkyDome(sunDir, boost) {
  *  - exponential distance haze that thins with altitude (aerial perspective)
  *  - near haze is cool blue-grey, far haze takes the horizon colour, haze towards the sun turns warm
  *  - ground-hugging mist pooled in the low valleys, so it sits between the trees rather than on top
- * Constants are baked from the active look; `scene.fog` only supplies the horizon colour and enables fog.
+ * It also adds cloud shadows: two layers of soft noise, projected along the sun's rays, dim the direct
+ * sunlight (never the sky light, so shaded ground keeps its colour). The pattern drifts with `scene.fog.near/far`.
+ * Constants are baked from the active look; `scene.fog` supplies the horizon colour, the drift, and enables fog.
  */
 let atmosphereInstalled = false;
 function installAtmosphere() {
   if (atmosphereInstalled) return;
   atmosphereInstalled = true;
-  const hz = CONFIG.haze, at = CONFIG.atmosphere;
+  const hz = CONFIG.haze, at = CONFIG.atmosphere, cl = CONFIG.clouds;
+  const edge = 0.5 + (0.5 - cl.cover) * 0.55 - cl.soft / 2; // noise level where shade starts (noise is centred on 0.5)
   const f = (n) => Number(n).toFixed(6);
   const v3 = (c) => { const k = new THREE.Color(c); return `vec3(${f(k.r)}, ${f(k.g)}, ${f(k.b)})`; };
   const sun = new THREE.Vector3().fromArray(CONFIG.sun.position).normalize();
@@ -149,13 +165,30 @@ function installAtmosphere() {
       uniform vec3 fogColor;
       varying float vFogDepth;
       varying vec3 vFogWorld;
-      #ifdef FOG_EXP2
-        uniform float fogDensity;
-      #else
-        uniform float fogNear;
-        uniform float fogFar;
-      #endif
+      uniform float fogNear; // cloud drift x (in noise cells)
+      uniform float fogFar;  // cloud drift z
+      float hzHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float hzNoise(vec2 p) {
+        vec2 i = floor(p), f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hzHash(i), hzHash(i + vec2(1.0, 0.0)), f.x), mix(hzHash(i + vec2(0.0, 1.0)), hzHash(i + vec2(1.0, 1.0)), f.x), f.y);
+      }
+      // Share of direct sunlight reaching this point (1 = clear sky above, lower under a drifting cloud).
+      float cloudShade() {
+        vec2 p = (vFogWorld.xz - vFogWorld.y * ${`vec2(${f(sun.x / sun.y)}, ${f(sun.z / sun.y)})`}) / ${f(cl.size)} - vec2(fogNear, fogFar);
+        float n = hzNoise(p) * 0.65 + hzNoise(p * 2.7 + 31.0) * 0.35;
+        return 1.0 - ${f(CONFIG.cloudShadow ?? 0)} * smoothstep(${f(edge)}, ${f(edge + cl.soft)}, n);
+      }
     #endif`;
+  if (CONFIG.cloudShadow > 0) {
+    const hook = 'getDirectionalLightInfo( directionalLight, directLight );';
+    const chunk = THREE.ShaderChunk.lights_fragment_begin;
+    if (chunk.includes(hook)) THREE.ShaderChunk.lights_fragment_begin = chunk.replace(hook, `${hook}
+		#ifdef USE_FOG
+		directLight.color *= cloudShade();
+		#endif`);
+    else console.warn('Cloud shadows are off: this three.js version has a different light shader.');
+  }
   THREE.ShaderChunk.fog_fragment = /* glsl */`
     #ifdef USE_FOG
       float hzD = vFogDepth * ${f(hz.density)};

@@ -13,6 +13,7 @@ import { bindPage, applyThumbnails } from './page.js';
 import { capturePresets } from './capture.js';
 import { createFoliage } from './foliage.js';
 import { createPost } from './post.js';
+import { createTraffic, createBirds } from './life.js';
 
 const hero = document.getElementById('hero');
 const stage = document.getElementById('stage');
@@ -30,11 +31,13 @@ const post = createPost(renderer, scene, camera);
 onResize((w, h) => post.setSize(w, h));
 const perf = createPerformance(renderer, stage, { onPixelRatio: () => post.setSize(stage.clientWidth, stage.clientHeight) });
 
-// The scene is static and the sun never moves: render the shadow map once, on demand.
+// The scenery is static and the sun never moves: render the shadow map once, on demand.
+// (Moving cars carry their own blob shadows instead of casting into it.)
 renderer.shadowMap.autoUpdate = false;
 renderer.info.autoReset = false;
 
-let site = null, rig = null, hotspots = null, popups = null;
+let site = null, rig = null, hotspots = null, popups = null, traffic = null;
+const birds = createBirds(scene);
 
 // Page UI (menu, view tabs, gallery) works even while/if the model is loading.
 const page = bindPage(hero, {
@@ -49,6 +52,9 @@ function frame() {
   renderer.info.reset(); // count draw calls across all post-processing passes of this frame
   const t = clock.getElapsedTime();
   mist.update(t, camera);
+  lights.update(t);
+  traffic.update(t);
+  birds.update(t);
   site.update(t);
   foliage.update(t, camera);
   rig.update();
@@ -63,6 +69,7 @@ try {
   foliage.apply(site.root);
   scene.add(site.root);
   const heightAt = createHeightSampler(site.terrain);
+  traffic = createTraffic(scene, site, heightAt, lights.sun);
   rig = createCameraRig(camera, renderer.domElement, heightAt);
   bindUI(rig, { hero });
   hotspots = createHotspots({ camera, dom: renderer.domElement, hero, site, rig, heightAt });
@@ -99,7 +106,7 @@ try {
       renderer.shadowMap.needsUpdate = true;
     });
   }
-  window.__hero = { renderer, scene, camera, rig, lights, site, perf, heightAt, hotspots, popups, page, post };
+  window.__hero = { renderer, scene, camera, rig, lights, site, perf, heightAt, hotspots, popups, page, post, traffic, birds };
 } catch (err) {
   console.error(err);
   text.textContent = 'The 3D model could not be loaded.';

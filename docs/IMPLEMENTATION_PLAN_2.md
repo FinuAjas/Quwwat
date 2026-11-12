@@ -4,8 +4,65 @@ Goal: move from the current clean low-poly look to a photographic, "architectura
 (like the reference hero image): natural colour, real materials, soft sunlight, depth and atmosphere —
 while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 MB first load).
 
-## Where the realism gap is today
-| Area | Now | Why it looks artificial |
+## Status — updated 2026-11-13
+
+**Legend:** ✅ Done · 🟡 Partial · ⏳ Pending — code · 🎨 Pending — artist · ⏸ Waiting on something else · ➖ Not built (optional, skipped)
+
+| Phase | Owner | Status | Summary |
+|---|---|---|---|
+| R0 Ready for an artist model | Code | ✅ 6 · ⏸ 1 | Any terrain shape, split files, foliage shader, KTX2, lightmaps, validator page. R0.7 (re-tune camera) waits for the artist's model. |
+| R1 Colour & tone | Code | ✅ 4 · 🟡 1 | AgX, real-world palette, tree tints, colour grade, three looks. Building weathering left to the artist. |
+| R2 Lighting & sky | Code | ✅ 4 · 🟡 1 | Procedural sky reflections, fitted shadows, contact shadows, baked ground shade. PCSS soft shadows not done. |
+| R3 Camera effects | Code | ✅ 5 | Bloom, tilt-shift, vignette, grain, colour fringe; phones keep grade + vignette + grain. |
+| R4 Atmosphere | Code | ✅ 3 · ➖ 1 | Distance haze, valley mist, softer mist banks, horizon ridges. Sun shafts skipped. |
+| R5 Ground materials | Artist | 🎨 5 · ⏳ 1 | Not started. R5.5 grass tufts is a code task for after the artist's terrain. |
+| R6 Vegetation | Artist + code | 🟡 1 · 🎨 4 | Wind/back-light shader ready; real trees, LODs, placement and hedges are the artist's. |
+| R7 Architecture detail | Artist | 🟡 1 · 🎨 7 | Only the animated water exists. Everything else is the artist's; caustics is a code task. |
+| R8 Life & motion | Code | ✅ 4 | Spline fly-in (skippable), drifting cloud shadows, moving cars and birds, settling camera moves. |
+| R9 Pipeline & performance | Both | 🟡 2 · ⏳ 3 · 🎨 1 | Loader and tiers partly ready; build script, poster image and final verification pending. |
+
+**Task count:** 26 done · 6 partial · 4 pending (code) · 17 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
+
+### Completed so far (R0–R4, R8)
+- The page accepts an artist-built model without code changes, and `tools/validate-model.html` checks a model against the brief.
+- Golden-hour look by default, with midday and overcast available (`?look=`).
+- Real-world colours, per-tree tints, lawn mottling; model re-exported (2.6 MB, 95 parked cars).
+- Sky-based reflections and ambient light, fitted shadow map, desktop contact shadows, baked ground shading for all devices.
+- Bloom, tilt-shift blur, vignette, film grain and a slight colour fringe.
+- Distance haze, valley mist, softer mist banks and three layers of horizon hills; camera can tilt to 80°.
+- A 6.5 s opening flight over the forest (skippable), cloud shadows drifting across the land, cars driving the access road and ring, a flock of birds, and camera moves that ease into place.
+
+### Pending — code (can be done now)
+1. **R9.5** Poster image shown before the 3D loads and when WebGL is unavailable.
+2. **R9.4** Ultra tier and GPU benchmark for automatic tier choice (the rest of this task is done).
+3. **R9.6** Real-phone test, Lighthouse run, final budget check.
+4. **R2.3** PCSS-style soft shadows (optional polish; the rest of this task is done).
+5. **R7.4** Pool caustics and **R5.5** grass tufts (both better after the artist's model).
+6. **R9.1** Asset build script (needs Node.js installed).
+
+### Pending — artist (see [BLENDER_ARTIST_BRIEF.md](BLENDER_ARTIST_BRIEF.md))
+- **R5** Textured terrain, roads and paving, soft edges, rocks.
+- **R6** Leaf-card trees and palms with LODs, natural placement, hedges and flower beds.
+- **R7** Detailed convention centre, prayer hall and cabin, PBR materials, pool shell, amphitheatre, play equipment, site furniture, realistic cars.
+- **R1.3** Building weathering (comes with the textures).
+- **R9.3** Texture budget; exporting with Draco + WebP.
+
+### Blocked until the artist delivers
+- **R0.7** Re-tune camera presets, pan bounds and hotspot focus distances.
+- **R9.2** Decide the file split (core / vegetation / details).
+- **R8** re-tune on the artist's model: intro flight path, car route (`CONFIG.intro`, `CONFIG.traffic`).
+
+### Known gaps in what is marked done
+- Nothing has been tested on a real phone; the phone tier was only exercised with `?tier=low` on desktop.
+- KTX2 textures and baked lightmaps are wired in but untested (no such assets yet).
+- Midday and overcast looks were not re-checked after the haze shader (R4) went in.
+- Frame rate in the preview pane read 72–144 fps with all desktop effects on; the pane throttles unevenly, so treat it as rough.
+- Lighthouse has not been run.
+- R8 was checked in the desktop preview pane only (both tiers load without errors); the portrait/phone intro path and the cloud shadows under the midday and overcast looks were not checked by eye.
+- Moving cars do not cast real shadows (the shadow map is rendered once); each carries a soft blob shadow instead.
+
+## Where the realism gap was at the start of Plan 2
+| Area | Before Plan 2 | Why it looked artificial |
 |---|---|---|
 | Colour | Flat saturated greens/oranges, ACES tone map | No colour grading, no tonal variation, greens too uniform |
 | Materials | Plain colours, no textures | No grain: grass, asphalt, tiles, plaster all look like plastic |
@@ -36,104 +93,104 @@ The artist's contract is in [BLENDER_ARTIST_BRIEF.md](BLENDER_ARTIST_BRIEF.md).
 | R8 Life & motion | Code | |
 | R9 Pipeline & performance | Artist exports Draco + WebP; Code does loading, tiers, poster | Node.js optional now |
 
-### Phase R0 — Make the page ready for an artist-built model ✅ (R0.7 waits for the artist's delivery)
-| # | Task | Done when |
-|---|---|---|
-| R0.1 | Ground-height lookup must not assume the blockout's regular grid: bake a height map from the `Terrain` mesh at load (one-off downward raycasts into a 2D array) | Camera guard works on any terrain mesh |
-| R0.2 | Loader accepts 1–3 GLB files (core first, vegetation/details streamed in after the first frame) | Split delivery works |
-| R0.3 | Foliage support: alpha-clipped leaves cast correct shadows; optional wind + back-light shader applied to meshes flagged `vegetation` | Leaf-card trees render and shadow correctly |
-| R0.4 | KTX2Loader wired in (optional GPU-compressed textures) | `.ktx2` textures load if the artist supplies them |
-| R0.5 | Baked AO (glTF occlusion texture, native) + lightmap via mesh custom property `lightMap` = file name, on UV2 | Artist bakes show up |
-| R0.6 | `tools/validate-model.html`: loads a GLB and reports contract errors (missing names/hotspots/anchors, non-instanced trees, triangle and draw-call budget, size) | Artist/developer get a pass/fail list |
-| R0.7 | Camera presets, pan bounds, hotspot focus distances re-tuned on the delivered model | Presets frame correctly |
+### Phase R0 — Make the page ready for an artist-built model · 6 of 7 done
+| # | Status | Task | Done when | Notes |
+|---|---|---|---|---|
+| R0.1 | ✅ Done | Ground-height lookup must not assume the blockout's regular grid: bake a height map from the `Terrain` mesh at load (one-off downward raycasts into a 2D array) | Camera guard works on any terrain mesh | Height map is rasterised from the terrain triangles (not raycasts). Verified: all 8 label heights unchanged. |
+| R0.2 | ✅ Done | Loader accepts 1–3 GLB files (core first, vegetation/details streamed in after the first frame) | Split delivery works | `models.core` + `models.extras` in `config.js`. Verified with a simulated extra file; a missing file is skipped with a warning. |
+| R0.3 | ✅ Done | Foliage support: alpha-clipped leaves cast correct shadows; optional wind + back-light shader applied to meshes flagged `vegetation` | Leaf-card trees render and shadow correctly | Wind sway + back-light glow on all near trees (`foliage.js`). Leaf-card shadows need no extra code; untested until real leaf-card trees arrive. |
+| R0.4 | ✅ Done | KTX2Loader wired in (optional GPU-compressed textures) | `.ktx2` textures load if the artist supplies them | Wired in; **untested** — no KTX2 textures exist yet. |
+| R0.5 | ✅ Done | Baked AO (glTF occlusion texture, native) + lightmap via mesh custom property `lightMap` = file name, on UV2 | Artist bakes show up | Wired in; **untested** — no baked lightmaps exist yet. |
+| R0.6 | ✅ Done | `tools/validate-model.html`: loads a GLB and reports contract errors (missing names/hotspots/anchors, non-instanced trees, triangle and draw-call budget, size) | Artist/developer get a pass/fail list | Current model passes every check (one expected warning on the Parking label). |
+| R0.7 | ⏸ Waiting | Camera presets, pan bounds, hotspot focus distances re-tuned on the delivered model | Presets frame correctly | Can only be done on the artist's delivered model. |
 
 The asset tasks in R5–R7 below now describe **what the artist delivers** (see the brief's checklist).
 
 ---
 
-## Phase R1 — Colour & tone ✅ (looks: `?look=golden|midday|overcast`; building weathering tint left to the artist)
-| # | Task | Done when |
-|---|---|---|
-| R1.1 | Switch tone mapping to **AgX** (or Neutral) and re-balance exposure | Highlights roll off softly; roofs no longer clip |
-| R1.2 | Re-palette all materials to measured real-world colours (terracotta roof `#a65a3a`, aged plaster `#d9cdb8`, asphalt `#5d5c58`, lawn `#5b7a34`…) | No "toy" colours remain |
-| R1.3 | Natural colour variation: per-instance tint for trees (glTF `_COLOR_0`), per-building weathering tint, lawn mottling | Forest shows mixed greens/olives/yellows |
-| R1.4 | Colour-grading pass (LUT or lift/gamma/gain shader): warm highlights, cool shadows, slight desaturation of greens | Matches the reference render's mood |
-| R1.5 | Time-of-day presets in config (golden hour default, midday, overcast) | One-line switch |
+## Phase R1 — Colour & tone · 4 done, 1 partial
+| # | Status | Task | Done when | Notes |
+|---|---|---|---|---|
+| R1.1 | ✅ Done | Switch tone mapping to **AgX** (or Neutral) and re-balance exposure | Highlights roll off softly; roofs no longer clip | AgX tone mapping, exposure re-balanced per look. |
+| R1.2 | ✅ Done | Re-palette all materials to measured real-world colours (terracotta roof `#a65a3a`, aged plaster `#d9cdb8`, asphalt `#5d5c58`, lawn `#5b7a34`…) | No "toy" colours remain | All materials re-coloured in `src/model/materials.js`; model re-exported. |
+| R1.3 | 🟡 Partial | Natural colour variation: per-instance tint for trees (glTF `_COLOR_0`), per-building weathering tint, lawn mottling | Forest shows mixed greens/olives/yellows | Done: per-tree tint, lawn dry patches and speckle. **Not done:** per-building weathering tint (left to the artist's textures). |
+| R1.4 | ✅ Done | Colour-grading pass (LUT or lift/gamma/gain shader): warm highlights, cool shadows, slight desaturation of greens | Matches the reference render's mood | Shader grade (split-toning, contrast, green taming) in `post.js`, not a LUT file. |
+| R1.5 | ✅ Done | Time-of-day presets in config (golden hour default, midday, overcast) | One-line switch | `golden` (default), `midday`, `overcast`; try with `?look=`. Overcast's final fog tweak and the midday/overcast haze were not re-checked visually. |
 
-## Phase R2 — Lighting & sky ✅ (procedural sky instead of a downloaded HDRI; PCSS shadows not done; test desktop tier with `?tier=high`)
-| # | Task | Done when |
-|---|---|---|
-| R2.1 | Replace RoomEnvironment with a real **HDRI sky** (Poly Haven 2k, CC0) for reflections + background | Glass/water reflect a real sky |
-| R2.2 | Align sun direction/colour to the HDRI; lower sun (≈30–35°) for longer, softer shadows | Shadows read as late-afternoon |
-| R2.3 | Cascaded or tighter shadow frustum + PCSS-style soft shadows | Crisp near, soft far, no shimmering |
-| R2.4 | **Ambient occlusion**: GTAO post pass (desktop) + baked AO in terrain vertex colours (all tiers) | Contact darkening under trees, cars, eaves |
-| R2.5 | Light probe / hemisphere tuned from HDRI for bounce colour | Shaded walls pick up green/sky tints |
+## Phase R2 — Lighting & sky · 4 done, 1 partial
+| # | Status | Task | Done when | Notes |
+|---|---|---|---|---|
+| R2.1 | ✅ Done | Replace RoomEnvironment with a real **HDRI sky** (Poly Haven 2k, CC0) for reflections + background | Glass/water reflect a real sky | Done with a **procedural sky** (gradient + sun glow) instead of a downloaded HDRI, so it matches each look's sun. A real HDRI is still optional. |
+| R2.2 | ✅ Done | Align sun direction/colour to the HDRI; lower sun (≈30–35°) for longer, softer shadows | Shadows read as late-afternoon | Sun comes from the look; golden hour sits at about 36°. |
+| R2.3 | 🟡 Partial | Cascaded or tighter shadow frustum + PCSS-style soft shadows | Crisp near, soft far, no shimmering | Done: shadow map fitted to the plot (254 × 236 m instead of 320 × 320 m). **Not done:** PCSS-style variable softness. |
+| R2.4 | ✅ Done | **Ambient occlusion**: GTAO post pass (desktop) + baked AO in terrain vertex colours (all tiers) | Contact darkening under trees, cars, eaves | GTAO pass on desktop; ground shading under trees/buildings baked into the model for all devices. |
+| R2.5 | ✅ Done | Light probe / hemisphere tuned from HDRI for bounce colour | Shaded walls pick up green/sky tints | Bounce colour comes from the sky environment's green ground half (no separate light probe). |
 
-## Phase R3 — Post-processing (cinematic camera) ✅ (tilt-shift is screen-space; settings in `CONFIG.post`)
-| # | Task | Done when |
-|---|---|---|
-| R3.1 | Add `EffectComposer` pipeline (RenderPass → GTAO → Bloom → DoF → Grade → SMAA/FXAA → Output) | Toggle per quality tier |
-| R3.2 | Subtle **bloom** on sun-lit water/glass only (high threshold) | No glow on grass |
-| R3.3 | **Tilt-shift / depth of field** focused on the orbit target (architectural-model feel) | Distant forest softly blurred |
-| R3.4 | Vignette + very light film grain + chromatic aberration ≤ 0.5 px | Feels photographic, not "game" |
-| R3.5 | Low tier: skip GTAO/DoF, keep grade + FXAA | Phones stay ≥ 30 fps |
+## Phase R3 — Post-processing (cinematic camera) · 5 of 5 done
+| # | Status | Task | Done when | Notes |
+|---|---|---|---|---|
+| R3.1 | ✅ Done | Add `EffectComposer` pipeline (RenderPass → GTAO → Bloom → DoF → Grade → SMAA/FXAA → Output) | Toggle per quality tier | Chain: scene → AO → bloom → tilt-shift → tone map → film grade. Edges use MSAA instead of SMAA/FXAA. |
+| R3.2 | ✅ Done | Subtle **bloom** on sun-lit water/glass only (high threshold) | No glow on grass | High HDR threshold; desktop only. |
+| R3.3 | ✅ Done | **Tilt-shift / depth of field** focused on the orbit target (architectural-model feel) | Distant forest softly blurred | Screen-space tilt-shift that follows the orbit target and fades out in close-ups; desktop only. |
+| R3.4 | ✅ Done | Vignette + very light film grain + chromatic aberration ≤ 0.5 px | Feels photographic, not "game" | Vignette + grain on all devices; colour fringe on desktop. |
+| R3.5 | ✅ Done | Low tier: skip GTAO/DoF, keep grade + FXAA | Phones stay ≥ 30 fps | Phones skip AO, bloom, blur and fringe. **Not tested on a real phone.** |
 
-## Phase R4 — Atmosphere ✅ (R4.3 sun shafts not built — warm haze towards the sun stands in; camera can now tilt to 80° to show the horizon)
-| # | Task | Done when |
-|---|---|---|
-| R4.1 | **Height fog + aerial perspective** shader (blue-grey haze increasing with distance & lower in valleys) | Hills fade naturally into distance |
-| R4.2 | Volumetric-looking mist: layered soft cloud cards with depth fade (no hard sprite edges) | Mist sits *between* trees, not on top |
-| R4.3 | Optional sun shafts (god rays) at golden-hour preset | Desktop only |
-| R4.4 | Distant mountain silhouettes (layered ridges) beyond the terrain | Horizon has depth like Kerala hills |
+## Phase R4 — Atmosphere · 3 done, 1 not built
+| # | Status | Task | Done when | Notes |
+|---|---|---|---|---|
+| R4.1 | ✅ Done | **Height fog + aerial perspective** shader (blue-grey haze increasing with distance & lower in valleys) | Hills fade naturally into distance | Patched fog shader: distance haze thinning with altitude, cool near / warm towards the sun, valley mist. |
+| R4.2 | ✅ Done | Volumetric-looking mist: layered soft cloud cards with depth fade (no hard sprite edges) | Mist sits *between* trees, not on top | Achieved differently: the between-trees mist is the height fog (R4.1); mist banks got a wispy texture and fade out near the camera. No depth-fade on the banks themselves. |
+| R4.3 | ➖ Not built | Optional sun shafts (god rays) at golden-hour preset | Desktop only | Optional; skipped — shafts tend to look fake from above. Warm haze towards the sun stands in. |
+| R4.4 | ✅ Done | Distant mountain silhouettes (layered ridges) beyond the terrain | Horizon has depth like Kerala hills | Three ridge layers; max camera tilt raised from 72° to 80° so the horizon is visible. |
 
-## Phase R5 — Ground & landscape materials
-| # | Task | Done when |
-|---|---|---|
-| R5.1 | Terrain **splat shader**: grass, dry grass, soil, rock blended by slope/height/noise (CC0 PBR textures, triplanar) | No flat colour anywhere |
-| R5.2 | Road surfaces: asphalt texture with wear, kerb stone texture, faded road paint | Roads read as real tarmac |
-| R5.3 | Paving textures: brick footpath, stone plaza, pool deck, amphitheatre concrete | Correct scale (1 tile ≈ real size) |
-| R5.4 | Soft road/lawn edge blending (decal strip) instead of hard ribbon edges | Edges look natural |
-| R5.5 | **Instanced grass tufts / ground cover** near the camera (fade by distance) | Lawns have depth when zoomed in |
-| R5.6 | Rocks (contour map shows rock areas) — instanced CC0 rock models | Rocky slopes match survey |
+## Phase R5 — Ground & landscape materials · not started (artist)
+| # | Status | Task | Done when | Notes |
+|---|---|---|---|---|
+| R5.1 | 🎨 Pending — artist | Terrain **splat shader**: grass, dry grass, soil, rock blended by slope/height/noise (CC0 PBR textures, triplanar) | No flat colour anywhere |  |
+| R5.2 | 🎨 Pending — artist | Road surfaces: asphalt texture with wear, kerb stone texture, faded road paint | Roads read as real tarmac |  |
+| R5.3 | 🎨 Pending — artist | Paving textures: brick footpath, stone plaza, pool deck, amphitheatre concrete | Correct scale (1 tile ≈ real size) |  |
+| R5.4 | 🎨 Pending — artist | Soft road/lawn edge blending (decal strip) instead of hard ribbon edges | Edges look natural |  |
+| R5.5 | ⏳ Pending — code | **Instanced grass tufts / ground cover** near the camera (fade by distance) | Lawns have depth when zoomed in | Best done once the artist's terrain is in. |
+| R5.6 | 🎨 Pending — artist | Rocks (contour map shows rock areas) — instanced CC0 rock models | Rocky slopes match survey |  |
 
-## Phase R6 — Vegetation (largest visual win)
-| # | Task | Done when |
-|---|---|---|
-| R6.1 | Replace blob trees with **leaf-card trees** (CC0 / Blender sapling): 3–4 tropical broadleaf species + coconut palm + areca palm + flowering shrubs | Real leafy silhouettes |
-| R6.2 | Foliage shader: alpha-tested leaves, two-sided lighting, **subsurface/translucency** toward the sun, wind sway (vertex shader) | Leaves glow when back-lit, gently move |
-| R6.3 | **LOD chain**: full tree (near) → simplified (mid) → billboard impostor (far forest) | Same fps with 3–4× more detail |
-| R6.4 | Natural placement: clustering, size by age, denser in valleys, gaps on rock | Forest no longer looks gridded |
-| R6.5 | Hedges and flower beds around buildings, ring road and paths (from the render) | Matches render landscaping |
+## Phase R6 — Vegetation (largest visual win) · shader ready, models pending (artist)
+| # | Status | Task | Done when | Notes |
+|---|---|---|---|---|
+| R6.1 | 🎨 Pending — artist | Replace blob trees with **leaf-card trees** (CC0 / Blender sapling): 3–4 tropical broadleaf species + coconut palm + areca palm + flowering shrubs | Real leafy silhouettes |  |
+| R6.2 | 🟡 Partial | Foliage shader: alpha-tested leaves, two-sided lighting, **subsurface/translucency** toward the sun, wind sway (vertex shader) | Leaves glow when back-lit, gently move | Done: wind sway and back-light translucency shader (see R0.3). Waiting: alpha-tested leaf cards from the artist's trees. |
+| R6.3 | 🎨 Pending — artist | **LOD chain**: full tree (near) → simplified (mid) → billboard impostor (far forest) | Same fps with 3–4× more detail | Code side ready: phones already thin instanced trees (70 % near, 45 % far). |
+| R6.4 | 🎨 Pending — artist | Natural placement: clustering, size by age, denser in valleys, gaps on rock | Forest no longer looks gridded |  |
+| R6.5 | 🎨 Pending — artist | Hedges and flower beds around buildings, ring road and paths (from the render) | Matches render landscaping |  |
 
-## Phase R7 — Architecture detail
-| # | Task | Done when |
-|---|---|---|
-| R7.1 | Convention centre rebuild: real windows/doors with frames, columns/verandah, eaves with fascia & soffit, roof tile texture with ridge caps | Reads as Kerala-style architecture |
-| R7.2 | Prayer hall, security cabin to the same standard | Consistent style |
-| R7.3 | PBR materials: plaster (with dirt at base), tiles (normal + roughness), glass (reflective, tinted), timber pergolas (wood grain) | Close-ups hold up |
-| R7.4 | Pool: tiled pool shell with depth colour, caustics shader, wet deck edge, real fountain particles | Water looks deep and clear |
-| R7.5 | Amphitheatre: concrete/stone texture, step edges, stage backdrop | Not "white plastic" |
-| R7.6 | Playground: CC0 play-equipment models, rubber surface texture | Recognisable equipment |
-| R7.7 | Site furniture: street lamps, benches, bollards, signage at gates, compound wall with gate | Human scale and life |
-| R7.8 | Cars: replace boxes with CC0 low-poly realistic cars (4–5 models, LOD) | Cars read at a glance |
+## Phase R7 — Architecture detail · water only; rest pending (artist)
+| # | Status | Task | Done when | Notes |
+|---|---|---|---|---|
+| R7.1 | 🎨 Pending — artist | Convention centre rebuild: real windows/doors with frames, columns/verandah, eaves with fascia & soffit, roof tile texture with ridge caps | Reads as Kerala-style architecture |  |
+| R7.2 | 🎨 Pending — artist | Prayer hall, security cabin to the same standard | Consistent style |  |
+| R7.3 | 🎨 Pending — artist | PBR materials: plaster (with dirt at base), tiles (normal + roughness), glass (reflective, tinted), timber pergolas (wood grain) | Close-ups hold up |  |
+| R7.4 | 🟡 Partial | Pool: tiled pool shell with depth colour, caustics shader, wet deck edge, real fountain particles | Water looks deep and clear | Done: animated water ripples/reflections. Pending — code: caustics. Pending — artist: tiled shell, wet edge, fountain. |
+| R7.5 | 🎨 Pending — artist | Amphitheatre: concrete/stone texture, step edges, stage backdrop | Not "white plastic" |  |
+| R7.6 | 🎨 Pending — artist | Playground: CC0 play-equipment models, rubber surface texture | Recognisable equipment |  |
+| R7.7 | 🎨 Pending — artist | Site furniture: street lamps, benches, bollards, signage at gates, compound wall with gate | Human scale and life |  |
+| R7.8 | 🎨 Pending — artist | Cars: replace boxes with CC0 low-poly realistic cars (4–5 models, LOD) | Cars read at a glance |  |
 
-## Phase R8 — Life & motion (cinematic feel)
-| # | Task | Done when |
-|---|---|---|
-| R8.1 | Intro as a **cinematic camera path** (spline fly-through over the forest into the site, ~6 s, skippable) | Feels like a film opener |
-| R8.2 | Slow drifting clouds' shadows across the terrain | Subtle moving light |
-| R8.3 | A few moving cars on the access road, birds over the forest (optional) | Scene feels alive |
-| R8.4 | Smoother preset transitions (eased arcs, slight camera "settle") | No mechanical moves |
+## Phase R8 — Life & motion (cinematic feel) · 4 of 4 done
+| # | Status | Task | Done when | Notes |
+|---|---|---|---|---|
+| R8.1 | ✅ Done | Intro as a **cinematic camera path** (spline fly-through over the forest into the site, ~6 s, skippable) | Feels like a film opener | 6.5 s spline from low over the south-east forest up to the aerial view. Click, scroll, Esc/Enter/Space or the "Skip intro" button fast-forwards it (0.7 s, no cut). Path in `CONFIG.intro`. |
+| R8.2 | ✅ Done | Slow drifting clouds' shadows across the terrain | Subtle moving light | Soft noise dims the direct sunlight only, on every material, projected along the sun's rays. Size, wind, cover in `CONFIG.clouds`; strength per look (`cloudShadow`). |
+| R8.3 | ✅ Done | A few moving cars on the access road, birds over the forest (optional) | Scene feels alive | 5 cars (3 on phones) drive gate → hairpin → ring road → back out, keeping left and slowing in bends (`src/hero/life.js`, route in `CONFIG.traffic`). The 3 static cars on the hairpin road were removed from the model. A flock of 7 birds circles the valley. |
+| R8.4 | ✅ Done | Smoother preset transitions (eased arcs, slight camera "settle") | No mechanical moves | New ease with a long soft tail; the look-at point arrives just before the camera; long moves pull back slightly mid-flight; duration grows with distance (1.3–3 s). |
 
-## Phase R9 — Asset pipeline & performance
-| # | Task | Done when |
-|---|---|---|
-| R9.1 | `assets/` source folder + `tools/build-assets` script: textures → KTX2 (Basis), meshes → Meshopt/Draco via `gltf-transform` | One command rebuilds |
-| R9.2 | Split GLB: `site-core.glb` (terrain/buildings, loads first) + `vegetation.glb` + `details.glb` (stream in after first frame) | First view < 2 s on 4G |
-| R9.3 | Texture budget: 2k max, atlases for small props, mipmaps, anisotropy | GPU memory < 300 MB desktop |
-| R9.4 | Quality tiers extended (Ultra / High / Low) + auto-detect via a 1 s GPU benchmark | Right tier picked automatically |
-| R9.5 | Static poster image (rendered from the scene) shown instantly and for no-WebGL / reduced-data users | Never a blank screen |
-| R9.6 | Re-verify: fps (debug HUD), load size, mobile test on a real phone, Lighthouse | Budgets met |
+## Phase R9 — Asset pipeline & performance · 2 partial, 4 pending
+| # | Status | Task | Done when | Notes |
+|---|---|---|---|---|
+| R9.1 | ⏳ Pending — code | `assets/` source folder + `tools/build-assets` script: textures → KTX2 (Basis), meshes → Meshopt/Draco via `gltf-transform` | One command rebuilds | Needs Node.js installed. The artist can already export Draco + WebP straight from Blender. |
+| R9.2 | 🟡 Partial | Split GLB: `site-core.glb` (terrain/buildings, loads first) + `vegetation.glb` + `details.glb` (stream in after first frame) | First view < 2 s on 4G | Loader side done (R0.2). Splitting the model into files is pending and depends on the artist's delivery. |
+| R9.3 | 🎨 Pending — artist | Texture budget: 2k max, atlases for small props, mipmaps, anisotropy | GPU memory < 300 MB desktop | Anisotropic filtering is applied on load; the validator page flags oversized textures. |
+| R9.4 | 🟡 Partial | Quality tiers extended (Ultra / High / Low) + auto-detect via a 1 s GPU benchmark | Right tier picked automatically | Done: two tiers (desktop / phone), `?tier=` override, automatic resolution scaling. **Not done:** Ultra tier, GPU benchmark. |
+| R9.5 | ⏳ Pending — code | Static poster image (rendered from the scene) shown instantly and for no-WebGL / reduced-data users | Never a blank screen |  |
+| R9.6 | ⏳ Pending — code | Re-verify: fps (debug HUD), load size, mobile test on a real phone, Lighthouse | Budgets met | No real-phone test and no Lighthouse run yet. |
 
 ---
 
