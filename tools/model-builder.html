@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Model Builder — Mountain Courtyard</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #1d2a1f; font: 13px/1.4 system-ui, sans-serif; color: #eef; overflow: hidden; }
+    #panel { position: fixed; top: 12px; left: 12px; background: rgba(15, 22, 17, .82); padding: 12px 14px; border-radius: 10px; min-width: 230px; }
+    #panel h1 { font-size: 14px; margin: 0 0 8px; }
+    #stats { white-space: pre; font-family: ui-monospace, monospace; font-size: 12px; opacity: .85; }
+    button { margin: 8px 6px 0 0; padding: 7px 12px; border: 0; border-radius: 999px; background: #e7c9a3; color: #222; cursor: pointer; font-weight: 600; }
+    #status { margin-top: 8px; color: #b9e3a1; }
+  </style>
+  <script type="importmap">
+    { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+  <div id="panel">
+    <h1>Mountain Courtyard · model builder</h1>
+    <div id="stats">building…</div>
+    <button id="save">Export &amp; save GLB</button><button id="download">Download</button><button id="top">Top view</button>
+    <div id="status"></div>
+  </div>
+  <script type="module" src="./model-builder.js"></script>
+</body>
+</html>

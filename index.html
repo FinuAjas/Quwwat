@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mountain Courtyard — Quwwat Group</title>
+  <meta name="description" content="Mountain Courtyard by Quwwat Group — a harmonious blend of nature, recreation and community living." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./src/styles/hero.css" />
+  <link rel="modulepreload" href="./src/hero/main.js" />
+  <script type="importmap">
+    { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+  <section class="hero" id="hero">
+    <!-- WebGL canvas + CSS2D label layer are injected here -->
+    <div class="hero__stage" id="stage" aria-label="Interactive 3D model of Mountain Courtyard"></div>
+    <div class="hero__vignette" aria-hidden="true"></div>
+
+    <header class="nav">
+      <a class="nav__brand" href="#" aria-label="Quwwat Group — Mountain Courtyard">
+        <img src="./public/assets/logos/quwwat_group_logo_white.webp" width="136" height="32" alt="Quwwat Group" class="nav__logo nav__logo--group" />
+        <span class="nav__divider" aria-hidden="true"></span>
+        <img src="./public/assets/logos/mountain_courtyard_logo_white.webp" width="135" height="64" alt="Mountain Courtyard" class="nav__logo nav__logo--project" />
+      </a>
+      <nav class="nav__links" id="nav-links" aria-label="Primary">
+        <a href="#" class="is-active">Home</a>
+        <a href="#">Project <span aria-hidden="true">▾</span></a>
+        <a href="#">Master Plan</a>
+        <a href="#">Amenities</a>
+        <a href="#">Gallery</a>
+        <a href="#">Location</a>
+        <a href="#">Contact</a>
+      </nav>
+      <a href="#contact" class="btn btn--sand nav__cta">Enquire Now <span aria-hidden="true">→</span></a>
+      <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="nav-links" aria-label="Open menu"><span></span><span></span><span></span></button>
+    </header>
+
+    <div class="hero__copy">
+      <p class="eyebrow">Introducing</p>
+      <h1 class="hero__title">Mountain<br />Courtyard<span class="leaf" aria-hidden="true"></span></h1>
+      <p class="hero__lead">A harmonious blend of nature, <br />recreation and community living.</p>
+      <button class="btn btn--ghost" type="button" id="walkthrough">
+        <span class="btn__play" aria-hidden="true">▶</span> Watch Project Walkthrough
+      </button>
+    </div>
+
+    <div class="views" role="tablist" aria-label="View mode">
+      <button role="tab" id="tab-3d" aria-selected="true" aria-controls="stage" class="views__tab is-active" data-view="3d">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5Zm0 2.3L18.7 8 12 11.7 5.3 8 12 4.3ZM5 9.7l6 3.3v6.6l-6-3.3V9.7Zm8 9.9V13l6-3.3v6.6l-6 3.3Z"/></svg>3D Model</button>
+      <button role="tab" id="tab-plan" aria-selected="false" aria-controls="panel-plan" tabindex="-1" class="views__tab" data-view="plan">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-6-2-6 2v16l6-2 6 2 6-2V3l-6 2ZM10 5.1l4 1.3v12.5l-4-1.3V5.1ZM5 6.4l3-1v12.5l-3 1V6.4Zm14 11.2-3 1V6.1l3-1v12.5Z"/></svg>Master Plan</button>
+      <button role="tab" id="tab-images" aria-selected="false" aria-controls="panel-images" tabindex="-1" class="views__tab" data-view="images">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 16H5V5h14v14Zm-5.5-6.5-3 3.9-2-2.4L6 18h12l-4.5-5.5ZM8.5 10A1.5 1.5 0 1 0 8.5 7a1.5 1.5 0 0 0 0 3Z"/></svg>Site Images</button>
+    </div>
+
+    <section class="panel" id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" hidden>
+      <figure class="panel__figure">
+        <img src="./public/assets/images/master-plan.webp" width="1170" height="812" alt="Master plan of Mountain Courtyard township showing the convention centre, pool, amphitheatre, business park and access roads" loading="lazy" />
+        <figcaption>Master plan — Mountain Court Yard Township Project</figcaption>
+      </figure>
+    </section>
+
+    <section class="panel" id="panel-images" role="tabpanel" aria-labelledby="tab-images" hidden>
+      <figure class="panel__figure">
+        <img id="gallery-img" src="./public/assets/images/site-render.webp" width="1600" height="1203" alt="" loading="lazy" />
+        <figcaption id="gallery-caption"></figcaption>
+      </figure>
+      <button class="panel__arrow panel__arrow--prev" type="button" data-dir="-1" aria-label="Previous image">‹</button>
+      <button class="panel__arrow panel__arrow--next" type="button" data-dir="1" aria-label="Next image">›</button>
+      <p class="panel__count" id="gallery-count" aria-live="polite"></p>
+    </section>
+
+    <div class="map-controls" aria-label="Map controls">
+      <div class="compass" id="compass" title="North"><span>N</span><i></i></div>
+      <button class="ctl" data-action="fullscreen" title="Fullscreen" aria-label="Fullscreen">⛶</button>
+      <button class="ctl" data-action="reset" title="Reset view" aria-label="Reset view">⟳</button>
+      <div class="ctl-group">
+        <button class="ctl" data-action="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+        <button class="ctl" data-action="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
+      </div>
+      <button class="ctl" data-action="layers" title="Labels" aria-label="Toggle labels">◈</button>
+    </div>
+
+    <div class="shots" aria-label="Camera presets">
+      <button class="shots__arrow" data-dir="-1" aria-label="Previous">‹</button>
+      <div class="shots__track" id="shots">
+        <button class="shot is-active" data-preset="aerial"><span>Aerial View</span></button>
+        <button class="shot" data-preset="main-building"><span>Main Building</span></button>
+        <button class="shot" data-preset="recreation"><span>Recreation Zone</span></button>
+      </div>
+      <button class="shots__arrow" data-dir="1" aria-label="Next">›</button>
+    </div>
+
+    <dialog class="video" id="walkthrough-dialog" aria-label="Project walkthrough">
+      <button class="video__close" type="button" aria-label="Close video">×</button>
+      <video controls playsinline preload="none" src="./public/assets/video/walkthrough-placeholder.mp4"></video>
+    </dialog>
+
+    <div class="loader" id="loader" role="status" aria-live="polite">
+      <div class="loader__bar"><i id="loader-fill"></i></div>
+      <p id="loader-text">Loading 3D model…</p>
+    </div>
+  </section>
+
+  <script type="module" src="./src/hero/main.js"></script>
+</body>
+</html>
