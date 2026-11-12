@@ -30,6 +30,7 @@ export function createScene(container) {
   const c = CONFIG.camera;
   const camera = new THREE.PerspectiveCamera(c.fov, 1, c.near, c.far);
   camera.layers.enable(1); // layer 1 = overlays (mist, selection ring)
+  camera.layers.enable(2); // layer 2 = leaf-card plants (drawn normally, hidden from the ambient-occlusion pass)
   camera.position.fromArray(c.position);
   camera.lookAt(new THREE.Vector3().fromArray(c.target));
 

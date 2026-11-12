@@ -8,7 +8,8 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
  *  - gentle wind sway (vertex shader; stronger towards the top of each plant, phase varies per instance)
  *  - back-light translucency (leaves glow when the sun is behind them)
  * Works with plain, vertex-coloured or textured alpha-clipped (leaf card) materials, instanced or not.
- * Leaf cards need nothing else: three.js already honours `alphaTest` in the shadow pass.
+ * Leaf cards (materials with `alphaTest`) also get soft cut-out edges and canopy-style lighting on both faces;
+ * three.js already honours `alphaTest` in the shadow pass.
  */
 export function createFoliage(sun) {
   const f = CONFIG.foliage;
@@ -25,6 +26,10 @@ export function createFoliage(sun) {
     const key = `${material.uuid}:${height.toFixed(2)}`;
     if (patched.has(key)) return patched.get(key);
     const mat = material.clone();
+    // Leaf cards (alpha-clipped, two-sided): soften their cut-out edges with the MSAA samples, and light both
+    // faces with the canopy's outward normal instead of flipping it on the back face.
+    const cards = material.alphaTest > 0;
+    if (cards) { mat.alphaToCoverage = true; mat.defines = { ...mat.defines, FOLIAGE_CARDS: '' }; }
     const uHeight = { value: Math.max(height, 0.001) };
     mat.onBeforeCompile = (shader) => {
       Object.assign(shader.uniforms, shared, { uHeight });
@@ -44,12 +49,17 @@ export function createFoliage(sun) {
           transformed.z += wAmt * 0.6;`);
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\nuniform vec3 uSunDirView; uniform vec3 uSunColor;')
+        .replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
+          #ifdef FOLIAGE_CARDS
+            normal = normalize(vNormal);
+            nonPerturbedNormal = normal;
+          #endif`)
         .replace('#include <opaque_fragment>', `
           float backLit = pow(max(dot(-normalize(vViewPosition), uSunDirView), 0.0), 3.0);
           outgoingLight += diffuseColor.rgb * uSunColor * backLit;
           #include <opaque_fragment>`);
     };
-    mat.customProgramCacheKey = () => 'foliage-v1';
+    mat.customProgramCacheKey = () => (cards ? 'foliage-v2-cards' : 'foliage-v2');
     patched.set(key, mat);
     return mat;
   }
@@ -59,6 +69,7 @@ export function createFoliage(sun) {
     root.traverse((o) => {
       if (!o.isMesh || !o.userData.vegetation || o.name.includes('_far') || !o.material?.isMeshStandardMaterial) return;
       if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+      if (o.material.alphaTest > 0) o.layers.set(2); // leaf cards: kept out of the ambient-occlusion pass (see post.js)
       o.material = patch(o.material, o.geometry.boundingBox.max.y);
     });
   }

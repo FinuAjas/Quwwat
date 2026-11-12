@@ -178,7 +178,7 @@ function installSoftShadows() {
 		float sum = 0.0, hits = 0.0;
 		for ( int i = 0; i < ${blockers}; i ++ ) {
 			vec2 o = softDisk( i, ${blockers}.0, turn ) * maxR * 0.6;
-			float d = unpackRGBAToDepth( texture2D( map, coord.xy + o ) );
+			float d = unpackRGBAToDepth( textureLod( map, coord.xy + o, 0.0 ) ); // explicit LOD: no screen-space gradients inside a loop
 			float ref = coord.z + clamp( dot( slope, o ), -0.004, 0.004 );
 			if ( d < ref - 0.0004 ) { sum += d; hits += 1.0; }
 		}
@@ -187,7 +187,7 @@ function installSoftShadows() {
 		float lit = 0.0;
 		for ( int i = 0; i < ${taps}; i ++ ) {
 			vec2 o = softDisk( i, ${taps}.0, turn + 1.7 ) * radius;
-			lit += texture2DCompare( map, coord.xy + o, coord.z + clamp( dot( slope, o ), -0.004, 0.004 ) );
+			lit += step( coord.z + clamp( dot( slope, o ), -0.004, 0.004 ), unpackRGBAToDepth( textureLod( map, coord.xy + o, 0.0 ) ) );
 		}
 		return lit / ${taps}.0;
 	}

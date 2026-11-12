@@ -16,17 +16,17 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 | R3 Camera effects | Code | ✅ 5 | Bloom, tilt-shift, vignette, grain, colour fringe; phones keep grade + vignette + grain. |
 | R4 Atmosphere | Code | ✅ 3 · ➖ 1 | Distance haze, valley mist, softer mist banks, horizon ridges. Sun shafts skipped. |
 | R5 Ground materials | Artist | 🎨 5 · ⏳ 1 | Not started. R5.5 grass tufts is a code task for after the artist's terrain. |
-| R6 Vegetation | Artist + code | 🟡 1 · 🎨 4 | Wind/back-light shader ready; real trees, LODs, placement and hedges are the artist's. |
+| R6 Vegetation | Code (procedural) | ✅ 5 | Leaf-card trees, palms, shrubs, hedges and flower beds, three distance levels, noise-driven forest — all generated in code. An artist's hand-modelled trees can still replace them later. |
 | R7 Architecture detail | Artist | 🟡 1 · 🎨 7 | Only the animated water exists. Everything else is the artist's; caustics is a code task. |
 | R8 Life & motion | Code | ✅ 4 | Spline fly-in (skippable), drifting cloud shadows, moving cars and birds, settling camera moves. |
 | R9 Pipeline & performance | Both | ✅ 2 · 🟡 2 · ⏳ 1 · 🎨 1 | Poster image and three benchmark-picked tiers done; load size checked. Build script (needs Node.js), real-phone test and Lighthouse pending. |
 
-**Task count:** 30 done · 4 partial · 2 pending (code) · 17 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
+**Task count:** 35 done · 3 partial · 2 pending (code) · 13 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
 
 ### Completed so far (R0–R4, R8, R9.4, R9.5)
 - The page accepts an artist-built model without code changes, and `tools/validate-model.html` checks a model against the brief.
 - Golden-hour look by default, with midday and overcast available (`?look=`).
-- Real-world colours, per-tree tints, lawn mottling; model re-exported (2.6 MB, 95 parked cars).
+- Real-world colours, per-tree tints, lawn mottling; model re-exported (3.0 MB, 95 parked cars).
 - Sky-based reflections and ambient light, fitted shadow map, desktop contact shadows, baked ground shading for all devices.
 - Bloom, tilt-shift blur, vignette, film grain and a slight colour fringe.
 - Distance haze, valley mist, softer mist banks and three layers of horizon hills; camera can tilt to 80°.
@@ -41,7 +41,6 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 
 ### Pending — artist (see [BLENDER_ARTIST_BRIEF.md](BLENDER_ARTIST_BRIEF.md))
 - **R5** Textured terrain, roads and paving, soft edges, rocks.
-- **R6** Leaf-card trees and palms with LODs, natural placement, hedges and flower beds.
 - **R7** Detailed convention centre, prayer hall and cabin, PBR materials, pool shell, amphitheatre, play equipment, site furniture, realistic cars.
 - **R9.3** Texture budget; exporting with Draco + WebP.
 
@@ -64,6 +63,8 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 - The mobile poster was rendered from the portrait preset but not viewed on a phone.
 - The distance-based soft shadows (R2.3) were checked on the golden-hour look and the high tier; midday, overcast and their frame-rate cost on a mid-range GPU are unmeasured.
 - Building weathering (R1.3) was checked on the convention centre from one close view and the aerial view, golden-hour look only; the plot boundary wall is left out because it follows the terrain.
+- Vegetation (R6) was checked from the aerial view and one close view on the high and ultra tiers, golden-hour look. The flower beds were not looked at close up, and the frame-rate cost of the alpha-clipped leaves on a mid-range GPU or a phone is unmeasured.
+- Leaf-card plants take no ambient occlusion (they still cast and receive shadows and have baked ground shade).
 - Moving cars do not cast real shadows (the shadow map is rendered once); each carries a soft blob shadow instead.
 
 ## Where the realism gap was at the start of Plan 2
@@ -158,14 +159,15 @@ The asset tasks in R5–R7 below now describe **what the artist delivers** (see 
 | R5.5 | ⏳ Pending — code | **Instanced grass tufts / ground cover** near the camera (fade by distance) | Lawns have depth when zoomed in | Best done once the artist's terrain is in. |
 | R5.6 | 🎨 Pending — artist | Rocks (contour map shows rock areas) — instanced CC0 rock models | Rocky slopes match survey |  |
 
-## Phase R6 — Vegetation (largest visual win) · shader ready, models pending (artist)
+## Phase R6 — Vegetation (largest visual win) · 5 of 5 done (procedural)
+Built in code (`src/model/vegetation.js`) instead of waiting for artist models. The trees are stylised leaf-card trees, not photo-scanned ones; artist-made trees can still be dropped in under the same names.
 | # | Status | Task | Done when | Notes |
 |---|---|---|---|---|
-| R6.1 | 🎨 Pending — artist | Replace blob trees with **leaf-card trees** (CC0 / Blender sapling): 3–4 tropical broadleaf species + coconut palm + areca palm + flowering shrubs | Real leafy silhouettes |  |
-| R6.2 | 🟡 Partial | Foliage shader: alpha-tested leaves, two-sided lighting, **subsurface/translucency** toward the sun, wind sway (vertex shader) | Leaves glow when back-lit, gently move | Done: wind sway and back-light translucency shader (see R0.3). Waiting: alpha-tested leaf cards from the artist's trees. |
-| R6.3 | 🎨 Pending — artist | **LOD chain**: full tree (near) → simplified (mid) → billboard impostor (far forest) | Same fps with 3–4× more detail | Code side ready: phones already thin instanced trees (70 % near, 45 % far). |
-| R6.4 | 🎨 Pending — artist | Natural placement: clustering, size by age, denser in valleys, gaps on rock | Forest no longer looks gridded |  |
-| R6.5 | 🎨 Pending — artist | Hedges and flower beds around buildings, ring road and paths (from the render) | Matches render landscaping |  |
+| R6.1 | ✅ Done | Replace blob trees with **leaf-card trees** (CC0 / Blender sapling): 3–4 tropical broadleaf species + coconut palm + areca palm + flowering shrubs | Real leafy silhouettes | Five broadleaf shapes (round, tall oval, open, umbrella, column), coconut and areca palms with drooping frond strips, shrubs and flowering shrubs. Each is a solid inner crown dressed with alpha-clipped leaf cards; one generated 256 px leaf texture serves every plant. |
+| R6.2 | ✅ Done | Foliage shader: alpha-tested leaves, two-sided lighting, **subsurface/translucency** toward the sun, wind sway (vertex shader) | Leaves glow when back-lit, gently move | Wind sway and back-light glow as before; leaf cards now also get soft cut-out edges (alpha-to-coverage) and are lit as one canopy on both faces. They are kept out of the ambient-occlusion pass, which cannot see cut-outs. |
+| R6.3 | ✅ Done | **LOD chain**: full tree (near) → simplified (mid) → billboard impostor (far forest) | Same fps with 3–4× more detail | Three levels chosen by distance from the site when a tree is placed (the camera always orbits the site): full trees within 118 m (130–360 triangles), simplified to 240 m (40–100), single blobs beyond (20). 13,201 plants, 0.94 M triangles (was 12,128 and 0.88 M). Not a per-frame switch. |
+| R6.4 | ✅ Done | Natural placement: clustering, size by age, denser in valleys, gaps on rock | Forest no longer looks gridded | Noise fields drive thickets and clearings, stands of old and young trees, palm groves on low ground, tall single-species stands, and bare patches on steep or stony ground. |
+| R6.5 | ✅ Done | Hedges and flower beds around buildings, ring road and paths (from the render) | Matches render landscaping | 279 hedge lengths along kerbs without parking bays, both sides of the footpath, and round the play area and plaza; flower beds at both gates, the plaza, the prayer hall and in drifts along road verges. Placement is rule-based, not traced from the render. |
 
 ## Phase R7 — Architecture detail · water only; rest pending (artist)
 | # | Status | Task | Done when | Notes |
