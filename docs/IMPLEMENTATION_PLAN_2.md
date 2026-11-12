@@ -78,7 +78,7 @@ The asset tasks in R5–R7 below now describe **what the artist delivers** (see 
 | R3.4 | Vignette + very light film grain + chromatic aberration ≤ 0.5 px | Feels photographic, not "game" |
 | R3.5 | Low tier: skip GTAO/DoF, keep grade + FXAA | Phones stay ≥ 30 fps |
 
-## Phase R4 — Atmosphere
+## Phase R4 — Atmosphere ✅ (R4.3 sun shafts not built — warm haze towards the sun stands in; camera can now tilt to 80° to show the horizon)
 | # | Task | Done when |
 |---|---|---|
 | R4.1 | **Height fog + aerial perspective** shader (blue-grey haze increasing with distance & lower in valleys) | Hills fade naturally into distance |

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { createScene } from './scene.js';
 import { setupLighting } from './lighting.js';
-import { createMist } from './atmosphere.js';
+import { createMist, createRidges } from './atmosphere.js';
 import { loadSite } from './loader.js';
 import { createPerformance } from './performance.js';
 import { createHeightSampler } from './terrainHeight.js';
@@ -24,6 +24,7 @@ const setProgress = (p) => { fill.style.width = `${Math.round(p * 100)}%`; };
 const { renderer, scene, camera, onResize } = createScene(stage);
 const lights = setupLighting(scene, renderer);
 const mist = createMist(scene);
+createRidges(scene);
 const foliage = createFoliage(lights.sun);
 const post = createPost(renderer, scene, camera);
 onResize((w, h) => post.setSize(w, h));
@@ -47,7 +48,7 @@ function frame() {
   if (!perf.tick()) return;
   renderer.info.reset(); // count draw calls across all post-processing passes of this frame
   const t = clock.getElapsedTime();
-  mist.update(t);
+  mist.update(t, camera);
   site.update(t);
   foliage.update(t, camera);
   rig.update();

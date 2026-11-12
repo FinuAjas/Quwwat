@@ -11,6 +11,7 @@ import { CONFIG, QUALITY } from './config.js';
  *  - distance fog matched to the horizon
  */
 export function setupLighting(scene, renderer) {
+  installAtmosphere(); // must run before any material is compiled
   const center = new THREE.Vector3().fromArray(CONFIG.siteCenter);
 
   const h = CONFIG.hemi;
@@ -114,4 +115,59 @@ function createSkyDome(sunDir, boost) {
   dome.renderOrder = -1;
   dome.frustumCulled = false;
   return dome;
+}
+
+/**
+ * Replaces three.js' flat distance fog with an atmosphere model, for every material at once
+ * (standard, instanced foliage, water, sprites) by patching the shared fog shader chunks:
+ *  - exponential distance haze that thins with altitude (aerial perspective)
+ *  - near haze is cool blue-grey, far haze takes the horizon colour, haze towards the sun turns warm
+ *  - ground-hugging mist pooled in the low valleys, so it sits between the trees rather than on top
+ * Constants are baked from the active look; `scene.fog` only supplies the horizon colour and enables fog.
+ */
+let atmosphereInstalled = false;
+function installAtmosphere() {
+  if (atmosphereInstalled) return;
+  atmosphereInstalled = true;
+  const hz = CONFIG.haze, at = CONFIG.atmosphere;
+  const f = (n) => Number(n).toFixed(6);
+  const v3 = (c) => { const k = new THREE.Color(c); return `vec3(${f(k.r)}, ${f(k.g)}, ${f(k.b)})`; };
+  const sun = new THREE.Vector3().fromArray(CONFIG.sun.position).normalize();
+
+  THREE.ShaderChunk.fog_pars_vertex = /* glsl */`
+    #ifdef USE_FOG
+      varying float vFogDepth;
+      varying vec3 vFogWorld;
+    #endif`;
+  THREE.ShaderChunk.fog_vertex = /* glsl */`
+    #ifdef USE_FOG
+      vFogDepth = -mvPosition.z;
+      vFogWorld = (mvPosition.xyz - viewMatrix[3].xyz) * mat3(viewMatrix); // view → world without a matrix inverse
+    #endif`;
+  THREE.ShaderChunk.fog_pars_fragment = /* glsl */`
+    #ifdef USE_FOG
+      uniform vec3 fogColor;
+      varying float vFogDepth;
+      varying vec3 vFogWorld;
+      #ifdef FOG_EXP2
+        uniform float fogDensity;
+      #else
+        uniform float fogNear;
+        uniform float fogFar;
+      #endif
+    #endif`;
+  THREE.ShaderChunk.fog_fragment = /* glsl */`
+    #ifdef USE_FOG
+      float hzD = vFogDepth * ${f(hz.density)};
+      float hzDist = 1.0 - exp(-hzD * hzD);
+      float hzAlt = exp(-max(vFogWorld.y, 0.0) / ${f(at.heightFalloff)});
+      float hzValley = exp(-max(vFogWorld.y - (${f(at.valley.top)}), 0.0) / ${f(at.valley.falloff)})
+                     * (1.0 - exp(-vFogDepth / ${f(at.valley.reach)})) * ${f(hz.valleyAmount)};
+      float hzAmount = clamp(hzDist * mix(0.55, 1.0, hzAlt) + hzValley * (1.0 - hzDist), 0.0, 1.0);
+      vec3 hzView = normalize(vFogWorld - cameraPosition);
+      float hzSun = pow(max(dot(hzView, ${`vec3(${f(sun.x)}, ${f(sun.y)}, ${f(sun.z)})`}), 0.0), 5.0);
+      vec3 hzColor = mix(${v3(hz.aerial)}, fogColor, smoothstep(0.05, 0.7, hzDist));
+      hzColor = mix(hzColor, ${v3(hz.sunTint)}, hzSun * 0.55);
+      gl_FragColor.rgb = mix(gl_FragColor.rgb, hzColor, hzAmount);
+    #endif`;
 }

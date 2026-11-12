@@ -21,6 +21,7 @@ export const LOOKS = {
     sun: { color: 0xffd3a0, intensity: 3.6, position: [-205, 150, -45], shadowExtent: 160, shadowFar: 700 },
     hemi: { sky: 0xc6d8f2, ground: 0x4b4a2e, intensity: 0.9 },
     env: { intensity: 0.55, skyBoost: 1.25, ground: 0x3d4a26, sunGlow: 1.0 },
+    haze: { density: 0.00085, aerial: 0x8fa3b5, sunTint: 0xffd9a6, valleyAmount: 0.45, ridge: 0x6f7f86 },
     exposure: 1.55, mistColor: 0xb4ada0, mistOpacity: 0.42,
     grade: { contrast: 0.14, saturation: 1.14, greenDesat: 0.2, shadows: [0.93, 0.99, 1.09], highlights: [1.08, 1.01, 0.9], lift: 0.0, gain: 1.0 },
   },
@@ -30,6 +31,7 @@ export const LOOKS = {
     sun: { color: 0xfff3e0, intensity: 3.6, position: [-90, 300, -60], shadowExtent: 150, shadowFar: 700 },
     hemi: { sky: 0xd4e6ff, ground: 0x3e4f26, intensity: 0.9 },
     env: { intensity: 0.6, skyBoost: 1.25, ground: 0x3a4a25, sunGlow: 0.7 },
+    haze: { density: 0.00075, aerial: 0x9fb6cc, sunTint: 0xf2f0e6, valleyAmount: 0.3, ridge: 0x6d8496 },
     exposure: 1.4, mistColor: 0xb9c0c2, mistOpacity: 0.42,
     grade: { contrast: 0.12, saturation: 1.12, greenDesat: 0.18, shadows: [0.97, 1.0, 1.05], highlights: [1.02, 1.01, 0.97], lift: 0.0, gain: 1.0 },
   },
@@ -39,6 +41,7 @@ export const LOOKS = {
     sun: { color: 0xe6edf2, intensity: 1.1, position: [-120, 260, -80], shadowExtent: 150, shadowFar: 700 },
     hemi: { sky: 0xe2e8ef, ground: 0x565f4a, intensity: 1.55 },
     env: { intensity: 0.8, skyBoost: 1.15, ground: 0x4a5340, sunGlow: 0.08 },
+    haze: { density: 0.0011, aerial: 0xaab3b8, sunTint: 0xd4d9dc, valleyAmount: 0.55, ridge: 0x8a9499 },
     exposure: 1.4, mistColor: 0xb4b9ba, mistOpacity: 0.42,
     grade: { contrast: 0.08, saturation: 0.95, greenDesat: 0.28, shadows: [0.98, 1.0, 1.03], highlights: [1.0, 1.0, 1.0], lift: 0.01, gain: 1.0 },
   },
@@ -69,7 +72,7 @@ export const CONFIG = {
 
   controls: {
     damping: 0.06,
-    minPolar: 20, maxPolar: 72,         // degrees from straight down
+    minPolar: 20, maxPolar: 80,         // degrees from straight down
     minDistance: 35, maxDistance: 480,
     groundClearance: 9,                 // metres the camera stays above the terrain
     panBounds: { minX: -110, maxX: 140, minZ: -100, maxZ: 110 },
@@ -92,11 +95,15 @@ export const CONFIG = {
     tiltShift: { blur: 5.5, band: 0.2, falloff: 0.34 },         // blur in CSS px at the frame edge; band = sharp half-height (0–0.5)
     vignette: 0.34, grain: 0.035, aberration: 0.45,             // aberration in px at the corners
   },
+  // Atmosphere shape (colours/density come from the look's `haze`).
+  // heightFalloff: metres over which the distance haze thins with altitude.
+  // valley: ground-hugging mist below `top` (world Y), fading over `falloff` metres, thickening over `reach` metres of view distance.
+  atmosphere: { heightFalloff: 140, valley: { top: -10, falloff: 6, reach: 260 }, ridges: true },
   // Ambient occlusion (desktop tier): radius in metres, intensity 0–1
   ao: { radius: 3.2, intensity: 0.85, samples: 12, thickness: 1.2 },
   // sky / fog / sun / hemi / env / exposure / grade come from the active look (see LOOKS below)
   ...LOOK,
   toneMapping: 'agx', // 'agx' | 'neutral' | 'aces'
 
-  mist: { ringMin: 105, ringMax: 240, heightMin: 30, heightMax: 85, sizeMin: 110, sizeMax: 210, opacity: 0.7, drift: 0.006 },
+  mist: { ringMin: 105, ringMax: 240, heightMin: 30, heightMax: 85, sizeMin: 110, sizeMax: 210, drift: 0.006, fadeNear: 45, fadeFar: 150 },
 };
