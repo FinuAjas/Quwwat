@@ -68,9 +68,9 @@ export const CONFIG = {
   perf: { minPixelRatio: 1, step: 0.25, slowMs: 24, fastMs: 13, sampleFrames: 90 },
   camera: {
     fov: 35, near: 1, far: 3000,
-    target: [18, 0, 4],
-    position: [-6, 190, 205],   // from the south, ~45° down — like the reference aerial
-    viewShift: 0.09,            // shift the frame right so the hero copy sits over forest (desktop only)
+    target: [-27.3, 8, -21.75], // the Convention Centre, kept at the exact centre of the screen
+    position: [-47, 165, 145],  // from the south, ~45° down — like the reference aerial
+    viewShift: 0,               // fraction of the width to shift the frame right (desktop only); 0 = centred
   },
 
   controls: {
@@ -89,7 +89,7 @@ export const CONFIG = {
 
   // Camera presets: [target], [position]. `mobile` overrides apply to portrait/narrow screens.
   presets: {
-    aerial: { target: [18, 0, 4], position: [-6, 190, 205], mobile: { target: [10, 0, 34], position: [0, 240, 250] } },
+    aerial: { target: [-27.3, 8, -21.75], position: [-47, 165, 145], mobile: { target: [-27.3, 8, -21.75], position: [-35.5, 206, 156.5] } },
     'main-building': { target: [-28, 8, -22], position: [8, 46, 32], mobile: { target: [-28, 8, -10], position: [0, 75, 60] } },
     recreation: { target: [-52, 7, -34], position: [-62, 38, 22], mobile: { target: [-52, 7, -20], position: [-58, 70, 55] } },
   },

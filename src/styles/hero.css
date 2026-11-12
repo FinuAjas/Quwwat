@@ -42,13 +42,14 @@ button { font: inherit; color: inherit; }
 .btn__play { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--sand); color: var(--sand-ink); font-size: 11px; }
 
 /* ---------- hero copy ---------- */
-.hero__copy { position: absolute; z-index: 2; left: var(--gutter); top: 50%; transform: translateY(-42%); max-width: 460px; pointer-events: none; }
+.hero__copy { position: absolute; z-index: 2; left: var(--gutter); bottom: 112px; max-width: 460px; pointer-events: none; }
 .hero__copy > * { pointer-events: auto; }
 .eyebrow { display: flex; align-items: center; gap: 14px; margin: 0 0 18px; font-size: 13px; letter-spacing: .38em; text-transform: uppercase; color: var(--ink-soft); }
 .eyebrow::after { content: ""; width: 64px; height: 1px; background: var(--ink-soft); }
 .hero__title { margin: 0; font: 400 clamp(44px, 5.4vw, 86px)/.92 var(--font-display); letter-spacing: -.01em; text-shadow: 0 2px 24px rgba(0, 0, 0, .35); }
+.hero__logo { display: block; width: auto; height: clamp(84px, 8.4vw, 140px); filter: drop-shadow(0 2px 18px rgba(0, 0, 0, .35)); }
 .leaf { display: inline-block; width: .42em; height: .3em; margin-left: .06em; border-radius: 0 100% 0 100%; background: linear-gradient(135deg, #8cc63f, #3f8a1e); transform: rotate(-28deg) translateY(-.05em); }
-.hero__lead { margin: 22px 0 30px; font-size: clamp(16px, 1.25vw, 20px); line-height: 1.45; color: var(--ink-soft); text-shadow: 0 1px 12px rgba(0, 0, 0, .4); }
+.hero__lead { margin: 20px 0 0; font-size: clamp(16px, 1.25vw, 20px); line-height: 1.45; color: var(--ink-soft); text-shadow: 0 1px 12px rgba(0, 0, 0, .4); }
 
 /* ---------- view switcher ---------- */
 .views { position: absolute; z-index: 2; left: var(--gutter); bottom: 34px; display: flex; gap: 4px; padding: 6px;
@@ -106,7 +107,10 @@ button { font: inherit; color: inherit; }
   .nav { padding-top: 14px; gap: 12px; }
   .nav__logo--group { height: 20px; } .nav__logo--project { height: 38px; } .nav__divider { height: 28px; }
   .nav .btn--sand { padding: 9px 14px; font-size: 13px; }
-  .hero__copy { top: auto; bottom: 150px; transform: none; right: var(--gutter); }
+  .hero__copy { bottom: 86px; right: var(--gutter); }
+  .hero__logo { height: 72px; }
+  .eyebrow { margin-bottom: 12px; }
+  .hero__lead { margin-top: 12px; }
   .hero__lead br { display: none; }
   .map-controls { top: 96px; transform: none; gap: 8px; }
   .compass { width: 46px; height: 46px; margin-bottom: 6px; }
