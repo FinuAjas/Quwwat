@@ -6,6 +6,7 @@ import { hasWebGL2, pickTier } from './tier.js';
  * this script then decides whether the interactive scene should replace it:
  *  - no WebGL 2                → poster stays, with a short note
  *  - data saver / reduced data → poster stays until the visitor asks for the 3D model
+ *  - no graphics acceleration  → the same (the scene would crawl or crash the tab on software rendering)
  *  - otherwise                 → pick a quality tier, download the 3D code and model, fade the poster out
  * Menu, view tabs and gallery work in every case.
  */
@@ -39,8 +40,7 @@ async function start() {
   hero.classList.add('is-loading');
   text.textContent = 'Loading 3D model…';
   try {
-    const tier = pickTier();
-    if (params.has('debug')) console.info('Quality tier', tier);
+    pickTier(); // already decided unless the visitor came through the poster-only page
     const { startHero } = await import('./app.js');
     app = await startHero({
       hero, page,
@@ -60,4 +60,9 @@ const saveData = navigator.connection?.saveData === true || matchMedia('(prefers
 const want3d = params.get('3d');
 if (!hasWebGL2()) showStatic('Interactive 3D is not available in this browser.');
 else if (want3d === 'off' || (saveData && want3d === null)) showStatic(saveData ? 'Data saver is on — showing a still image.' : 'Showing a still image.', 'Load 3D model');
-else start();
+else {
+  const tier = pickTier();
+  if (params.has('debug')) console.info('Quality tier', tier);
+  if (tier.tooSlow && want3d === null) showStatic('This device has no 3D graphics acceleration — showing a still image.', 'Load 3D anyway');
+  else start();
+}

@@ -58,7 +58,8 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 - KTX2 textures and baked lightmaps are wired in but untested (no such assets yet).
 - Midday and overcast looks were not re-checked after the haze shader (R4) went in.
 - Frame rate in the preview pane read 72–144 fps with all desktop effects on; the pane throttles unevenly, so treat it as rough.
-- Lighthouse has not been run.
+- Lighthouse has produced no scores yet: the one run crashed on the 3D scene (see R9.6); it needs re-running once the fix is live.
+- A browser tab opened in the background can benchmark many times slower than the GPU really is (measured 41.7 ms vs 0.8 ms on the same machine). Slow results are therefore not remembered between visits, but that visit still gets the low tier.
 - R8 was checked in the desktop preview pane only (both tiers load without errors); the portrait/phone intro path and the cloud shadows under the midday and overcast looks were not checked by eye.
 - The tier benchmark's thresholds were calibrated on one machine only (RTX 5050 laptop, 0.8 ms → ultra); integrated-GPU desktops and phones are untested, so their tier choice is a best guess. `?debug` logs the measurement.
 - The no-WebGL and data-saver paths were exercised only through the `?3d=off` preview switch, not on a real device with those conditions.
@@ -194,7 +195,7 @@ The asset tasks in R5–R7 below now describe **what the artist delivers** (see 
 | R9.3 | 🎨 Pending — artist | Texture budget: 2k max, atlases for small props, mipmaps, anisotropy | GPU memory < 300 MB desktop | Anisotropic filtering is applied on load; the validator page flags oversized textures. |
 | R9.4 | ✅ Done | Quality tiers extended (Ultra / High / Low) + auto-detect via a 1 s GPU benchmark | Right tier picked automatically | `src/hero/tier.js`: a ~0.35 s shader benchmark on the first visit (result remembered) picks ultra / high / low on desktops and high / low on phones; `?tier=` still overrides. Ultra adds 8× MSAA, a 6144 px shadow map, 16-sample AO, more mist and cars. Thresholds calibrated on one machine only. |
 | R9.5 | ✅ Done | Static poster image (rendered from the scene) shown instantly and for no-WebGL / reduced-data users | Never a blank screen | `hero-poster.webp` (1920×1200, 132 KB) and `hero-poster-mobile.webp` (900×1600, 87 KB) show from the first paint under the hero copy. Without WebGL 2 the poster stays; with data saver it stays behind a "Load 3D model" button. `main.js` is now a small bootstrap and the 3D code (`app.js`, three.js, the model) is fetched only when needed. Preview with `?3d=off`. |
-| R9.6 | 🟡 Partial | Re-verify: fps (debug HUD), load size, mobile test on a real phone, Lighthouse | Budgets met | Done: first load is 1.85 MB compressed (model 1.23 MB, three.js 0.36 MB, images 0.15 MB) against the 6 MB budget; the HUD read 144 fps on the high tier in the preview pane. **Not done:** real-phone test, Lighthouse run. |
+| R9.6 | 🟡 Partial | Re-verify: fps (debug HUD), load size, mobile test on a real phone, Lighthouse | Budgets met | Done: first load is 1.85 MB compressed (model 1.23 MB, three.js 0.36 MB, images 0.15 MB) against the 6 MB budget; phone-size emulation (375×812, touch) loads the low/high tier, the portrait poster and the portrait intro without layout overlap. Lighthouse (PageSpeed Insights, mobile, live site, 13 Nov 2026) **crashed its test browser** — its machines have no GPU, so the scene ran on software rendering. Fixed: devices without graphics acceleration now keep the poster and offer the 3D behind a button. **Not done:** Lighthouse re-run after that fix is published; real-phone test; fps (the preview pane was hidden, so frame rates read there are meaningless). |
 
 ---
 

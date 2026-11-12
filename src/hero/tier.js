@@ -3,15 +3,19 @@
  * bootstrap script, before any of the 3D code is downloaded.
  *
  *  - `?tier=ultra|high|low` in the address bar always wins.
- *  - Otherwise a short GPU benchmark (well under a second, first visit only — the result is remembered)
+ *  - Otherwise a short GPU benchmark (well under a second, first visit only — the result is remembered,
+ *    except a slow one, which is re-measured on the next visit)
  *    decides: desktops get ultra / high / low, phones and tablets get high / low.
  *  - If the benchmark cannot run, the old rule applies: touch or small screens → low, everything else → high.
+ *  - Devices with no graphics acceleration (software rendering) are flagged `tooSlow`: main.js keeps the poster
+ *    for them and offers the 3D scene behind a button, because it would crawl or crash the tab.
  */
 const TIERS = ['ultra', 'high', 'low'];
-const STORE_KEY = 'mc-hero-tier-v1';
+const STORE_KEY = 'mc-hero-tier-v2';
 // Median milliseconds for one benchmark batch (see `benchmark`). Faster than `fast` = strong GPU, slower than `slow` = weak GPU.
 // Only calibrated on one machine so far (RTX 5050 laptop: 0.8 ms); adjust once more devices have been measured (?debug logs the result).
-export const BENCH = { fast: 2.5, slow: 16, maxMs: 350, samples: 12, draws: 8, size: 512 };
+// Slower than `tooSlow`, or software rendering (no GPU at all): the 3D scene is not started automatically.
+export const BENCH = { fast: 2.5, slow: 16, tooSlow: 150, maxMs: 350, samples: 12, draws: 8, size: 512 };
 
 const forced = new URLSearchParams(location.search).get('tier');
 const handheld = matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) < 820;
@@ -82,14 +86,16 @@ export function benchmark() {
 export function pickTier() {
   if (chosen) return { tier: chosen, source: 'forced' };
   try {
-    const saved = JSON.parse(localStorage.getItem(STORE_KEY) ?? 'null');
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) ?? sessionStorage.getItem(STORE_KEY) ?? 'null');
     if (TIERS.includes(saved?.tier)) { chosen = saved.tier; return { ...saved, source: 'remembered' }; }
   } catch { /* storage blocked or corrupt: measure again */ }
   const b = benchmark();
   if (!b) { chosen = fallback; return { tier: chosen, source: 'screen-size rule' }; }
   const speed = b.software || b.ms > BENCH.slow ? 'slow' : b.ms < BENCH.fast ? 'fast' : 'medium';
   chosen = handheld ? (speed === 'fast' ? 'high' : 'low') : { fast: 'ultra', medium: 'high', slow: 'low' }[speed];
-  const result = { tier: chosen, ms: Math.round(b.ms * 100) / 100, renderer: b.renderer };
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(result)); } catch { /* private mode */ }
+  const result = { tier: chosen, ms: Math.round(b.ms * 100) / 100, renderer: b.renderer, tooSlow: b.software || b.ms > BENCH.tooSlow };
+  // A tab opened in the background can measure many times slower than the GPU really is, so a slow result
+  // is only kept for this visit and measured again next time; fast and medium results are remembered.
+  try { (speed === 'slow' ? sessionStorage : localStorage).setItem(STORE_KEY, JSON.stringify(result)); } catch { /* private mode */ }
   return { ...result, source: 'benchmark' };
 }
