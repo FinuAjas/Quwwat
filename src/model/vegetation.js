@@ -61,7 +61,7 @@ function palm(seed) {
     g.rotateZ(-0.45 - (i % 2) * 0.25); g.rotateY(a); g.translate(0, 0.86, 0);
     fronds.push(g);
   }
-  parts.push(shadeCanopy(merge(fronds), 0x4f8a2a, seed));
+  parts.push(shadeCanopy(merge(fronds), 0x4a7230, seed));
   return merge(parts);
 }
 function farTree(color, seed) {
@@ -69,15 +69,15 @@ function farTree(color, seed) {
 }
 
 const SPECIES = {
-  oakA: () => broadleaf(0x3f7a2a, 11),
-  oakB: () => broadleaf(0x2f6324, 23),
-  oakC: () => broadleaf(0x58913a, 37),
-  cypress: () => columnar(0x2d5f2a, 51),
+  oakA: () => broadleaf(0x3b6327, 11),
+  oakB: () => broadleaf(0x2c4f22, 23),
+  oakC: () => broadleaf(0x557a33, 37),
+  cypress: () => columnar(0x27492a, 51),
   palm: () => palm(61),
-  shrub: () => shadeCanopy(blob(0.5, 1, 1, 0.65, 1, 0, 0.3, 0, 71), 0x467f2f, 71),
-  flowering: () => shadeCanopy(blob(0.5, 1, 1, 0.7, 1, 0, 0.32, 0, 83), 0x8c9a3a, 83),
-  farA: () => farTree(0x2e5a22, 91),
-  farB: () => farTree(0x3d6d2a, 97),
+  shrub: () => shadeCanopy(blob(0.5, 1, 1, 0.65, 1, 0, 0.3, 0, 71), 0x3f6a2c, 71),
+  flowering: () => shadeCanopy(blob(0.5, 1, 1, 0.7, 1, 0, 0.32, 0, 83), 0x7a8436, 83),
+  farA: () => farTree(0x2a4a22, 91),
+  farB: () => farTree(0x37592a, 97),
 };
 
 // ---------- placement ----------
@@ -140,6 +140,7 @@ export function buildVegetation(heightAt) {
   const group = new THREE.Group(); group.name = 'Vegetation';
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), v = new THREE.Vector3(), sc = new THREE.Vector3();
   let total = 0, tris = 0;
+  const tint = new THREE.Color(), tintRand = mulberry32(2024);
   for (const [sp, list] of Object.entries(lists)) {
     if (!list.length) continue;
     const geo = SPECIES[sp]();
@@ -149,7 +150,11 @@ export function buildVegetation(heightAt) {
     list.forEach((t, i) => {
       q.setFromAxisAngle(up, t.rot);
       im.setMatrixAt(i, m4.compose(v.set(t.x, t.y, t.z), q, sc.set(t.s, t.s * t.sy, t.s)));
+      // per-plant tint (exported as glTF _COLOR_0): brightness varies, hue drifts between blue-green and olive/yellow
+      const b = 0.78 + tintRand() * 0.42, warm = tintRand();
+      im.setColorAt(i, tint.setRGB(b * (0.9 + warm * 0.32), b * (0.96 + warm * 0.06), b * (1.0 - warm * 0.38)));
     });
+    im.instanceColor.needsUpdate = true;
     im.computeBoundingSphere();
     group.add(im);
     total += list.length; tris += (geo.attributes.position.count / 3) * list.length;

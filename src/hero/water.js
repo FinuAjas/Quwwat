@@ -15,7 +15,7 @@ export function createWater(original) {
     clearcoatRoughness: 0.05,
     envMapIntensity: 1.6,
   });
-  const uniforms = { uTime: { value: 0 }, uDeep: { value: new THREE.Color(0x0c6e9c) }, uShallow: { value: new THREE.Color(0x5fd0e8) } };
+  const uniforms = { uTime: { value: 0 }, uDeep: { value: new THREE.Color(0x0d5f7a) }, uShallow: { value: new THREE.Color(0x4fb4c6) } };
 
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);

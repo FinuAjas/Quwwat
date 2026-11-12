@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Model Validator — Mountain Courtyard</title>
+  <style>
+    body { margin: 0; padding: 28px; background: #141c15; color: #e9efe6; font: 14px/1.5 system-ui, sans-serif; }
+    h1 { font-size: 20px; margin: 0 0 4px; } p.sub { margin: 0 0 18px; opacity: .7; }
+    #drop { border: 2px dashed #5a7a52; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 18px; cursor: pointer; }
+    #drop.over { background: #22321f; }
+    table { border-collapse: collapse; width: 100%; max-width: 980px; }
+    td, th { padding: 7px 10px; border-bottom: 1px solid #2c3b2b; text-align: left; vertical-align: top; }
+    .pass { color: #8fe08a; } .warn { color: #f0c96a; } .fail { color: #ff8a80; font-weight: 600; }
+    #summary { font-size: 16px; margin: 14px 0; } code { background: #22321f; padding: 1px 5px; border-radius: 4px; }
+    canvas { display: none; }
+  </style>
+  <script type="importmap">
+    { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+  <h1>Mountain Courtyard · model validator</h1>
+  <p class="sub">Checks a <code>.glb</code> against <code>docs/BLENDER_ARTIST_BRIEF.md</code>. The current project model is checked on load.</p>
+  <div id="drop">Drop a .glb here, or click to choose a file<input id="file" type="file" accept=".glb" hidden /></div>
+  <div id="summary">Loading…</div>
+  <table id="report"></table>
+  <script type="module" src="./validate-model.js"></script>
+</body>
+</html>

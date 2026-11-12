@@ -6,7 +6,7 @@ export function createScene(container) {
   const renderer = new THREE.WebGLRenderer({ antialias: QUALITY.antialias, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, QUALITY.pixelRatio));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMapping = { agx: THREE.AgXToneMapping, neutral: THREE.NeutralToneMapping, aces: THREE.ACESFilmicToneMapping }[CONFIG.toneMapping] ?? THREE.AgXToneMapping;
   renderer.toneMappingExposure = CONFIG.exposure;
   renderer.shadowMap.enabled = QUALITY.shadows;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;

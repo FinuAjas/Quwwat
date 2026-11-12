@@ -22,7 +22,7 @@ function carGeometry() {
   return g;
 }
 
-const PAINTS = [['White', 0xf2f2f0, 0.34], ['Silver', 0xa9adb2, 0.22], ['Black', 0x24272b, 0.18], ['Red', 0xa8231c, 0.12], ['Blue', 0x2c4f86, 0.14]];
+const PAINTS = [['White', 0xe4e4e0, 0.34], ['Silver', 0x979ba0, 0.22], ['Black', 0x1b1d20, 0.18], ['Red', 0x7c1d18, 0.12], ['Blue', 0x243f69, 0.14]];
 
 export function buildRoads() {
   const roads = new THREE.Group(); roads.name = 'Roads';

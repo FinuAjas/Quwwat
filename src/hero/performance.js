@@ -6,7 +6,7 @@ import { CONFIG, QUALITY, TIER } from './config.js';
  *  - pauses rendering when the hero is scrolled off-screen or the tab is hidden
  *  - optional ?debug HUD with fps / draw calls / triangles
  */
-export function createPerformance(renderer, container) {
+export function createPerformance(renderer, container, { onPixelRatio = () => {} } = {}) {
   const p = CONFIG.perf;
   const maxRatio = Math.min(devicePixelRatio, QUALITY.pixelRatio);
   let ratio = maxRatio;
@@ -36,7 +36,7 @@ export function createPerformance(renderer, container) {
         let next = ratio;
         if (avg > p.slowMs && ratio > p.minPixelRatio) next = Math.max(p.minPixelRatio, ratio - p.step);
         else if (avg < p.fastMs && ratio < maxRatio) next = Math.min(maxRatio, ratio + p.step);
-        if (next !== ratio) { ratio = next; renderer.setPixelRatio(ratio); renderer.setSize(container.clientWidth, container.clientHeight, false); cooldown = 2; }
+        if (next !== ratio) { ratio = next; renderer.setPixelRatio(ratio); renderer.setSize(container.clientWidth, container.clientHeight, false); onPixelRatio(ratio); cooldown = 2; }
       }
       if (hud) {
         const i = renderer.info.render;

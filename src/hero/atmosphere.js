@@ -35,7 +35,7 @@ export function createMist(scene) {
   for (let i = 0; i < QUALITY.mistCount; i++) {
     const mat = new THREE.SpriteMaterial({
       map: textures[i % textures.length], transparent: true, depthWrite: false,
-      opacity: m.opacity * (0.6 + Math.random() * 0.4), color: 0xf4f7f4,
+      opacity: CONFIG.mistOpacity * (0.6 + Math.random() * 0.4), color: CONFIG.mistColor, // tinted per look so mist stays soft white after exposure
     });
     const sp = new THREE.Sprite(mat);
     const size = m.sizeMin + Math.random() * (m.sizeMax - m.sizeMin);

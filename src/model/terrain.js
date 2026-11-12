@@ -128,9 +128,9 @@ export function buildTerrain() {
   const zs = axis(TERRAIN.innerZ, TERRAIN.step, TERRAIN.outer, TERRAIN.outerSegs);
   const nx = xs.length, nz = zs.length;
   const pos = new Float32Array(nx * nz * 3), col = new Uint8Array(nx * nz * 3), heights = new Float32Array(nx * nz);
-  const lawnA = new THREE.Color(0x7fae43), lawnB = new THREE.Color(0x5f9330);
-  const forestA = new THREE.Color(0x2c4a1d), forestB = new THREE.Color(0x456b2a);
-  const verge = new THREE.Color(0x8c9a5a);
+  const lawnA = new THREE.Color(0x6c8b3d), lawnB = new THREE.Color(0x4d6e2f), lawnDry = new THREE.Color(0x8a8a4c);
+  const forestA = new THREE.Color(0x24381a), forestB = new THREE.Color(0x385229);
+  const verge = new THREE.Color(0x7c8153);
   const c = new THREE.Color(), c2 = new THREE.Color();
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
     const x = xs[i], z = zs[j], k = j * nx + i;
@@ -140,6 +140,10 @@ export function buildTerrain() {
     const sd = signedDistToPolygon(x, z, SITE_BOUNDARY);
     const n1 = fbm(x / 9, z / 9, 3) * 0.5 + 0.5, n2 = fbm(x / 40 + 3, z / 40, 3) * 0.5 + 0.5;
     c.copy(lawnA).lerp(lawnB, clamp(n1 * 0.7 + n2 * 0.5 - 0.1, 0, 1));
+    // natural mottling: broad dry patches + fine speckle
+    const n3 = fbm(x / 17 - 9, z / 17 + 4, 4) * 0.5 + 0.5;
+    c.lerp(lawnDry, smoothstep(0.58, 0.82, n3) * 0.45);
+    c.multiplyScalar(0.92 + 0.16 * (fbm(x / 2.3, z / 2.3, 2) * 0.5 + 0.5));
     c2.copy(forestA).lerp(forestB, clamp(n1 * 0.6 + n2 * 0.4, 0, 1));
     c.lerp(c2, smoothstep(-1.5, 3, sd));
     if (sd < 0) {

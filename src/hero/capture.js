@@ -6,8 +6,9 @@ import { CONFIG } from './config.js';
  * thumbnail backgrounds and as extra "Site Images". Runs once while the loader is visible.
  * Returns { [presetName]: { thumb: objectURL, large: objectURL } }.
  */
-export async function capturePresets(renderer, scene, camera, names, { thumb = [336, 216], large = [1600, 1000] } = {}) {
+export async function capturePresets(renderer, scene, camera, names, { thumb = [336, 216], large = [1600, 1000], render = () => renderer.render(scene, camera) } = {}) {
   const canvas = renderer.domElement;
+  if (!canvas.width || !canvas.height) return {}; // page loaded while hidden / zero-sized: skip, thumbnails are optional
   const saved = { pos: camera.position.clone(), quat: camera.quaternion.clone(), view: camera.view && { ...camera.view }, aspect: camera.aspect, fov: camera.fov };
   const target = new THREE.Vector3();
   const out = {};
@@ -30,7 +31,7 @@ export async function capturePresets(renderer, scene, camera, names, { thumb = [
     camera.position.fromArray(p.position);
     camera.lookAt(target.fromArray(p.target));
     camera.updateMatrixWorld();
-    renderer.render(scene, camera); // drawImage must run in the same task, before the buffer is cleared
+    render(); // drawImage must run in the same task, before the buffer is cleared
     const [tw, th] = thumb, [lw, lh] = large;
     const thumbP = crop(tw, th), largeP = crop(lw, lh);
     out[name] = { thumb: await thumbP, large: await largeP };
