@@ -60,7 +60,7 @@ The asset tasks in R5–R7 below now describe **what the artist delivers** (see 
 | R1.4 | Colour-grading pass (LUT or lift/gamma/gain shader): warm highlights, cool shadows, slight desaturation of greens | Matches the reference render's mood |
 | R1.5 | Time-of-day presets in config (golden hour default, midday, overcast) | One-line switch |
 
-## Phase R2 — Lighting & sky
+## Phase R2 — Lighting & sky ✅ (procedural sky instead of a downloaded HDRI; PCSS shadows not done; test desktop tier with `?tier=high`)
 | # | Task | Done when |
 |---|---|---|
 | R2.1 | Replace RoomEnvironment with a real **HDRI sky** (Poly Haven 2k, CC0) for reflections + background | Glass/water reflect a real sky |

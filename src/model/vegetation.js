@@ -159,5 +159,12 @@ export function buildVegetation(heightAt) {
     group.add(im);
     total += list.length; tris += (geo.attributes.position.count / 3) * list.length;
   }
-  return { group, total, tris };
+  // canopy footprints for baked ground shading (skip the distant low-detail forest)
+  const occluders = [];
+  for (const [sp, list] of Object.entries(lists)) {
+    if (sp.startsWith('far')) continue;
+    const k = sp === 'cypress' ? 0.16 : sp === 'palm' ? 0.3 : sp === 'shrub' || sp === 'flowering' ? 0.5 : 0.34;
+    for (const t of list) occluders.push({ x: t.x, z: t.z, r: Math.max(1.2, t.s * k) });
+  }
+  return { group, total, tris, occluders };
 }

@@ -31,6 +31,7 @@ const perf = createPerformance(renderer, stage, { onPixelRatio: () => post.setSi
 
 // The scene is static and the sun never moves: render the shadow map once, on demand.
 renderer.shadowMap.autoUpdate = false;
+renderer.info.autoReset = false;
 
 let site = null, rig = null, hotspots = null, popups = null;
 
@@ -44,6 +45,7 @@ const page = bindPage(hero, {
 const clock = new THREE.Clock();
 function frame() {
   if (!perf.tick()) return;
+  renderer.info.reset(); // count draw calls across all post-processing passes of this frame
   const t = clock.getElapsedTime();
   mist.update(t);
   site.update(t);
@@ -69,6 +71,8 @@ try {
   // Compile every shader (incl. shadow depth variants) while the loader is still visible,
   // so the first interactive frame doesn't hitch.
   await renderer.compileAsync(scene, camera);
+  // Spend the whole shadow map on the plot (buildings + roads), not the surrounding forest.
+  lights.fitShadows([site.root.getObjectByName('Structures'), site.root.getObjectByName('Roads'), ...site.clickable]);
   renderer.shadowMap.needsUpdate = true;
   // Render stills from the camera presets for the thumbnails and the Site Images gallery (optional: never block the scene).
   try {

@@ -48,6 +48,7 @@ export function createHotspots({ camera, dom, hero, site, rig, heightAt }) {
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 96).rotateX(-Math.PI / 2), ringMat);
   ring.name = 'HotspotRing';
   ring.renderOrder = 5;
+  ring.layers.set(1); // overlay layer: skipped by the ambient-occlusion pass
   ring.visible = false;
   site.root.parent.add(ring);
   function placeRing(spot) {

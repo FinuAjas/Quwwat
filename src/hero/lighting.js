@@ -1,18 +1,23 @@
 import * as THREE from 'three';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CONFIG, QUALITY } from './config.js';
 
-/** Sun + sky fill, soft shadows, PBR environment, sky dome and distance fog. */
+/**
+ * Outdoor lighting for the active look:
+ *  - warm directional sun with soft shadows (fitted to the site once the model is loaded)
+ *  - hemisphere fill
+ *  - a procedural sky (gradient + sun glow + ground bounce colour) used both as the visible
+ *    background and, pre-filtered, as the image-based lighting / reflection environment —
+ *    so glass, water and car paint reflect a sky whose sun matches the real light direction
+ *  - distance fog matched to the horizon
+ */
 export function setupLighting(scene, renderer) {
   const center = new THREE.Vector3().fromArray(CONFIG.siteCenter);
 
-  // Soft sky/ground bounce
   const h = CONFIG.hemi;
   const hemi = new THREE.HemisphereLight(h.sky, h.ground, h.intensity);
   hemi.name = 'SkyFill';
   scene.add(hemi);
 
-  // Warm sun from the north-west so shadows fall towards the south-east (as in the render)
   const s = CONFIG.sun;
   const sun = new THREE.DirectionalLight(s.color, s.intensity);
   sun.name = 'Sun';
@@ -24,44 +29,87 @@ export function setupLighting(scene, renderer) {
     const e = s.shadowExtent;
     Object.assign(sun.shadow.camera, { left: -e, right: e, top: e, bottom: -e, near: 20, far: s.shadowFar });
     sun.shadow.bias = -0.0003;
-    sun.shadow.normalBias = 0.5;
-    sun.shadow.radius = 3;
+    sun.shadow.normalBias = 0.35;
   }
   scene.add(sun, sun.target);
+  const sunDir = new THREE.Vector3().fromArray(s.position).normalize();
 
-  // Image-based lighting for glass/water/paint reflections (cheap, no HDR download)
+  // Visible sky
+  const dome = createSkyDome(sunDir, 1);
+  scene.add(dome);
+
+  // Environment (IBL + reflections) rendered from the same sky, slightly brighter, with a ground colour
+  const envScene = new THREE.Scene();
+  envScene.add(createSkyDome(sunDir, CONFIG.env.skyBoost));
   const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = CONFIG.envIntensity;
+  scene.environment = pmrem.fromScene(envScene, 0.02, 1, 6000).texture;
+  scene.environmentIntensity = CONFIG.env.intensity;
   pmrem.dispose();
 
-  // Atmosphere: linear fog matched to the sky horizon colour
   scene.fog = new THREE.Fog(CONFIG.fog.color, CONFIG.fog.near, CONFIG.fog.far);
   scene.background = new THREE.Color(CONFIG.fog.color);
-  scene.add(createSkyDome());
 
-  return { sun, hemi };
+  /**
+   * Tighten the shadow camera around the given objects (in light space) so the whole shadow map
+   * is spent on the site instead of on empty forest. Call once after the model is added.
+   */
+  function fitShadows(objects, margin = 22) {
+    if (!sun.castShadow) return;
+    const box = new THREE.Box3();
+    objects.filter(Boolean).forEach((o) => box.expandByObject(o));
+    if (box.isEmpty()) return;
+    box.expandByScalar(margin);
+    sun.updateMatrixWorld(); sun.target.updateMatrixWorld();
+    const cam = sun.shadow.camera;
+    const view = new THREE.Matrix4().lookAt(sun.position, sun.target.position, cam.up).setPosition(sun.position).invert();
+    const p = new THREE.Vector3(), b = new THREE.Box3();
+    for (let i = 0; i < 8; i++) {
+      p.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).applyMatrix4(view);
+      b.expandByPoint(p);
+    }
+    cam.left = b.min.x; cam.right = b.max.x; cam.bottom = b.min.y; cam.top = b.max.y;
+    cam.near = Math.max(1, -b.max.z - 260); // keep tall trees between the sun and the site as casters
+    cam.far = -b.min.z + 40;
+    cam.updateProjectionMatrix();
+    const texel = Math.max(b.max.x - b.min.x, b.max.y - b.min.y) / sun.shadow.mapSize.x;
+    sun.shadow.normalBias = THREE.MathUtils.clamp(texel * 4, 0.12, 0.5);
+    renderer.shadowMap.needsUpdate = true;
+    return { width: b.max.x - b.min.x, height: b.max.y - b.min.y, texel };
+  }
+
+  return { sun, hemi, dome, fitShadows };
 }
 
-function createSkyDome() {
+function createSkyDome(sunDir, boost) {
   const { top, horizon, bottom } = CONFIG.sky;
   const mat = new THREE.ShaderMaterial({
     name: 'SkyGradient',
     side: THREE.BackSide, depthWrite: false, fog: false,
-    uniforms: { top: { value: new THREE.Color(top) }, horizon: { value: new THREE.Color(horizon) }, bottom: { value: new THREE.Color(bottom) } },
+    uniforms: {
+      top: { value: new THREE.Color(top) }, horizon: { value: new THREE.Color(horizon) }, bottom: { value: new THREE.Color(bottom) },
+      ground: { value: new THREE.Color(CONFIG.env.ground) },
+      sunDir: { value: sunDir.clone() }, sunColor: { value: new THREE.Color(CONFIG.sun.color) },
+      glow: { value: CONFIG.env.sunGlow }, boost: { value: boost },
+    },
     vertexShader: /* glsl */`
       varying vec3 vDir;
       void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: /* glsl */`
-      uniform vec3 top; uniform vec3 horizon; uniform vec3 bottom; varying vec3 vDir;
+      uniform vec3 top, horizon, bottom, ground, sunDir, sunColor; uniform float glow, boost; varying vec3 vDir;
       void main() {
-        float y = vDir.y;
-        vec3 c = y > 0.0 ? mix(horizon, top, pow(smoothstep(0.0, 0.6, y), 0.8)) : mix(horizon, bottom, smoothstep(0.0, -0.2, y));
-        gl_FragColor = vec4(c, 1.0);
+        vec3 d = normalize(vDir);
+        vec3 sky = mix(horizon, top, pow(smoothstep(0.0, 0.6, d.y), 0.8));
+        // below the horizon: haze band, then (for reflections / bounce light) the ground colour
+        vec3 low = mix(bottom, ground, smoothstep(-0.03, -0.25, d.y) * step(1.001, boost));
+        vec3 c = d.y > 0.0 ? sky : mix(horizon, low, smoothstep(0.0, -0.06, d.y));
+        // sun: tight core + wide atmospheric glow, only above the horizon
+        float s = max(dot(d, sunDir), 0.0);
+        c += sunColor * glow * (pow(s, 900.0) * 14.0 + pow(s, 48.0) * 0.9 + pow(s, 6.0) * 0.22) * smoothstep(-0.05, 0.05, d.y);
+        gl_FragColor = vec4(c * boost, 1.0);
         #include <colorspace_fragment>
       }`,
   });
-  const dome = new THREE.Mesh(new THREE.SphereGeometry(2500, 32, 16), mat);
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(2500, 48, 24), mat);
   dome.name = 'SkyDome';
   dome.renderOrder = -1;
   dome.frustumCulled = false;

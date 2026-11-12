@@ -41,6 +41,7 @@ export function createMist(scene) {
     const size = m.sizeMin + Math.random() * (m.sizeMax - m.sizeMin);
     sp.scale.set(size, size * 0.55, 1);
     sp.renderOrder = 10;
+    sp.layers.set(1); // overlay layer: skipped by the ambient-occlusion pass
     const p = {
       sprite: sp,
       angle: (i / QUALITY.mistCount) * Math.PI * 2 + Math.random() * 0.3,

@@ -176,3 +176,44 @@ export function buildTerrain() {
   };
   return { mesh, heightAt };
 }
+
+/**
+ * Bakes soft ground shading into the terrain vertex colours (works on every device, no runtime cost):
+ * darker under tree canopies and in a band around building footprints.
+ * occluders: [{x, z, r}] canopies; footprints: obstacles from structures.js ({x,z,r} or {x,z,hx,hz,rot}).
+ */
+export function bakeGroundShade(mesh, occluders, footprints = []) {
+  const pos = mesh.geometry.attributes.position, col = mesh.geometry.attributes.color;
+  const cell = 8, grid = new Map();
+  const key = (i, j) => i * 73856093 ^ j * 19349663;
+  for (const o of occluders) {
+    const k = key(Math.floor(o.x / cell), Math.floor(o.z / cell));
+    let a = grid.get(k); if (!a) grid.set(k, (a = [])); a.push(o);
+  }
+  for (let v = 0; v < pos.count; v++) {
+    const x = pos.getX(v), z = pos.getZ(v);
+    if (Math.abs(x - 15) > 290 || Math.abs(z) > 290) continue;
+    let light = 1;
+    const ci = Math.floor(x / cell), cj = Math.floor(z / cell);
+    for (let i = ci - 1; i <= ci + 1; i++) for (let j = cj - 1; j <= cj + 1; j++) {
+      const a = grid.get(key(i, j)); if (!a) continue;
+      for (const o of a) {
+        const d = Math.hypot(x - o.x, z - o.z) / o.r;
+        if (d < 1.3) light *= 1 - 0.3 * (1 - smoothstep(0.45, 1.3, d));
+      }
+    }
+    for (const f of footprints) {
+      let d; // distance outside the footprint (<= 0 inside)
+      if (f.r !== undefined) d = Math.hypot(x - f.x, z - f.z) - f.r;
+      else {
+        const dx = x - f.x, dz = z - f.z, c = Math.cos(f.rot), s = Math.sin(f.rot);
+        const lx = Math.abs(dx * c - dz * s) - f.hx, lz = Math.abs(dx * s + dz * c) - f.hz;
+        d = Math.max(lx, lz);
+      }
+      if (d < 3) light *= 1 - 0.2 * (1 - smoothstep(-1, 3, d));
+    }
+    light = Math.max(0.55, light);
+    if (light < 0.999) col.setXYZ(v, col.getX(v) * light, col.getY(v) * light, col.getZ(v) * light);
+  }
+  col.needsUpdate = true;
+}

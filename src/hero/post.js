@@ -3,6 +3,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { CONFIG, QUALITY } from './config.js';
 
 /**
@@ -49,6 +50,20 @@ export function createPost(renderer, scene, camera) {
   const target = new THREE.WebGLRenderTarget(Math.max(1, size.x), Math.max(1, size.y), { type: THREE.HalfFloatType, samples: QUALITY.msaa });
   const composer = new EffectComposer(renderer, target);
   composer.addPass(new RenderPass(scene, camera));
+
+  // Ground-truth ambient occlusion: soft contact darkening under trees, cars and eaves (desktop tier).
+  let ao = null;
+  if (QUALITY.ao) {
+    ao = new GTAOPass(scene, camera, Math.max(1, size.x), Math.max(1, size.y));
+    const a = CONFIG.ao;
+    ao.updateGtaoMaterial({ radius: a.radius, distanceExponent: 1, thickness: a.thickness, scale: 1, samples: a.samples, distanceFallOff: 1, screenSpaceRadius: false });
+    ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, radiusExponent: 1, rings: 2, samples: 12 });
+    ao.blendIntensity = a.intensity;
+    // Overlays (mist sprites, selection ring) are on layer 1: hide them while AO renders its depth/normal buffers.
+    const renderAO = ao.render.bind(ao);
+    ao.render = (...args) => { camera.layers.disable(1); try { renderAO(...args); } finally { camera.layers.enable(1); } };
+    composer.addPass(ao);
+  }
   composer.addPass(new OutputPass()); // tone mapping (renderer.toneMapping/exposure) + sRGB
   const grade = new ShaderPass(GradeShader);
   composer.addPass(grade);
@@ -62,7 +77,7 @@ export function createPost(renderer, scene, camera) {
   setGrade(CONFIG.grade);
 
   return {
-    composer, grade, setGrade,
+    composer, grade, ao, setGrade,
     render: () => composer.render(),
     /** Call after the canvas size or pixel ratio changes. */
     setSize(w, h) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(Math.max(1, w), Math.max(1, h)); },

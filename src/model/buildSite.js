@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { HOTSPOTS } from './layout.js';
-import { buildTerrain } from './terrain.js';
+import { buildTerrain, bakeGroundShade } from './terrain.js';
 import { buildRoads } from './roads.js';
-import { buildStructures } from './structures.js';
+import { buildStructures, obstacles } from './structures.js';
 import { buildVegetation } from './vegetation.js';
 
 /**
@@ -21,6 +21,7 @@ export function buildSite() {
   const { roads, parking, carCount } = buildRoads();
   const structures = buildStructures(heightAt);
   const veg = buildVegetation(heightAt);
+  bakeGroundShade(terrain, veg.occluders, obstacles);
   root.add(terrain, roads, parking, structures, veg.group);
 
   const anchors = new THREE.Group(); anchors.name = 'Hotspots';

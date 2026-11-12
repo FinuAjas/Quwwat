@@ -1,11 +1,13 @@
 // Central tuning for the hero scene. World units are metres; site centre ≈ (15, 0, 0).
 const coarse = matchMedia('(pointer: coarse)').matches;
 const small = Math.min(screen.width, screen.height) < 820;
-export const TIER = coarse || small ? 'low' : 'high';
+// Force a tier for testing from the address bar: ?tier=high or ?tier=low
+const forcedTier = new URLSearchParams(location.search).get('tier');
+export const TIER = forcedTier === 'high' || forcedTier === 'low' ? forcedTier : coarse || small ? 'low' : 'high';
 
 export const QUALITY = {
-  high: { pixelRatio: 2, antialias: true, msaa: 4, shadows: true, shadowMapSize: 4096, mistCount: 26 },
-  low: { pixelRatio: 1.5, antialias: true, msaa: 2, shadows: true, shadowMapSize: 2048, mistCount: 14 },
+  high: { pixelRatio: 2, antialias: true, msaa: 4, ao: true, shadows: true, shadowMapSize: 4096, mistCount: 26 },
+  low: { pixelRatio: 1.5, antialias: true, msaa: 2, ao: false, shadows: true, shadowMapSize: 2048, mistCount: 14 },
 }[TIER];
 
 // ---------- time-of-day looks ----------
@@ -18,6 +20,7 @@ export const LOOKS = {
     fog: { color: 0xdcd3c0, near: 380, far: 1050 },
     sun: { color: 0xffd3a0, intensity: 3.6, position: [-205, 150, -45], shadowExtent: 160, shadowFar: 700 },
     hemi: { sky: 0xc6d8f2, ground: 0x4b4a2e, intensity: 0.9 },
+    env: { intensity: 0.55, skyBoost: 1.25, ground: 0x3d4a26, sunGlow: 1.0 },
     exposure: 1.55, mistColor: 0xb4ada0, mistOpacity: 0.42,
     grade: { contrast: 0.14, saturation: 1.14, greenDesat: 0.2, shadows: [0.93, 0.99, 1.09], highlights: [1.08, 1.01, 0.9], lift: 0.0, gain: 1.0 },
   },
@@ -26,6 +29,7 @@ export const LOOKS = {
     fog: { color: 0xcfdde0, near: 400, far: 1100 },
     sun: { color: 0xfff3e0, intensity: 3.6, position: [-90, 300, -60], shadowExtent: 150, shadowFar: 700 },
     hemi: { sky: 0xd4e6ff, ground: 0x3e4f26, intensity: 0.9 },
+    env: { intensity: 0.6, skyBoost: 1.25, ground: 0x3a4a25, sunGlow: 0.7 },
     exposure: 1.4, mistColor: 0xb9c0c2, mistOpacity: 0.42,
     grade: { contrast: 0.12, saturation: 1.12, greenDesat: 0.18, shadows: [0.97, 1.0, 1.05], highlights: [1.02, 1.01, 0.97], lift: 0.0, gain: 1.0 },
   },
@@ -34,6 +38,7 @@ export const LOOKS = {
     fog: { color: 0xcdd3d3, near: 330, far: 980 },
     sun: { color: 0xe6edf2, intensity: 1.1, position: [-120, 260, -80], shadowExtent: 150, shadowFar: 700 },
     hemi: { sky: 0xe2e8ef, ground: 0x565f4a, intensity: 1.55 },
+    env: { intensity: 0.8, skyBoost: 1.15, ground: 0x4a5340, sunGlow: 0.08 },
     exposure: 1.4, mistColor: 0xb4b9ba, mistOpacity: 0.42,
     grade: { contrast: 0.08, saturation: 0.95, greenDesat: 0.28, shadows: [0.98, 1.0, 1.03], highlights: [1.0, 1.0, 1.0], lift: 0.01, gain: 1.0 },
   },
@@ -81,9 +86,10 @@ export const CONFIG = {
   },
   intro: { from: { target: [18, 0, 4], position: [-260, 330, 300] }, mobile: { target: [8, 0, 32], position: [-300, 420, 420] } },
 
-  // sky / fog / sun / hemi / exposure / grade come from the active look (see LOOKS below)
+  // Ambient occlusion (desktop tier): radius in metres, intensity 0–1
+  ao: { radius: 3.2, intensity: 0.85, samples: 12, thickness: 1.2 },
+  // sky / fog / sun / hemi / env / exposure / grade come from the active look (see LOOKS below)
   ...LOOK,
-  envIntensity: 0.35,
   toneMapping: 'agx', // 'agx' | 'neutral' | 'aces'
 
   mist: { ringMin: 105, ringMax: 240, heightMin: 30, heightMax: 85, sizeMin: 110, sizeMax: 210, opacity: 0.7, drift: 0.006 },

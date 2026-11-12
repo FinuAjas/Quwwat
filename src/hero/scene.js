@@ -15,6 +15,7 @@ export function createScene(container) {
   const scene = new THREE.Scene();
   const c = CONFIG.camera;
   const camera = new THREE.PerspectiveCamera(c.fov, 1, c.near, c.far);
+  camera.layers.enable(1); // layer 1 = overlays (mist, selection ring)
   camera.position.fromArray(c.position);
   camera.lookAt(new THREE.Vector3().fromArray(c.target));
 
