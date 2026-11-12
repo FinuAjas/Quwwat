@@ -46,9 +46,6 @@
       <p class="eyebrow">Introducing</p>
       <h1 class="hero__title">Mountain<br />Courtyard<span class="leaf" aria-hidden="true"></span></h1>
       <p class="hero__lead">A harmonious blend of nature, <br />recreation and community living.</p>
-      <button class="btn btn--ghost" type="button" id="walkthrough">
-        <span class="btn__play" aria-hidden="true">▶</span> Watch Project Walkthrough
-      </button>
     </div>
 
     <div class="views" role="tablist" aria-label="View mode">
@@ -98,17 +95,20 @@
       <button class="shots__arrow" data-dir="1" aria-label="Next">›</button>
     </div>
 
-    <dialog class="video" id="walkthrough-dialog" aria-label="Project walkthrough">
-      <button class="video__close" type="button" aria-label="Close video">×</button>
-      <video controls playsinline preload="none" src="./public/assets/video/walkthrough-placeholder.mp4"></video>
-    </dialog>
-
     <div class="loader" id="loader" role="status" aria-live="polite">
       <div class="loader__bar"><i id="loader-fill"></i></div>
       <p id="loader-text">Loading 3D model…</p>
     </div>
   </section>
 
+  <script>
+    // Browsers block ES modules on file:// pages, so the 3D scene can never load there.
+    if (location.protocol === 'file:') {
+      document.getElementById('loader-text').innerHTML =
+        'This page must be served over http.<br>Double-click <b>start.bat</b> in the project folder (or run <code>python serve.py</code>)<br>and open <b>http://localhost:5173</b>.';
+      document.getElementById('loader-text').style.cssText = 'text-align:center;line-height:1.8;letter-spacing:.04em';
+    }
+  </script>
   <script type="module" src="./src/hero/main.js"></script>
 </body>
 </html>

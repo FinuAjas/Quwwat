@@ -1,6 +1,6 @@
 /**
  * Page-level hero UI that works before (and without) the 3D model:
- * mobile menu, 3D / Master Plan / Site Images view switcher, image gallery, walkthrough video.
+ * mobile menu, 3D / Master Plan / Site Images view switcher, image gallery.
  */
 export function bindPage(hero, { onViewChange = () => {} } = {}) {
   const $ = (s) => hero.querySelector(s);
@@ -58,16 +58,6 @@ export function bindPage(hero, { onViewChange = () => {} } = {}) {
   document.addEventListener('keydown', (e) => {
     if (!panels.images.hidden && (e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !e.target.closest?.('.views')) showImage(gi + (e.key === 'ArrowRight' ? 1 : -1));
   });
-
-  // ---------- walkthrough video ----------
-  const dialog = $('#walkthrough-dialog'), video = dialog.querySelector('video');
-  $('#walkthrough').addEventListener('click', () => {
-    dialog.showModal();
-    video.play().catch(() => { /* autoplay may be blocked; controls are visible */ });
-  });
-  dialog.querySelector('.video__close').addEventListener('click', () => dialog.close());
-  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); }); // backdrop click
-  dialog.addEventListener('close', () => video.pause());
 
   return {
     setView,

@@ -67,6 +67,6 @@ Mountain Courtyard/
 6.1 CSS2DRenderer layer; pin labels at `Hotspot_*` anchors; click → detail card (title, text, image, CTA).
 6.2 Occlusion/fade by distance; close on outside click / Esc.
 
-## Phase 7 — Hero UI & polish ✅ (Lighthouse not run — needs Node/Chrome DevTools; walkthrough video is a placeholder)
-7.1 Nav, logo lockup, “Introducing Mountain Courtyard” copy, walkthrough button, view switcher (3D Model / Master Plan / Site Images), thumbnail carousel jumping to camera presets.
+## Phase 7 — Hero UI & polish ✅ (Lighthouse not run — needs Node/Chrome DevTools)
+7.1 Nav, logo lockup, “Introducing Mountain Courtyard” copy, view switcher (3D Model / Master Plan / Site Images), thumbnail carousel jumping to camera presets.
 7.2 Responsive (mobile: reduced trees, no shadows, simplified controls), accessibility (keyboard + reduced-motion), Lighthouse pass.

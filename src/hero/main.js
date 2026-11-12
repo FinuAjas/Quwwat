@@ -29,7 +29,7 @@ renderer.shadowMap.autoUpdate = false;
 
 let site = null, rig = null, hotspots = null, popups = null;
 
-// Page UI (menu, view tabs, gallery, video) works even while/if the model is loading.
+// Page UI (menu, view tabs, gallery) works even while/if the model is loading.
 const page = bindPage(hero, {
   onViewChange: (view) => {
     perf.setPaused(view !== '3d'); // no GPU work while a 2D panel covers the scene
