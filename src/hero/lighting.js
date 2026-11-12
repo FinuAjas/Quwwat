@@ -15,6 +15,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
  */
 export function setupLighting(scene, renderer) {
   installAtmosphere(); // must run before any material is compiled
+  if (QUALITY.shadows && QUALITY.softShadows) installSoftShadows();
   const center = new THREE.Vector3().fromArray(CONFIG.siteCenter);
 
   const h = CONFIG.hemi;
@@ -35,6 +36,7 @@ export function setupLighting(scene, renderer) {
     Object.assign(sun.shadow.camera, { left: -e, right: e, top: e, bottom: -e, near: 20, far: s.shadowFar });
     sun.shadow.bias = -0.0003;
     sun.shadow.normalBias = 0.35;
+    setSoftness(sun);
   }
   scene.add(sun, sun.target);
   const sunDir = new THREE.Vector3().fromArray(s.position).normalize();
@@ -80,6 +82,7 @@ export function setupLighting(scene, renderer) {
     cam.updateProjectionMatrix();
     const texel = Math.max(b.max.x - b.min.x, b.max.y - b.min.y) / sun.shadow.mapSize.x;
     sun.shadow.normalBias = THREE.MathUtils.clamp(texel * 4, 0.12, 0.5);
+    setSoftness(sun);
     renderer.shadowMap.needsUpdate = true;
     return { width: b.max.x - b.min.x, height: b.max.y - b.min.y, texel };
   }
@@ -141,6 +144,75 @@ function createSkyDome(sunDir, boost) {
  * sunlight (never the sky light, so shaded ground keeps its colour). The pattern drifts with `scene.fog.near/far`.
  * Constants are baked from the active look; `scene.fog` supplies the horizon colour, the drift, and enables fog.
  */
+/**
+ * Distance-based soft shadows (PCSS): for each lit point, find the average depth of whatever blocks the sun
+ * nearby, then blur the shadow edge in proportion to the gap between blocker and receiver — crisp under a
+ * car or at the foot of a wall, soft where a treetop's shadow lands far below.
+ * Replaces the fixed-width filter inside three.js' getShadow() for directional and spot lights. Sample
+ * positions are rotated per pixel, so the blur shows as fine grain (hidden by the film grain) instead of bands.
+ * The two numbers the shader needs arrive packed in the light's `shadow.radius` (see setSoftness).
+ */
+function installSoftShadows() {
+  const [blockers, taps] = QUALITY.softShadows;
+  const chunk = THREE.ShaderChunk.shadowmap_pars_fragment;
+  const fnHook = '	float getShadow(', bodyHook = '#if defined( SHADOWMAP_TYPE_PCF )';
+  if (!chunk.includes(fnHook) || !chunk.includes(bodyHook)) {
+    console.warn('Distance-based soft shadows are off: this three.js version has a different shadow shader.');
+    return;
+  }
+  const functions = /* glsl */`
+	float softNoise( vec2 p ) { return fract( 52.9829189 * fract( dot( p, vec2( 0.06711056, 0.00583715 ) ) ) ); }
+	vec2 softDisk( int i, float count, float turn ) {
+		float a = float( i ) * 2.39996323 + turn;
+		return vec2( cos( a ), sin( a ) ) * sqrt( ( float( i ) + 0.5 ) / count );
+	}
+	float softShadow( sampler2D map, vec2 mapSize, float packed, vec3 coord ) {
+		float maxR = floor( packed ) / 16384.0; // widest blur, in shadow-map UV
+		float spread = fract( packed );           // UV of blur per unit of depth between blocker and receiver
+		float texel = 1.0 / mapSize.x;
+		float turn = softNoise( gl_FragCoord.xy ) * 6.2831853;
+		// Depth slope of the surface being shaded, so a wide filter on a hillside does not shadow itself.
+		vec3 dx = dFdx( coord ), dy = dFdy( coord );
+		float det = dx.x * dy.y - dx.y * dy.x;
+		vec2 slope = abs( det ) > 1e-12 ? vec2( dy.y * dx.z - dx.y * dy.z, dx.x * dy.z - dy.x * dx.z ) / det : vec2( 0.0 );
+		float sum = 0.0, hits = 0.0;
+		for ( int i = 0; i < ${blockers}; i ++ ) {
+			vec2 o = softDisk( i, ${blockers}.0, turn ) * maxR * 0.6;
+			float d = unpackRGBAToDepth( texture2D( map, coord.xy + o ) );
+			float ref = coord.z + clamp( dot( slope, o ), -0.004, 0.004 );
+			if ( d < ref - 0.0004 ) { sum += d; hits += 1.0; }
+		}
+		if ( hits < 0.5 ) return 1.0;
+		float radius = clamp( ( coord.z - sum / hits ) * spread, texel * 1.25, maxR );
+		float lit = 0.0;
+		for ( int i = 0; i < ${taps}; i ++ ) {
+			vec2 o = softDisk( i, ${taps}.0, turn + 1.7 ) * radius;
+			lit += texture2DCompare( map, coord.xy + o, coord.z + clamp( dot( slope, o ), -0.004, 0.004 ) );
+		}
+		return lit / ${taps}.0;
+	}
+
+`;
+  THREE.ShaderChunk.shadowmap_pars_fragment = chunk
+    .replace(fnHook, functions + fnHook)
+    .replace(bodyHook, `#if 1
+			shadow = softShadow( shadowMap, shadowMapSize, shadowRadius, shadowCoord.xyz );
+		#elif defined( SHADOWMAP_TYPE_PCF )`);
+}
+
+/**
+ * Hand the soft-shadow shader its two numbers through the one spare per-light value, `shadow.radius`:
+ * whole part = widest blur (UV × 16384), fraction = blur in UV per unit of shadow depth. Both depend on the
+ * shadow camera's size, so call again whenever that changes.
+ */
+function setSoftness(sun) {
+  if (!QUALITY.softShadows) return;
+  const cam = sun.shadow.camera, sh = CONFIG.shadows;
+  const width = ((cam.right - cam.left) + (cam.top - cam.bottom)) / 2;
+  const spread = Math.min(0.999, ((cam.far - cam.near) * sh.softness) / width);
+  sun.shadow.radius = Math.max(1, Math.round((sh.maxBlur / width) * 16384)) + spread;
+}
+
 let atmosphereInstalled = false;
 function installAtmosphere() {
   if (atmosphereInstalled) return;

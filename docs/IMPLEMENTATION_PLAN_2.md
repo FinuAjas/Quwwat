@@ -12,7 +12,7 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 |---|---|---|---|
 | R0 Ready for an artist model | Code | ✅ 6 · ⏸ 1 | Any terrain shape, split files, foliage shader, KTX2, lightmaps, validator page. R0.7 (re-tune camera) waits for the artist's model. |
 | R1 Colour & tone | Code | ✅ 4 · 🟡 1 | AgX, real-world palette, tree tints, colour grade, three looks. Building weathering left to the artist. |
-| R2 Lighting & sky | Code | ✅ 4 · 🟡 1 | Procedural sky reflections, fitted shadows, contact shadows, baked ground shade. PCSS soft shadows not done. |
+| R2 Lighting & sky | Code | ✅ 5 | Procedural sky reflections, fitted shadows that soften with distance, contact shadows, baked ground shade. |
 | R3 Camera effects | Code | ✅ 5 | Bloom, tilt-shift, vignette, grain, colour fringe; phones keep grade + vignette + grain. |
 | R4 Atmosphere | Code | ✅ 3 · ➖ 1 | Distance haze, valley mist, softer mist banks, horizon ridges. Sun shafts skipped. |
 | R5 Ground materials | Artist | 🎨 5 · ⏳ 1 | Not started. R5.5 grass tufts is a code task for after the artist's terrain. |
@@ -21,7 +21,7 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 | R8 Life & motion | Code | ✅ 4 | Spline fly-in (skippable), drifting cloud shadows, moving cars and birds, settling camera moves. |
 | R9 Pipeline & performance | Both | ✅ 2 · 🟡 2 · ⏳ 1 · 🎨 1 | Poster image and three benchmark-picked tiers done; load size checked. Build script (needs Node.js), real-phone test and Lighthouse pending. |
 
-**Task count:** 28 done · 6 partial · 2 pending (code) · 17 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
+**Task count:** 29 done · 5 partial · 2 pending (code) · 17 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
 
 ### Completed so far (R0–R4, R8, R9.4, R9.5)
 - The page accepts an artist-built model without code changes, and `tools/validate-model.html` checks a model against the brief.
@@ -36,9 +36,8 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 
 ### Pending — code (can be done now)
 1. **R9.6** Real-phone test and Lighthouse run (the load-size check is done).
-2. **R2.3** PCSS-style soft shadows (optional polish; the rest of this task is done).
-3. **R7.4** Pool caustics and **R5.5** grass tufts (both better after the artist's model).
-4. **R9.1** Asset build script (needs Node.js installed).
+2. **R7.4** Pool caustics and **R5.5** grass tufts (both better after the artist's model).
+3. **R9.1** Asset build script (needs Node.js installed).
 
 ### Pending — artist (see [BLENDER_ARTIST_BRIEF.md](BLENDER_ARTIST_BRIEF.md))
 - **R5** Textured terrain, roads and paving, soft edges, rocks.
@@ -64,6 +63,7 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 - The tier benchmark's thresholds were calibrated on one machine only (RTX 5050 laptop, 0.8 ms → ultra); integrated-GPU desktops and phones are untested, so their tier choice is a best guess. `?debug` logs the measurement.
 - The no-WebGL and data-saver paths were exercised only through the `?3d=off` preview switch, not on a real device with those conditions.
 - The mobile poster was rendered from the portrait preset but not viewed on a phone.
+- The distance-based soft shadows (R2.3) were checked on the golden-hour look and the high tier; midday, overcast and their frame-rate cost on a mid-range GPU are unmeasured.
 - Moving cars do not cast real shadows (the shadow map is rendered once); each carries a soft blob shadow instead.
 
 ## Where the realism gap was at the start of Plan 2
@@ -122,12 +122,12 @@ The asset tasks in R5–R7 below now describe **what the artist delivers** (see 
 | R1.4 | ✅ Done | Colour-grading pass (LUT or lift/gamma/gain shader): warm highlights, cool shadows, slight desaturation of greens | Matches the reference render's mood | Shader grade (split-toning, contrast, green taming) in `post.js`, not a LUT file. |
 | R1.5 | ✅ Done | Time-of-day presets in config (golden hour default, midday, overcast) | One-line switch | `golden` (default), `midday`, `overcast`; try with `?look=`. Overcast's final fog tweak and the midday/overcast haze were not re-checked visually. |
 
-## Phase R2 — Lighting & sky · 4 done, 1 partial
+## Phase R2 — Lighting & sky · 5 of 5 done
 | # | Status | Task | Done when | Notes |
 |---|---|---|---|---|
 | R2.1 | ✅ Done | Replace RoomEnvironment with a real **HDRI sky** (Poly Haven 2k, CC0) for reflections + background | Glass/water reflect a real sky | Done with a **procedural sky** (gradient + sun glow) instead of a downloaded HDRI, so it matches each look's sun. A real HDRI is still optional. |
 | R2.2 | ✅ Done | Align sun direction/colour to the HDRI; lower sun (≈30–35°) for longer, softer shadows | Shadows read as late-afternoon | Sun comes from the look; golden hour sits at about 36°. |
-| R2.3 | 🟡 Partial | Cascaded or tighter shadow frustum + PCSS-style soft shadows | Crisp near, soft far, no shimmering | Done: shadow map fitted to the plot (254 × 236 m instead of 320 × 320 m). **Not done:** PCSS-style variable softness. |
+| R2.3 | ✅ Done | Cascaded or tighter shadow frustum + PCSS-style soft shadows | Crisp near, soft far, no shimmering | Shadow map fitted to the plot (254 × 236 m instead of 320 × 320 m). On the ultra / high tiers shadow edges now widen with distance from the object casting them (measured: 0.1 m at the base of a pole, 1 m at 13 m along its shadow); phones keep the plain soft filter. Tuning in `CONFIG.shadows`. |
 | R2.4 | ✅ Done | **Ambient occlusion**: GTAO post pass (desktop) + baked AO in terrain vertex colours (all tiers) | Contact darkening under trees, cars, eaves | GTAO pass on desktop; ground shading under trees/buildings baked into the model for all devices. |
 | R2.5 | ✅ Done | Light probe / hemisphere tuned from HDRI for bounce colour | Shaded walls pick up green/sky tints | Bounce colour comes from the sky environment's green ground half (no separate light probe). |
 
