@@ -22,7 +22,13 @@ export function createHotspots({ camera, dom, hero, site, rig, heightAt }) {
     object.traverse((o) => {
       if (!o.isMesh) return;
       if (!own.has(o.material)) {
-        const m = o.material.name?.startsWith('Water') || !o.material.emissive ? o.material : o.material.clone();
+        let m = o.material;
+        if (!m.name?.startsWith('Water') && m.emissive) {
+          m = o.material.clone();
+          // clone() drops shader patches (weathering, foliage wind): carry them over
+          m.onBeforeCompile = o.material.onBeforeCompile;
+          m.customProgramCacheKey = o.material.customProgramCacheKey;
+        }
         own.set(o.material, m);
       }
       o.material = own.get(o.material);

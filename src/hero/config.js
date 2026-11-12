@@ -131,6 +131,14 @@ export const CONFIG = {
   // heightFalloff: metres over which the distance haze thins with altitude.
   // valley: ground-hugging mist below `top` (world Y), fading over `falloff` metres, thickening over `reach` metres of view distance.
   atmosphere: { heightFalloff: 140, valley: { top: -10, falloff: 6, reach: 260 }, ridges: true },
+  // Procedural weathering for flat-coloured building materials, listed by material name (see weathering.js).
+  // amount: 0 = off, 1 = normal. Leave textured artist materials out: their weathering belongs in the textures.
+  weathering: {
+    amount: 1,
+    wall: ['Wall_Plaster'],
+    roof: ['Roof_Tile'],
+    stone: ['Wall_Stone', 'Amphi_Seat', 'Amphi_Stage', 'Pool_Deck', 'Paving_Plaza'],
+  },
   // Sun shadows on the ultra / high tiers are sharp where an object meets the ground and blur with distance from it.
   // softness = metres of blur per metre between the object and its shadow (the real sun is ~0.01; haze makes it look wider),
   // maxBlur = widest blur in metres. Samples per tier: QUALITY.softShadows [blocker search, filter]. Phones keep plain soft shadows.

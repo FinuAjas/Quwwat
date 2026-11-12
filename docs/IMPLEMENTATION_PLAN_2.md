@@ -11,7 +11,7 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 | Phase | Owner | Status | Summary |
 |---|---|---|---|
 | R0 Ready for an artist model | Code | ✅ 6 · ⏸ 1 | Any terrain shape, split files, foliage shader, KTX2, lightmaps, validator page. R0.7 (re-tune camera) waits for the artist's model. |
-| R1 Colour & tone | Code | ✅ 4 · 🟡 1 | AgX, real-world palette, tree tints, colour grade, three looks. Building weathering left to the artist. |
+| R1 Colour & tone | Code | ✅ 5 | AgX, real-world palette, tree tints, procedural building weathering, colour grade, three looks. |
 | R2 Lighting & sky | Code | ✅ 5 | Procedural sky reflections, fitted shadows that soften with distance, contact shadows, baked ground shade. |
 | R3 Camera effects | Code | ✅ 5 | Bloom, tilt-shift, vignette, grain, colour fringe; phones keep grade + vignette + grain. |
 | R4 Atmosphere | Code | ✅ 3 · ➖ 1 | Distance haze, valley mist, softer mist banks, horizon ridges. Sun shafts skipped. |
@@ -21,7 +21,7 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 | R8 Life & motion | Code | ✅ 4 | Spline fly-in (skippable), drifting cloud shadows, moving cars and birds, settling camera moves. |
 | R9 Pipeline & performance | Both | ✅ 2 · 🟡 2 · ⏳ 1 · 🎨 1 | Poster image and three benchmark-picked tiers done; load size checked. Build script (needs Node.js), real-phone test and Lighthouse pending. |
 
-**Task count:** 29 done · 5 partial · 2 pending (code) · 17 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
+**Task count:** 30 done · 4 partial · 2 pending (code) · 17 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
 
 ### Completed so far (R0–R4, R8, R9.4, R9.5)
 - The page accepts an artist-built model without code changes, and `tools/validate-model.html` checks a model against the brief.
@@ -43,7 +43,6 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 - **R5** Textured terrain, roads and paving, soft edges, rocks.
 - **R6** Leaf-card trees and palms with LODs, natural placement, hedges and flower beds.
 - **R7** Detailed convention centre, prayer hall and cabin, PBR materials, pool shell, amphitheatre, play equipment, site furniture, realistic cars.
-- **R1.3** Building weathering (comes with the textures).
 - **R9.3** Texture budget; exporting with Draco + WebP.
 
 ### Blocked until the artist delivers
@@ -64,6 +63,7 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 - The no-WebGL and data-saver paths were exercised only through the `?3d=off` preview switch, not on a real device with those conditions.
 - The mobile poster was rendered from the portrait preset but not viewed on a phone.
 - The distance-based soft shadows (R2.3) were checked on the golden-hour look and the high tier; midday, overcast and their frame-rate cost on a mid-range GPU are unmeasured.
+- Building weathering (R1.3) was checked on the convention centre from one close view and the aerial view, golden-hour look only; the plot boundary wall is left out because it follows the terrain.
 - Moving cars do not cast real shadows (the shadow map is rendered once); each carries a soft blob shadow instead.
 
 ## Where the realism gap was at the start of Plan 2
@@ -113,12 +113,12 @@ The asset tasks in R5–R7 below now describe **what the artist delivers** (see 
 
 ---
 
-## Phase R1 — Colour & tone · 4 done, 1 partial
+## Phase R1 — Colour & tone · 5 of 5 done
 | # | Status | Task | Done when | Notes |
 |---|---|---|---|---|
 | R1.1 | ✅ Done | Switch tone mapping to **AgX** (or Neutral) and re-balance exposure | Highlights roll off softly; roofs no longer clip | AgX tone mapping, exposure re-balanced per look. |
 | R1.2 | ✅ Done | Re-palette all materials to measured real-world colours (terracotta roof `#a65a3a`, aged plaster `#d9cdb8`, asphalt `#5d5c58`, lawn `#5b7a34`…) | No "toy" colours remain | All materials re-coloured in `src/model/materials.js`; model re-exported. |
-| R1.3 | 🟡 Partial | Natural colour variation: per-instance tint for trees (glTF `_COLOR_0`), per-building weathering tint, lawn mottling | Forest shows mixed greens/olives/yellows | Done: per-tree tint, lawn dry patches and speckle. **Not done:** per-building weathering tint (left to the artist's textures). |
+| R1.3 | ✅ Done | Natural colour variation: per-instance tint for trees (glTF `_COLOR_0`), per-building weathering tint, lawn mottling | Forest shows mixed greens/olives/yellows | Per-tree tint, lawn dry patches and speckle; building weathering is a procedural shader (`src/hero/weathering.js`): patchy fading, rain streaks and ground grime on walls, tile variation and moss patches on roofs, mottled stone and paving, and a slight cast per building. Materials are listed by name in `CONFIG.weathering`; set `amount: 0` or drop a name once the artist's textured version of it arrives. |
 | R1.4 | ✅ Done | Colour-grading pass (LUT or lift/gamma/gain shader): warm highlights, cool shadows, slight desaturation of greens | Matches the reference render's mood | Shader grade (split-toning, contrast, green taming) in `post.js`, not a LUT file. |
 | R1.5 | ✅ Done | Time-of-day presets in config (golden hour default, midday, overcast) | One-line switch | `golden` (default), `midday`, `overcast`; try with `?look=`. Overcast's final fog tweak and the midday/overcast haze were not re-checked visually. |
 

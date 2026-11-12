@@ -14,6 +14,7 @@ import { capturePresets, savePosters } from './capture.js';
 import { createFoliage } from './foliage.js';
 import { createPost } from './post.js';
 import { createTraffic, createBirds } from './life.js';
+import { createWeathering } from './weathering.js';
 
 /**
  * The interactive 3D hero. Loaded on demand by main.js (after the WebGL / data-saver checks and the
@@ -28,6 +29,7 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   const mist = createMist(scene);
   createRidges(scene);
   const foliage = createFoliage(lights.sun);
+  const weathering = createWeathering();
   const post = createPost(renderer, scene, camera);
   onResize((w, h) => post.setSize(w, h));
   const perf = createPerformance(renderer, stage, { onPixelRatio: () => post.setSize(stage.clientWidth, stage.clientHeight) });
@@ -40,6 +42,7 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
 
   const site = await loadSite(renderer, (p) => onProgress(p * 0.8));
   foliage.apply(site.root);
+  weathering.apply(site.root);
   scene.add(site.root);
   const heightAt = createHeightSampler(site.terrain);
   const traffic = createTraffic(scene, site, heightAt, lights.sun);
@@ -104,6 +107,7 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   if (site.hasExtras) {
     site.loadExtras(async (part) => {
       foliage.apply(part);
+      weathering.apply(part);
       await renderer.compileAsync(part, camera, scene); // compile off-screen first, so adding it doesn't hitch
       scene.add(part);
       renderer.shadowMap.needsUpdate = true;
