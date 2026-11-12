@@ -36,7 +36,8 @@ export const PADS = [
   { id: 'gate-south', c: P(1050, 1100), rx: 8, rz: 6, rot: 0, elev: 52.5, falloff: 6 },
 ];
 
-const ringNoParking = (x, z) => !(z > -14 && x > -62 && x < -5);
+// no bays along the south side of the ring (amphitheatre) or beside the children's play area
+const ringNoParking = (x, z) => !(z > -14 && x > -62 && x < -5) && Math.hypot(x + 75, z + 31.8) > 15;
 
 export const ROADS = [
   {

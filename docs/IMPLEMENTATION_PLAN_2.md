@@ -69,7 +69,7 @@ The asset tasks in R5–R7 below now describe **what the artist delivers** (see 
 | R2.4 | **Ambient occlusion**: GTAO post pass (desktop) + baked AO in terrain vertex colours (all tiers) | Contact darkening under trees, cars, eaves |
 | R2.5 | Light probe / hemisphere tuned from HDRI for bounce colour | Shaded walls pick up green/sky tints |
 
-## Phase R3 — Post-processing (cinematic camera)
+## Phase R3 — Post-processing (cinematic camera) ✅ (tilt-shift is screen-space; settings in `CONFIG.post`)
 | # | Task | Done when |
 |---|---|---|
 | R3.1 | Add `EffectComposer` pipeline (RenderPass → GTAO → Bloom → DoF → Grade → SMAA/FXAA → Output) | Toggle per quality tier |

@@ -52,6 +52,7 @@ function frame() {
   foliage.update(t, camera);
   rig.update();
   hotspots.update(t);
+  post.update(t, rig.controls.target, camera.position.distanceTo(rig.controls.target));
   post.render();
   popups.update();
 }

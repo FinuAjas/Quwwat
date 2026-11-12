@@ -6,8 +6,8 @@ const forcedTier = new URLSearchParams(location.search).get('tier');
 export const TIER = forcedTier === 'high' || forcedTier === 'low' ? forcedTier : coarse || small ? 'low' : 'high';
 
 export const QUALITY = {
-  high: { pixelRatio: 2, antialias: true, msaa: 4, ao: true, shadows: true, shadowMapSize: 4096, mistCount: 26 },
-  low: { pixelRatio: 1.5, antialias: true, msaa: 2, ao: false, shadows: true, shadowMapSize: 2048, mistCount: 14 },
+  high: { pixelRatio: 2, antialias: true, msaa: 4, ao: true, bloom: true, dof: true, shadows: true, shadowMapSize: 4096, mistCount: 26 },
+  low: { pixelRatio: 1.5, antialias: true, msaa: 2, ao: false, bloom: false, dof: false, shadows: true, shadowMapSize: 2048, mistCount: 14 },
 }[TIER];
 
 // ---------- time-of-day looks ----------
@@ -86,6 +86,12 @@ export const CONFIG = {
   },
   intro: { from: { target: [18, 0, 4], position: [-260, 330, 300] }, mobile: { target: [8, 0, 32], position: [-300, 420, 420] } },
 
+  // Camera effects. bloom/tiltShift/aberration run on the desktop tier only; vignette + grain everywhere.
+  post: {
+    bloom: { strength: 0.22, radius: 0.75, threshold: 1.5 },   // threshold is in scene (HDR) brightness: only sun glints bloom
+    tiltShift: { blur: 5.5, band: 0.2, falloff: 0.34 },         // blur in CSS px at the frame edge; band = sharp half-height (0–0.5)
+    vignette: 0.34, grain: 0.035, aberration: 0.45,             // aberration in px at the corners
+  },
   // Ambient occlusion (desktop tier): radius in metres, intensity 0–1
   ao: { radius: 3.2, intensity: 0.85, samples: 12, thickness: 1.2 },
   // sky / fog / sun / hemi / env / exposure / grade come from the active look (see LOOKS below)
