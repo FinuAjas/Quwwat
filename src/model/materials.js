@@ -32,5 +32,8 @@ export const M = {
   fence: std('Boundary_Wall', 0xcac3b5, { roughness: 0.95, side: THREE.DoubleSide }),
   canvas: std('Shade_Canvas', 0xa3352a, { roughness: 0.8, side: THREE.DoubleSide }),
   foliage: std('Foliage', 0xffffff, { vertexColors: true, roughness: 0.95 }),
+  rock: std('Rock', 0xffffff, { vertexColors: true, roughness: 1 }),
+  // worn-earth strip beside roads and paths; vertex alpha fades it into the grass
+  shoulder: std('Ground_Shoulder', 0xffffff, { vertexColors: true, roughness: 1, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
   car: (name, color) => std(`Car_${name}`, color, { vertexColors: true, roughness: 0.3, metalness: 0.55 }),
 };

@@ -130,7 +130,7 @@ export function buildTerrain() {
   const pos = new Float32Array(nx * nz * 3), col = new Uint8Array(nx * nz * 3), heights = new Float32Array(nx * nz);
   const lawnA = new THREE.Color(0x6c8b3d), lawnB = new THREE.Color(0x4d6e2f), lawnDry = new THREE.Color(0x8a8a4c);
   const forestA = new THREE.Color(0x24381a), forestB = new THREE.Color(0x385229);
-  const verge = new THREE.Color(0x7c8153);
+  const verge = new THREE.Color(0x7c8153), dirt = new THREE.Color(0x8b6a49);
   const c = new THREE.Color(), c2 = new THREE.Color();
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
     const x = xs[i], z = zs[j], k = j * nx + i;
@@ -148,7 +148,12 @@ export function buildTerrain() {
     c.lerp(c2, smoothstep(-1.5, 3, sd));
     if (sd < 0) {
       const q = roadQuery(x, z);
-      if (q) c.lerp(verge, 0.35 * (1 - smoothstep(q.extent, q.extent + 3, q.d)));
+      if (q) {
+        // road edge: trodden earth right beside the kerb, thinning grass further out, with an uneven width
+        const ragged = fbm(x / 5 + 2, z / 5 - 6, 2) * 1.2;
+        c.lerp(verge, 0.4 * (1 - smoothstep(q.extent, q.extent + 3.6 + ragged, q.d)));
+        c.lerp(dirt, 0.55 * (1 - smoothstep(q.extent + 0.5, q.extent + 2.2 + ragged, q.d)));
+      }
     }
     col.set([c.r * 255 + 0.5, c.g * 255 + 0.5, c.b * 255 + 0.5], k * 3);
   }

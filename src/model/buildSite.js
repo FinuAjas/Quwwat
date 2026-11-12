@@ -4,6 +4,7 @@ import { buildTerrain, bakeGroundShade } from './terrain.js';
 import { buildRoads } from './roads.js';
 import { buildStructures, obstacles } from './structures.js';
 import { buildVegetation } from './vegetation.js';
+import { buildRocks } from './rocks.js';
 
 /**
  * Builds the complete Mountain Courtyard site as a THREE.Group named "MountainCourtyard".
@@ -21,8 +22,9 @@ export function buildSite() {
   const { roads, parking, carCount } = buildRoads();
   const structures = buildStructures(heightAt);
   const veg = buildVegetation(heightAt);
+  const rocks = buildRocks(heightAt);
   bakeGroundShade(terrain, veg.occluders, obstacles);
-  root.add(terrain, roads, parking, structures, veg.group);
+  root.add(terrain, roads, parking, structures, veg.group, rocks.group);
 
   const anchors = new THREE.Group(); anchors.name = 'Hotspots';
   for (const h of HOTSPOTS) {
@@ -37,6 +39,6 @@ export function buildSite() {
   root.add(anchors);
   root.userData = { generator: 'mountain-courtyard procedural model v1', units: 'metres', up: 'Y', north: '-Z (approx.)' };
 
-  const stats = { ms: Math.round(performance.now() - t0), trees: veg.total, treeTris: Math.round(veg.tris), cars: carCount };
+  const stats = { ms: Math.round(performance.now() - t0), trees: veg.total, treeTris: Math.round(veg.tris), cars: carCount, rocks: rocks.total };
   return { root, heightAt, stats };
 }

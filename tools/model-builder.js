@@ -43,7 +43,8 @@ root.traverse((o) => {
   const g = o.geometry, n = g.index ? g.index.count / 3 : g.attributes.position.count / 3;
   tris += n * (o.isInstancedMesh ? o.count : 1);
 });
-statsEl.textContent = `build   ${stats.ms} ms\nmeshes  ${meshes}\ntris    ${(tris / 1e6).toFixed(2)} M\ntrees   ${stats.trees}\ncars    ${stats.cars}`;
+statsEl.textContent = `build   ${stats.ms} ms\nmeshes  ${meshes}\ntris    ${(tris / 1e6).toFixed(2)} M\ntrees   ${stats.trees}\ncars    ${stats.cars}
+rocks   ${stats.rocks}`;
 
 async function exportGLB() {
   // Terrain normals are cheap to rebuild at load time (saves ~0.4 MB); restore them after export.

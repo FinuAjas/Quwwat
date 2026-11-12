@@ -4,6 +4,7 @@ import { roadQuery, roadData } from './terrain.js';
 import { isBlocked } from './structures.js';
 import { mergeVertices, mulberry32, fbm, signedDistToPolygon, pointInPolygon, smoothstep, clamp, lerp } from './geom.js';
 import { M } from './materials.js';
+import { rockiness } from './rocks.js';
 
 /*
  * Vegetation for the procedural site model.
@@ -295,8 +296,7 @@ export function buildVegetation(heightAt) {
     const x = gx + (rand() - 0.5) * 4.4, z = gz + (rand() - 0.5) * 4.4, r = Math.hypot(x - 15, z);
     if (r >= MID_RADIUS || signedDistToPolygon(x, z, SITE_BOUNDARY) < 1.5) { rand(); continue; }
     const y = heightAt(x, z);
-    const slope = Math.hypot(heightAt(x + 3, z) - heightAt(x - 3, z), heightAt(x, z + 3) - heightAt(x, z - 3)) / 6;
-    const rock = Math.max(smoothstep(0.42, 0.75, slope), smoothstep(0.74, 0.86, n01(x, z, 38, 5, -8)));  // steep or stony: sparse
+    const rock = rockiness(x, z, heightAt);                                                             // steep or stony: sparse
     const clump = smoothstep(0.28, 0.62, n01(x, z, 62));                                                // thickets vs clearings
     const valley = 1 - smoothstep(-12, 5, y);                                                           // 1 on the low ground
     if (rand() > clamp((0.46 + 0.45 * clump + 0.22 * valley) * (1 - 0.85 * rock), 0, 0.97)) continue;

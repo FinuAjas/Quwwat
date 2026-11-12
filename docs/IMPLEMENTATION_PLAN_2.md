@@ -15,18 +15,18 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 | R2 Lighting & sky | Code | ✅ 5 | Procedural sky reflections, fitted shadows that soften with distance, contact shadows, baked ground shade. |
 | R3 Camera effects | Code | ✅ 5 | Bloom, tilt-shift, vignette, grain, colour fringe; phones keep grade + vignette + grain. |
 | R4 Atmosphere | Code | ✅ 3 · ➖ 1 | Distance haze, valley mist, softer mist banks, horizon ridges. Sun shafts skipped. |
-| R5 Ground materials | Artist | 🎨 5 · ⏳ 1 | Not started. R5.5 grass tufts is a code task for after the artist's terrain. |
+| R5 Ground materials | Code (procedural) | ✅ 6 | Terrain, road and paving detail from shaders, soft earth shoulders, grass tufts near the camera, rocks — all generated in code, no texture files. |
 | R6 Vegetation | Code (procedural) | ✅ 5 | Leaf-card trees, palms, shrubs, hedges and flower beds, three distance levels, noise-driven forest — all generated in code. An artist's hand-modelled trees can still replace them later. |
 | R7 Architecture detail | Artist | 🟡 1 · 🎨 7 | Only the animated water exists. Everything else is the artist's; caustics is a code task. |
 | R8 Life & motion | Code | ✅ 4 | Spline fly-in (skippable), drifting cloud shadows, moving cars and birds, settling camera moves. |
 | R9 Pipeline & performance | Both | ✅ 2 · 🟡 2 · ⏳ 1 · 🎨 1 | Poster image and three benchmark-picked tiers done; load size checked. Build script (needs Node.js), real-phone test and Lighthouse pending. |
 
-**Task count:** 35 done · 3 partial · 2 pending (code) · 13 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
+**Task count:** 41 done · 3 partial · 1 pending (code) · 8 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
 
 ### Completed so far (R0–R4, R8, R9.4, R9.5)
 - The page accepts an artist-built model without code changes, and `tools/validate-model.html` checks a model against the brief.
 - Golden-hour look by default, with midday and overcast available (`?look=`).
-- Real-world colours, per-tree tints, lawn mottling; model re-exported (3.0 MB, 95 parked cars).
+- Real-world colours, per-tree tints, lawn mottling; model re-exported (3.2 MB, 95 parked cars).
 - Sky-based reflections and ambient light, fitted shadow map, desktop contact shadows, baked ground shading for all devices.
 - Bloom, tilt-shift blur, vignette, film grain and a slight colour fringe.
 - Distance haze, valley mist, softer mist banks and three layers of horizon hills; camera can tilt to 80°.
@@ -36,11 +36,10 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 
 ### Pending — code (can be done now)
 1. **R9.6** Real-phone test and Lighthouse run (the load-size check is done).
-2. **R7.4** Pool caustics and **R5.5** grass tufts (both better after the artist's model).
+2. **R7.4** Pool caustics (better after the artist's model).
 3. **R9.1** Asset build script (needs Node.js installed).
 
 ### Pending — artist (see [BLENDER_ARTIST_BRIEF.md](BLENDER_ARTIST_BRIEF.md))
-- **R5** Textured terrain, roads and paving, soft edges, rocks.
 - **R7** Detailed convention centre, prayer hall and cabin, PBR materials, pool shell, amphitheatre, play equipment, site furniture, realistic cars.
 - **R9.3** Texture budget; exporting with Draco + WebP.
 
@@ -65,6 +64,9 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 - Building weathering (R1.3) was checked on the convention centre from one close view and the aerial view, golden-hour look only; the plot boundary wall is left out because it follows the terrain.
 - Vegetation (R6) was checked from the aerial view and one close view on the high and ultra tiers, golden-hour look. The flower beds were not looked at close up, and the frame-rate cost of the alpha-clipped leaves on a mid-range GPU or a phone is unmeasured.
 - Leaf-card plants take no ambient occlusion (they still cast and receive shadows and have baked ground shade).
+- Ground work (R5) was checked from the aerial view and two close views on the high tier, golden-hour look. The brick footpath, pool-deck tiles and road paint were not looked at close up; the cost of the grass tufts on a mid-range GPU is unmeasured.
+- Rock placement follows slope and noise, not the rock areas on the contour survey.
+- The preset thumbnails sometimes came up blank on the first page load after re-exporting the model and were fine on the next load; not tracked down.
 - Moving cars do not cast real shadows (the shadow map is rendered once); each carries a soft blob shadow instead.
 
 ## Where the realism gap was at the start of Plan 2
@@ -149,15 +151,16 @@ The asset tasks in R5–R7 below now describe **what the artist delivers** (see 
 | R4.3 | ➖ Not built | Optional sun shafts (god rays) at golden-hour preset | Desktop only | Optional; skipped — shafts tend to look fake from above. Warm haze towards the sun stands in. |
 | R4.4 | ✅ Done | Distant mountain silhouettes (layered ridges) beyond the terrain | Horizon has depth like Kerala hills | Three ridge layers; max camera tilt raised from 72° to 80° so the horizon is visible. |
 
-## Phase R5 — Ground & landscape materials · not started (artist)
+## Phase R5 — Ground & landscape materials · 6 of 6 done (procedural)
+Built in code instead of waiting for artist textures: the detail is computed in shaders (`src/hero/surfaces.js`), so there are no texture files to download. It is stylised, not photographic; an artist's textured materials replace it by leaving their names out of `CONFIG.surfaces`.
 | # | Status | Task | Done when | Notes |
 |---|---|---|---|---|
-| R5.1 | 🎨 Pending — artist | Terrain **splat shader**: grass, dry grass, soil, rock blended by slope/height/noise (CC0 PBR textures, triplanar) | No flat colour anywhere |  |
-| R5.2 | 🎨 Pending — artist | Road surfaces: asphalt texture with wear, kerb stone texture, faded road paint | Roads read as real tarmac |  |
-| R5.3 | 🎨 Pending — artist | Paving textures: brick footpath, stone plaza, pool deck, amphitheatre concrete | Correct scale (1 tile ≈ real size) |  |
-| R5.4 | 🎨 Pending — artist | Soft road/lawn edge blending (decal strip) instead of hard ribbon edges | Edges look natural |  |
-| R5.5 | ⏳ Pending — code | **Instanced grass tufts / ground cover** near the camera (fade by distance) | Lawns have depth when zoomed in | Best done once the artist's terrain is in. |
-| R5.6 | 🎨 Pending — artist | Rocks (contour map shows rock areas) — instanced CC0 rock models | Rocky slopes match survey |  |
+| R5.1 | ✅ Done | Terrain **splat shader**: grass, dry grass, soil, rock blended by slope/height/noise (CC0 PBR textures, triplanar) | No flat colour anywhere | Shader on the terrain: grass mottling and speckle, dry patches, red laterite earth on steeper ground, bedded rock on the steepest. Procedural colour only — no PBR textures or normal maps. |
+| R5.2 | ✅ Done | Road surfaces: asphalt texture with wear, kerb stone texture, faded road paint | Roads read as real tarmac | Asphalt: aggregate speckle, darker repair patches, hairline cracks in close views. Road paint is worn and faded. Kerbs are mottled stone (no individual kerb stones). |
+| R5.3 | ✅ Done | Paving textures: brick footpath, stone plaza, pool deck, amphitheatre concrete | Correct scale (1 tile ≈ real size) | Brick pavers on the footpath (0.42 × 0.21 m), flagstones on the plaza (1.1 × 0.75 m), 0.6 m tiles on the pool deck aligned to the pool, mottled concrete on the amphitheatre, granule speckle on the play surface. Brick and flagstone rows follow the compass, not the path's curve. |
+| R5.4 | ✅ Done | Soft road/lawn edge blending (decal strip) instead of hard ribbon edges | Edges look natural | A semi-transparent worn-earth strip outside every kerb and path edge, fading into the grass with an uneven width, plus matching earth and thin-grass tones baked into the terrain colours. |
+| R5.5 | ✅ Done | **Instanced grass tufts / ground cover** near the camera (fade by distance) | Lawns have depth when zoomed in | `src/hero/grass.js`: 40,000 tufts (70,000 on ultra, none on phones) scattered at load on lawn-coloured terrain that no road, path or building covers. They shrink away between 45 and 110 m from the camera and are switched off in wide views. Works on any model; nothing is stored in the model file. |
+| R5.6 | ✅ Done | Rocks (contour map shows rock areas) — instanced CC0 rock models | Rocky slopes match survey | 524 instanced boulders in three generated shapes, placed on steep and stony ground (the same field that thins the forest). Not matched to the survey's rock areas. |
 
 ## Phase R6 — Vegetation (largest visual win) · 5 of 5 done (procedural)
 Built in code (`src/model/vegetation.js`) instead of waiting for artist models. The trees are stylised leaf-card trees, not photo-scanned ones; artist-made trees can still be dropped in under the same names.

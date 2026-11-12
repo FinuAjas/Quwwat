@@ -14,7 +14,8 @@ import { capturePresets, savePosters } from './capture.js';
 import { createFoliage } from './foliage.js';
 import { createPost } from './post.js';
 import { createTraffic, createBirds } from './life.js';
-import { createWeathering } from './weathering.js';
+import { createSurfaces } from './surfaces.js';
+import { createGrass } from './grass.js';
 
 /**
  * The interactive 3D hero. Loaded on demand by main.js (after the WebGL / data-saver checks and the
@@ -29,7 +30,7 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   const mist = createMist(scene);
   createRidges(scene);
   const foliage = createFoliage(lights.sun);
-  const weathering = createWeathering();
+  const surfaces = createSurfaces();
   const post = createPost(renderer, scene, camera);
   onResize((w, h) => post.setSize(w, h));
   const perf = createPerformance(renderer, stage, { onPixelRatio: () => post.setSize(stage.clientWidth, stage.clientHeight) });
@@ -42,10 +43,11 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
 
   const site = await loadSite(renderer, (p) => onProgress(p * 0.8));
   foliage.apply(site.root);
-  weathering.apply(site.root);
+  surfaces.apply(site.root);
   scene.add(site.root);
   const heightAt = createHeightSampler(site.terrain);
   const traffic = createTraffic(scene, site, heightAt, lights.sun);
+  const grass = createGrass(scene, site, heightAt);
   const rig = createCameraRig(camera, renderer.domElement, heightAt);
   bindUI(rig, { hero });
   const hotspots = createHotspots({ camera, dom: renderer.domElement, hero, site, rig, heightAt });
@@ -84,6 +86,7 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
     lights.update(t);
     traffic.update(t);
     birds.update(t);
+    grass.update(t, camera);
     site.update(t);
     foliage.update(t, camera);
     rig.update();
@@ -107,12 +110,12 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   if (site.hasExtras) {
     site.loadExtras(async (part) => {
       foliage.apply(part);
-      weathering.apply(part);
+      surfaces.apply(part);
       await renderer.compileAsync(part, camera, scene); // compile off-screen first, so adding it doesn't hitch
       scene.add(part);
       renderer.shadowMap.needsUpdate = true;
     });
   }
-  window.__hero = { renderer, scene, camera, rig, lights, site, perf, heightAt, hotspots, popups, page, post, traffic, birds };
+  window.__hero = { renderer, scene, camera, rig, lights, site, perf, heightAt, hotspots, popups, page, post, traffic, birds, grass };
   return { onViewChange };
 }
