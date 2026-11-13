@@ -4,6 +4,7 @@ import { box, hipRoof, merge, prep, deg } from './geom.js';
 import { roadQuery } from './terrain.js';
 import { building, FLOOR } from './architecture.js';
 import { M } from './materials.js';
+import { blockedBy } from './legacy.js';
 
 /** Obstacles for vegetation placement: circles {x,z,r} and oriented boxes {x,z,hx,hz,rot}. */
 export const obstacles = [];
@@ -109,12 +110,17 @@ function sector(r0, r1, a0, a1) {
   return s;
 }
 const flat = (shape, depth, y, seg = 40) => new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: seg }).rotateX(-Math.PI / 2).translate(0, y, 0);
+/**
+ * Amphitheatre (Plan 3): a half-ring of tiers on the NW side of the parking drive. Its straight, open side lies on
+ * the drive's kerb and faces the drive; the stage is the half-disc inside the tiers. Local frame: angle 0 = +X,
+ * 90 deg = -Z (the middle of the seats); the seats cover f.arc, the stage the whole half-disc.
+ */
 function amphitheatre() {
   const f = FEATURES.amphitheatre;
   const g = new THREE.Group(); g.name = 'Amphitheater';
   const seats = [], risers = [], nosings = [], steps = [];
-  const a0 = deg(-8), a1 = Math.PI + deg(8); // tiers wrap the north half (local -Z)
-  const aisles = [Math.PI / 2, Math.PI / 2 - 1.0, Math.PI / 2 + 1.0];
+  const a0 = deg(f.arc[0]), a1 = deg(f.arc[1]);
+  const aisles = [45, 90, 135].map(deg);
   for (let i = 0; i < f.tiers; i++) {
     const r0 = f.r0 + i * f.tierDepth, r1 = r0 + f.tierDepth;
     const top = (i + 1) * f.tierRise;
@@ -125,22 +131,21 @@ function amphitheatre() {
       steps.push(new THREE.BoxGeometry(1.0, f.tierRise / 2, f.tierDepth * 0.5).translate(0, i * f.tierRise + f.tierRise / 4, -r).rotateY(phi - Math.PI / 2));
     }
   }
-  const outer = f.r0 + f.tiers * f.tierDepth;
-  const wall = flat(sector(outer, outer + 0.5, a0, a1), f.tiers * f.tierRise + 2.9, -2);
-  const cope = flat(sector(outer - 0.06, outer + 0.58, a0, a1), 0.1, f.tiers * f.tierRise + 0.9);
-  const orchestra = new THREE.CylinderGeometry(f.r0, f.r0, 0.3, 40); orchestra.translate(0, 0.1, 0);
-  const stage = flat(sector(0, f.r0 + 1.5, Math.PI, Math.PI * 2), 2.6, -2, 32);
-  // open timber backdrop behind the stage (posts + two curved beams): frames the stage without hiding it
-  const frame = [], R = f.r0 + 1.25, b0 = Math.PI + 0.5, b1 = Math.PI * 2 - 0.5;
-  for (let i = 0; i < 6; i++) {
-    const a = b0 + ((b1 - b0) * i) / 5;
-    frame.push(box(0.24, 3.3, 0.24, Math.cos(a) * R, 0.6 + 1.65, -Math.sin(a) * R, -a));
-  }
-  frame.push(flat(sector(R - 0.17, R + 0.17, b0 - 0.06, b1 + 0.06), 0.24, 3.9, 24), flat(sector(R - 0.08, R + 0.08, b0, b1), 0.14, 3.2, 24));
-  g.add(mesh(seats, M.tier, 'Amphi_Seats'), mesh(risers, M.stage, 'Amphi_Risers'), mesh([...nosings, ...steps], M.plinth, 'Amphi_Steps'));
-  g.add(mesh([wall, cope], M.plinth, 'Amphi_Wall'), mesh([orchestra, stage], M.stage, 'Amphi_Stage'), mesh(frame, M.timber, 'Amphi_Backdrop'));
+  const rim = f.r0 + f.tiers * f.tierDepth, outer = rim + f.walkway, top = f.tiers * f.tierRise;
+  const walk = flat(sector(rim, outer, a0, a1), top + 2, -2);                         // upper walkway, level with the top tier
+  const wall = flat(sector(outer, outer + 0.5, a0, a1), top + 2.9, -2);
+  const cope = flat(sector(outer - 0.06, outer + 0.58, a0, a1), 0.1, top + 0.9);
+  const stage = flat(sector(0, f.r0, 0, Math.PI), 2.25, -2, 32);                      // top at +0.25
+  // open timber backdrop along the stage's straight edge (posts + two beams): frames the stage without hiding it
+  const frame = [], W = f.r0 - 0.7;
+  for (let i = 0; i < 5; i++) frame.push(box(0.24, 3.3, 0.24, -W + (2 * W * i) / 4, 0.25 + 1.65, -0.3));
+  frame.push(box(2 * W + 0.6, 0.24, 0.34, 0, 3.55 + 0.12, -0.3), box(2 * W + 0.3, 0.14, 0.16, 0, 2.9, -0.3));
+  g.add(mesh([...seats, walk], M.tier, 'Amphi_Seats'), mesh(risers, M.stage, 'Amphi_Risers'), mesh([...nosings, ...steps], M.plinth, 'Amphi_Steps'));
+  g.add(mesh([wall, cope], M.plinth, 'Amphi_Wall'), mesh([stage], M.stage, 'Amphi_Stage'), mesh(frame, M.timber, 'Amphi_Backdrop'));
   place(g, f.pos, padY('amphitheatre'), f.rot);
-  obstacles.push({ x: f.pos[0], z: f.pos[1], r: outer + 2 });
+  // footprint: the half-disc only, as a box on the seats' side, so the drive beside it is not blocked (plan3: see legacy.js)
+  const R = outer + 2, c = Math.cos(f.rot), sn = Math.sin(f.rot);
+  obstacles.push({ x: f.pos[0] - sn * R / 2, z: f.pos[1] - c * R / 2, hx: R, hz: R / 2, rot: f.rot, plan3: 'amphitheatre' });
   return g;
 }
 
@@ -208,7 +213,7 @@ function playground() {
   return g;
 }
 
-// ---------- pergola / gates / shades / plaza ----------
+// ---------- pergola / gates / shades / turning head ----------
 export function pergolaGeometry(length, width, height = 3) {
   const parts = [];
   const nPost = Math.max(2, Math.round(length / 3) + 1);
@@ -300,14 +305,25 @@ function gateSouth() {
   obstacles.push({ x: f.pos[0] + 6, z: f.pos[1] - 2, r: 7 });
   return g;
 }
-function plaza() {
-  const f = FEATURES.plaza;
-  const disc = new THREE.CylinderGeometry(f.radius, f.radius, 0.6, 40); disc.translate(0, -0.12, 0);
-  const ring = new THREE.CylinderGeometry(f.radius + 0.7, f.radius + 0.7, 0.5, 40); ring.translate(0, -0.2, 0);
-  const g = new THREE.Group(); g.name = 'Plaza';
-  g.add(mesh(disc, M.plaza, 'Plaza_Paving', false), mesh(ring, M.kerb, 'Plaza_Edge', false));
-  place(g, f.pos, padY('plaza') * 1 + 0.08, 0);
-  obstacles.push({ x: f.pos[0], z: f.pos[1], r: f.radius + 1.5 });
+/**
+ * Turning head: the paved bulb where the parking drive and the access road meet. An asphalt disc just under
+ * the road surfaces (they run a little way onto it), with a kerb round it that opens where the roads enter.
+ */
+function turningHead() {
+  const f = FEATURES.turningHead, [cx, cz] = f.pos, R = f.radius;
+  const g = new THREE.Group(); g.name = 'TurningHead';
+  const disc = new THREE.CylinderGeometry(R, R, 0.6, 56); disc.translate(0, -0.2, 0); // top at +0.10: under the roads (+0.12)
+  const kerb = [], N = 96;
+  for (let i = 0; i < N; i++) {
+    const a0 = (i / N) * Math.PI * 2, a1 = ((i + 1) / N) * Math.PI * 2, am = (a0 + a1) / 2;
+    const q = roadQuery(cx + Math.cos(am) * (R + 0.35), cz - Math.sin(am) * (R + 0.35));
+    if (q && q.road.surface !== 'path' && q.d < q.extent + 0.9) continue;         // a road comes in here: leave the kerb open
+    kerb.push(flat(sector(R - 0.05, R + 0.7, a0, a1), 0.5, -0.34, 2));               // top at +0.16, like the road kerbs
+  }
+  g.add(mesh(disc, M.asphalt, 'TurningHead_Surface', false));
+  if (kerb.length) g.add(mesh(kerb, M.kerb, 'TurningHead_Kerb', false));
+  place(g, f.pos, padY('turning-head'), 0);
+  obstacles.push({ x: cx, z: cz, r: R + 1.5, plan3: 'turning-head' });
   return g;
 }
 
@@ -358,18 +374,10 @@ function boundaryWall(heightAt) {
 
 export function buildStructures(heightAt) {
   const root = new THREE.Group(); root.name = 'Structures';
-  root.add(mainBuilding(), prayerHall(), pool(), amphitheatre(), playground(), pergolas(), shades(), gateWest(heightAt), gateSouth(), plaza(), boundaryWall(heightAt));
+  root.add(mainBuilding(), prayerHall(), pool(), amphitheatre(), playground(), pergolas(), shades(), gateWest(heightAt), gateSouth(), turningHead(), boundaryWall(heightAt));
   root.traverse((o) => { if (o.userData.snapToGround) o.position.y = heightAt(o.position.x, o.position.z); });
   return root;
 }
 
-export function isBlocked(x, z, pad = 0) {
-  for (const o of obstacles) {
-    if (o.r !== undefined) { if (Math.hypot(x - o.x, z - o.z) < o.r + pad) return true; continue; }
-    const dx = x - o.x, dz = z - o.z, c = Math.cos(o.rot), s = Math.sin(o.rot);
-    const lx = dx * c - dz * s, lz = dx * s + dz * c; // inverse of rotation.y
-    if (Math.abs(lx) < o.hx + pad && Math.abs(lz) < o.hz + pad) return true;
-  }
-  return false;
-}
+export const isBlocked = blockedBy(obstacles);
 export { P, FLOOR };

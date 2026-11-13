@@ -1,7 +1,6 @@
 import * as THREE from 'three';
-import { SITE_BOUNDARY, FEATURES } from './layout.js';
-import { roadQuery, roadData } from './terrain.js';
-import { isBlocked } from './structures.js';
+import { SITE_BOUNDARY } from './layout.js';
+import { mergeScatter } from './legacy.js';
 import { mergeVertices, mulberry32, fbm, signedDistToPolygon, pointInPolygon, smoothstep, clamp, lerp } from './geom.js';
 import { M } from './materials.js';
 import { rockiness } from './rocks.js';
@@ -274,14 +273,19 @@ const SPECIES = {
 const SMALL = new Set(['shrub', 'flowering', 'flower', 'hedge']); // no LOD versions; only planted near the buildings
 
 // ---------- placement ----------
-export function buildVegetation(heightAt) {
+/**
+ * Where every plant goes in one world (legacy.js): a list per species and level of detail, each plant with its
+ * size, heading and tint. One random sequence runs through the whole planting, so it must be run on a whole world.
+ */
+function placeVegetation(world) {
+  const { roadData, roadQuery, isBlocked, heightAt, features: F } = world;
   const rand = mulberry32(7);
   const lists = Object.fromEntries(Object.keys(SPECIES).map((k) => [k, []]));
   /** Plant one. The level of detail follows the distance from the site centre. rot: fixed heading (hedges). */
   const put = (sp, x, z, s, sy = 1, rot = rand() * Math.PI * 2) => {
     const r = Math.hypot(x - 15, z);
     const key = SMALL.has(sp) || sp.startsWith('far') || r < HERO_RADIUS ? sp : `${sp}_mid`;
-    lists[key].push({ x, z, y: heightAt(x, z) - 0.015 * s, s, sy, rot });
+    lists[key].push({ x, z, s, sy, rot });
   };
   const roadClear = (x, z, m) => { const q = roadQuery(x, z); return !q || q.d > q.extent + m; };
   const inPlot = (x, z, m = 1) => pointInPolygon(x, z, SITE_BOUNDARY) && signedDistToPolygon(x, z, SITE_BOUNDARY) < -m;
@@ -331,7 +335,7 @@ export function buildVegetation(heightAt) {
     });
   }
 
-  // 3) hedges: along kerbs that have no parking bays, both sides of the footpath, round the play area and plaza
+  // 3) hedges: along kerbs that have no parking bays, both sides of the footpath, round the play area
   const HEDGE = 2 / 1.25; // instance scale that makes one hedge length span the 2 m between road samples
   const hedgeAt = (x, z, tx, tz, height = 1) => put('hedge', x, z, HEDGE * (0.97 + rand() * 0.06), (0.5 + rand() * 0.06) * height, Math.atan2(-tz, tx));
   for (const { def, samples } of roadData) {
@@ -352,21 +356,21 @@ export function buildVegetation(heightAt) {
       if (inPlot(x, z, 1.5) && roadClear(x, z, 2.2) && keep(x, z)) hedgeAt(x, z, -Math.sin(a), Math.cos(a), 0.85);
     }
   };
-  ringHedge(FEATURES.playground.pos, FEATURES.playground.radius + 2.4);
-  ringHedge(FEATURES.plaza.pos, FEATURES.plaza.radius + 1.6, (x, z) => Math.hypot(x - FEATURES.amphitheatre.pos[0], z - FEATURES.amphitheatre.pos[1]) > 14);
+  ringHedge(F.playground.pos, F.playground.radius + 2.4);
+  if (F.plaza) ringHedge(F.plaza.pos, F.plaza.radius + 1.6, (x, z) => Math.hypot(x - F.amphitheatre.pos[0], z - F.amphitheatre.pos[1]) > 14); // old layout
 
-  // 4) flower beds: drifts along the road verges, and rings at the gates, plaza and prayer hall
+  // 4) flower beds: drifts along the road verges, and rings at the gates and prayer hall
   const bed = (x, z, n, spread) => {
     for (let i = 0; i < n; i++) {
       const fx = x + (rand() - 0.5) * spread, fz = z + (rand() - 0.5) * spread;
       if (inPlot(fx, fz) && roadClear(fx, fz, 0.9) && !isBlocked(fx, fz, 0.5)) put('flower', fx, fz, 0.7 + rand() * 0.5, 0.8 + rand() * 0.4);
     }
   };
-  for (const f of [FEATURES.gateSouth, FEATURES.gateWest]) bed(f.pos[0], f.pos[1], 90, 26);
+  for (const f of [F.gateSouth, F.gateWest]) bed(f.pos[0], f.pos[1], 90, 26);
   for (let i = 0; i < 22; i++) {
     const a = (i / 22) * Math.PI * 2;
-    bed(FEATURES.plaza.pos[0] + Math.cos(a) * (FEATURES.plaza.radius + 0.8), FEATURES.plaza.pos[1] + Math.sin(a) * (FEATURES.plaza.radius + 0.8), 2, 0.6);
-    bed(FEATURES.prayerHall.pos[0] + Math.cos(a) * 9.6, FEATURES.prayerHall.pos[1] + Math.sin(a) * 9.6, 2, 1.4);
+    if (F.plaza) bed(F.plaza.pos[0] + Math.cos(a) * (F.plaza.radius + 0.8), F.plaza.pos[1] + Math.sin(a) * (F.plaza.radius + 0.8), 2, 0.6); // old layout
+    bed(F.prayerHall.pos[0] + Math.cos(a) * 9.6, F.prayerHall.pos[1] + Math.sin(a) * 9.6, 2, 1.4);
   }
 
   // 5) lawn trees, boundary planting, shrubs and verge flowers inside the plot
@@ -385,12 +389,36 @@ export function buildVegetation(heightAt) {
     else if (r < 0.03) put('shrub', jx, jz, 1.5 + rand() * 1.5);
   }
 
+  // per-plant tint: brightness varies, hue drifts between blue-green and olive/yellow
+  const tintRand = mulberry32(2024);
+  for (const [sp, list] of Object.entries(lists)) for (const t of list) {
+    t.bright = 0.78 + tintRand() * 0.42;
+    t.warm = sp === 'hedge' ? tintRand() * 0.3 : tintRand();
+  }
+  return lists;
+}
+
+/**
+ * world: the current site; legacy: the site before Plan 3 (legacy.js). Outside the Plan 3 work area the planting
+ * is exactly what the old site had; inside it, it follows the current roads and structures.
+ */
+export function buildVegetation(heightAt, world, legacy) {
+  const old = placeVegetation(legacy), now = placeVegetation(world);
+  const clear = (o) => { const q = world.roadQuery(o.x, o.z); return (!q || q.d > q.extent + 1.4) && !world.isBlocked(o.x, o.z, 0.6); };
+  const lists = {};
+  for (const sp of Object.keys(old)) {
+    const base = sp.replace('_mid', '');
+    // trees: crowns are wide, so old trees stay for 5 m inside the outline too, if they still stand clear
+    const rule = base === 'flower' ? {} : base === 'hedge' ? { gap: 1.2 } : SMALL.has(base) ? { gap: 1 } : sp.startsWith('far') ? {} : { band: 5, gap: 2.5, valid: clear };
+    lists[sp] = mergeScatter(old[sp], now[sp], rule);
+  }
+
   // build one InstancedMesh per species and level of detail
   const leaves = new THREE.MeshStandardMaterial({ name: 'Foliage_Leaves', map: leafAtlas(), vertexColors: true, alphaTest: 0.42, side: THREE.DoubleSide, roughness: 0.95, metalness: 0 });
   const group = new THREE.Group(); group.name = 'Vegetation';
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), v = new THREE.Vector3(), sc = new THREE.Vector3();
   let total = 0, tris = 0;
-  const tint = new THREE.Color(), tintRand = mulberry32(2024), counts = {};
+  const tint = new THREE.Color(), counts = {};
   for (const [sp, list] of Object.entries(lists)) {
     if (!list.length) continue;
     const geo = SPECIES[sp](), far = sp.startsWith('far');
@@ -400,9 +428,8 @@ export function buildVegetation(heightAt) {
     im.userData = { castShadow: !far, receiveShadow: true, vegetation: true, ...(sp === 'hedge' ? { keepAll: true } : {}) };
     list.forEach((t, i) => {
       q.setFromAxisAngle(up, t.rot);
-      im.setMatrixAt(i, m4.compose(v.set(t.x, t.y, t.z), q, sc.set(t.s, t.s * t.sy, t.s)));
-      // per-plant tint (exported as glTF _COLOR_0): brightness varies, hue drifts between blue-green and olive/yellow
-      const b = 0.78 + tintRand() * 0.42, warm = sp === 'hedge' ? tintRand() * 0.3 : tintRand();
+      im.setMatrixAt(i, m4.compose(v.set(t.x, heightAt(t.x, t.z) - 0.015 * t.s, t.z), q, sc.set(t.s, t.s * t.sy, t.s)));
+      const b = t.bright, warm = t.warm; // exported as glTF _COLOR_0
       im.setColorAt(i, tint.setRGB(b * (0.9 + warm * 0.32), b * (0.96 + warm * 0.06), b * (1.0 - warm * 0.38)));
     });
     im.instanceColor.needsUpdate = true;

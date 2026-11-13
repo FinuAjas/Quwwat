@@ -1,13 +1,12 @@
 import * as THREE from 'three';
 import { FEATURES, SITE_BOUNDARY } from './layout.js';
-import { roadData, roadQuery } from './terrain.js';
-import { obstacles, isBlocked } from './structures.js';
+import { mergeScatter } from './legacy.js';
 import { box, merge, prep, paint, signedDistToPolygon, mulberry32 } from './geom.js';
 import { M } from './materials.js';
 
 /**
- * Site furniture, for human scale: street lamps along the roads, benches at the plaza, play area, prayer
- * hall and footpath, bollards round the plaza and at the west gate, and a name sign at each gate.
+ * Site furniture, for human scale: street lamps along the roads, benches at the play area, prayer
+ * hall and footpath, bollards at the west gate, and a name sign at each gate.
  * Lamps, benches and bollards are one instanced mesh each, sharing one vertex-coloured material.
  */
 const DARK = 0x23282c, TEAK = 0x7a4b2d, CREAM = 0xf3e6c0;
@@ -61,9 +60,10 @@ function signTexture() {
   return tex;
 }
 
-export function buildFurniture(heightAt) {
+/** Where the lamps, benches and bollards go in one world (legacy.js). Adds each lamp and bench to world.obstacles. */
+function placeFurniture(world) {
+  const { roadData, roadQuery, obstacles, isBlocked, features: F } = world;
   const rand = mulberry32(77);
-  const group = new THREE.Group(); group.name = 'Furniture';
   const inPlot = (x, z, margin = 1.5) => signedDistToPolygon(x, z, SITE_BOUNDARY) < -margin;
   const offRoad = (x, z, clear = 0.4) => { const q = roadQuery(x, z); return !q || q.d > q.extent + clear; };
   const lamps = [], benches = [], bollards = [];
@@ -78,7 +78,7 @@ export function buildFurniture(heightAt) {
         const off = (side > 0 ? s.hl : s.hr) + 1.15;
         const x = s.x + s.nx * side * off, z = s.z + s.nz * side * off;
         if (!inPlot(x, z) || !offRoad(x, z, 0.7) || isBlocked(x, z, 0.6)) continue;
-        lamps.push({ x, z, yaw: Math.atan2(-s.nx * side, -s.nz * side) });
+        lamps.push({ x, z, r: 0.9, yaw: Math.atan2(-s.nx * side, -s.nz * side) });
         obstacles.push({ x, z, r: 0.9 });
         side = -side;
         break;
@@ -89,14 +89,14 @@ export function buildFurniture(heightAt) {
   // ---- benches (front of the bench faces the given point) ----
   const bench = (x, z, lookX, lookZ) => {
     if (!inPlot(x, z, 1) || !offRoad(x, z, 0.8)) return;
-    benches.push({ x, z, yaw: Math.atan2(lookX - x, lookZ - z) });
+    benches.push({ x, z, r: 1.3, yaw: Math.atan2(lookX - x, lookZ - z) });
     obstacles.push({ x, z, r: 1.3 });
   };
   const ring = (c, r, anglesDeg) => anglesDeg.forEach((a) => { const t = (a * Math.PI) / 180; bench(c[0] + Math.cos(t) * r, c[1] + Math.sin(t) * r, c[0], c[1]); });
-  ring(FEATURES.plaza.pos, FEATURES.plaza.radius + 1.5, [20, 95, 160, 235, 300]);
-  ring(FEATURES.playground.pos, FEATURES.playground.radius + 1.9, [75, 130, 185, 240, 290]);
+  if (F.plaza) ring(F.plaza.pos, F.plaza.radius + 1.5, [20, 95, 160, 235, 300]); // the old round plaza (legacy.js)
+  ring(F.playground.pos, F.playground.radius + 1.9, [75, 130, 185, 240, 290]);
   { // in front of the prayer hall, facing it
-    const [px, pz] = FEATURES.prayerHall.pos, rot = FEATURES.prayerHall.rot;
+    const [px, pz] = F.prayerHall.pos, rot = F.prayerHall.rot;
     for (const lx of [-3.2, 3.2]) {
       const x = px + lx * Math.cos(rot) + 8.2 * Math.sin(rot), z = pz - lx * Math.sin(rot) + 8.2 * Math.cos(rot);
       bench(x, z, px, pz);
@@ -108,18 +108,37 @@ export function buildFurniture(heightAt) {
     bench(s.x + s.nx * side * 2.1, s.z + s.nz * side * 2.1, s.x, s.z);
   }
 
-  // ---- bollards: round the plaza where no road meets it, and beside the west gate ----
-  for (let a = 0; a < 360; a += 24) {
-    const t = (a * Math.PI) / 180, x = FEATURES.plaza.pos[0] + Math.cos(t) * (FEATURES.plaza.radius + 0.38), z = FEATURES.plaza.pos[1] + Math.sin(t) * (FEATURES.plaza.radius + 0.38);
+  // ---- bollards beside the west gate (and, on the old layout, round the plaza where no road met it) ----
+  if (F.plaza) for (let a = 0; a < 360; a += 24) {
+    const t = (a * Math.PI) / 180, x = F.plaza.pos[0] + Math.cos(t) * (F.plaza.radius + 0.38), z = F.plaza.pos[1] + Math.sin(t) * (F.plaza.radius + 0.38);
     if (offRoad(x, z, 0.5)) bollards.push({ x, z, yaw: 0 });
   }
   {
-    const [gx, gz] = FEATURES.gateWest.pos, rot = FEATURES.gateWest.rot;
+    const [gx, gz] = F.gateWest.pos, rot = F.gateWest.rot;
     for (const lx of [-4.3, 4.3]) for (const lz of [-5.5, -7.5, -9.5]) {
       const x = gx + lx * Math.cos(rot) + lz * Math.sin(rot), z = gz - lx * Math.sin(rot) + lz * Math.cos(rot);
       if (offRoad(x, z, 0.2)) bollards.push({ x, z, yaw: 0 });
     }
   }
+
+  // a little heading scatter, drawn in the order the instanced meshes are built
+  for (const list of [lamps, benches, bollards]) for (const o of list) o.yaw += (rand() - 0.5) * 0.04;
+  return { lamps, benches, bollards };
+}
+
+/**
+ * world: the current site; legacy: the site before Plan 3 (legacy.js). Outside the Plan 3 work area the
+ * furniture is what the old site had; inside it, it follows the current roads.
+ */
+export function buildFurniture(heightAt, world, legacy) {
+  const group = new THREE.Group(); group.name = 'Furniture';
+  const { obstacles } = world, structures = obstacles.length;
+  const old = placeFurniture(legacy), now = placeFurniture(world);
+  const lamps = mergeScatter(old.lamps, now.lamps, { gap: 9 });
+  const benches = mergeScatter(old.benches, now.benches, { gap: 1.5 });
+  const bollards = mergeScatter(old.bollards, now.bollards, { gap: 0.5 });
+  obstacles.length = structures; // replace the trial placement's footprints with those of what is really built
+  for (const o of [...lamps, ...benches]) obstacles.push({ x: o.x, z: o.z, r: o.r });
 
   // ---- instanced meshes ----
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
@@ -127,7 +146,7 @@ export function buildFurniture(heightAt) {
     if (!list.length) return;
     const im = new THREE.InstancedMesh(geo, M.furniture, list.length);
     im.name = name; im.userData = { castShadow: true, receiveShadow: true };
-    list.forEach((o, i) => { q.setFromAxisAngle(up, o.yaw + (rand() - 0.5) * 0.04); im.setMatrixAt(i, m4.compose(v.set(o.x, heightAt(o.x, o.z), o.z), q, one)); });
+    list.forEach((o, i) => { q.setFromAxisAngle(up, o.yaw); im.setMatrixAt(i, m4.compose(v.set(o.x, heightAt(o.x, o.z), o.z), q, one)); });
     group.add(im);
   };
   instanced('Street_Lamps', lampGeometry(), lamps);
@@ -155,6 +174,7 @@ export function buildFurniture(heightAt) {
     sign.rotation.y = rot + 0.35; // angled towards arriving traffic
     group.add(sign);
     obstacles.push({ x, z, r: 3 });
+    legacy.obstacles.push({ x, z, r: 3 });
   }
   return { group, counts: { lamps: lamps.length, benches: benches.length, bollards: bollards.length } };
 }

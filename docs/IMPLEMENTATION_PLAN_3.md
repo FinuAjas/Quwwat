@@ -10,10 +10,10 @@ reference render (`public/assets/images/site-render.webp`). **Nothing outside th
 | Task | Status | Summary |
 |---|---|---|
 | P3.1 Lock the boundary | ✅ | Outline saved as `PLAN3_AREA`; 15 "before" images and a manifest saved in `tools/plan3/before/` (see the notes under P3.1) |
-| P3.2 Parking drive + turning head | ⏳ | Replace the short connector stub with the long parking drive and its turning head |
-| P3.3 Access road (spine) | ⏳ | Move the spine onto the render's line and run it into the turning head |
-| P3.4 West road merge | ⏳ | The west road joins the spine inside the marked area. Its tail to the hairpin junction is removed (approved 2026-11-13) |
-| P3.5 Amphitheatre | ⏳ | Turn it to face the drive, make it a half-ring, enlarge it to the render's size, remove the round plaza |
+| P3.2 Parking drive + turning head | ✅ | `amphi-drive` replaces the connector; asphalt turning head at (560,752) replaces the plaza (see the notes under P3.2) |
+| P3.3 Access road (spine) | ✅ | Spine moved onto the render's line and run into the turning head (see the notes under P3.3) |
+| P3.4 West road merge | ✅ | The west road joins the spine at (843,652); its tail to the hairpin junction is removed (see the notes under P3.4) |
+| P3.5 Amphitheatre | ✅ | Half-ring on the drive's NW kerb, facing the drive. Outer radius 10.6 m, not 15.5 m: that is all that fits (see the notes under P3.5) |
 | P3.6 Planted median | ⏳ | Tree and hedge wedge between the drive and the spine |
 | P3.7 Knock-on fixes | ⏳ | Furniture, hedges and flower beds that were tied to the plaza; car route; hotspot text |
 | P3.8 Rebuild & verify | ⏳ | Rebuild the model, compare against the render, prove nothing else changed |
@@ -87,7 +87,7 @@ The marked area, as layout pixels (taken from the annotated screenshot):
 ## Tasks
 
 ### P3.1 Lock the boundary
-1. Add the outline above to `layout.js` as `PLAN3_AREA`. It is used only by tools and checks, not by the model.
+1. Add the outline above to `layout.js` as `PLAN3_AREA`. It is used only by tools and checks, not by the model. (Since P3.2 the model does read it: see the notes there.)
 2. With the current model, capture **before** images: a top-down orthographic frame of the whole site plus the eight camera presets, at a fixed size, with the intro, cars, birds and clouds frozen.
 
 **Done 2026-11-13** (branch `p3-south-area`, model as of commit `ebe1334`).
@@ -107,16 +107,96 @@ The marked area, as layout pixels (taken from the annotated screenshot):
 - `layout.js`: add pad `turning-head`. Remove pad `plaza`.
 - `structures.js`: replace `plaza()` with `turningHead()`: an asphalt disc plus a kerb ring with gaps where the roads enter. Remove `FEATURES.plaza`.
 
+**Done 2026-11-13.**
+- **Centreline taken from the render, not from the numbers above.** Measured on the render, the drive runs
+  `(724,541) → (719,562) → (707,584) → (689.6,606.6) → … → (582.5,715.9)`; the list in "Target design" is about 3 m off.
+- **Bays on the SE side only, near the ring end.** The model's roads are 1.5–1.9× wider than the render's, so two rows of
+  bays do not fit the wedge between the drive and the spine. NW-side bays and the two accessible bays are left out.
+- Turning head: asphalt disc r = 7.5 m at (560,752), kerb open where the two roads enter. Its pad is at 90 m and is
+  marked `firm` (new, `terrain.js`): a firm pad also pulls the road profiles and the ground beside them onto its level.
+  Without it the ground followed the roads' smoothed profiles and buried half the disc.
+- The plaza, its pad, benches, bollards, hedge ring and flower-bed ring are gone (the P3.7 removals are therefore done).
+- **Keeping the rest of the site unchanged needed new code: `src/model/legacy.js`.** Parked cars, plants, lamps and rocks
+  are scattered with running random sequences, so the first build with the new roads reshuffled them across the whole
+  site (about 3,700 m² changed outside the area). Now every scatter is placed twice, once on the pre-Plan-3 layout
+  (kept in `legacy.js`) and once on the current one; outside `PLAN3_AREA` the old placement is kept, inside it the new
+  one. Old trees are also kept for 5 m inside the outline if they still stand clear of roads. So `PLAN3_AREA` **is** now
+  read by the model, and P3.4–P3.7 get the same protection without further work.
+- New tool `tools/plan3_diff.py` (needs Pillow): compares `tools/plan3/before` and `after`, masks the area plus 3 m,
+  counts changed pixels outside it and lists mesh and instance counts that differ.
+- **Measured after P3.2 + P3.3:** outside the area `top.png` differs in 206 pixels (5 m²), all at the junction end of the
+  spine (parking-bay lines a few centimetres along, and the patch where three road surfaces overlap). Cars, trees,
+  lamps and rocks outside the area are identical. The view with sun shadows differs in 848 pixels (19 m²), from shadows
+  of things inside the area. Counts: cars 95 → 94, lamps 17 → 18, benches 10 → 6, bollards 18 → 6, plants 13,209 → 13,168,
+  rocks 524 → 523.
+- **Known, waiting for later tasks:** the old amphitheatre's stage stands on the drive until P3.5 moves it; there is a
+  bare bank between the drive and the spine until P3.6 plants the median; the moving cars still follow the removed
+  connector until P3.7 re-routes them. The poster images are not re-rendered yet (P3.8).
+
 ### P3.3 Spine
 - `layout.js`: new `parking-spine` points and parking rules (above).
+
+**Done 2026-11-13.**
+- From the junction to x = 990 px the spine is copied point by point from its old curve, so nothing moves outside the
+  area. From there it eases onto the render's line, `(960,588) → (930,607) → … → (631,736) → (602,748)`, and ends on the
+  turning head. The render's line is roughly 3 m from the centreline listed in "Target design".
+- North-side bays run from x = 768 px to 1027 px. West of 768 px the drive's own bays fill the wedge, so the extra bays
+  down to the median tip are left out.
 
 ### P3.4 West road merge
 - `layout.js`: new `west-road` points. `roads.js`: move the parked car.
 - Removing the ~10 m tail outside the marked area is approved.
 
+**Done 2026-11-13.**
+- New centreline, measured on the render and listed from the merge down to the gate:
+  `(843,652) → (822,667) → (800,684) → (770,705.5) → (735,731) → (700,760) → (660,800) → (585,858) → (520,905)`.
+  The last three points are the old ones, so the gate end does not move. The merge is at (843,652), on the spine as
+  built, not at the (815,648) listed in "Target design" (that point belongs to the plan's spine line, which is ~3 m off).
+- No taper was needed. Instead (`terrain.js`, `roads.js`):
+  - a road can now say `joins: <road id>`. Within 6 m of that road it takes its level (3 cm lower, so the two surfaces
+    do not flicker), easing back to its own profile by 14 m. Before, each road kept its own profile and one would have
+    stood above the other;
+  - inside the work area, kerbs and centre dashes are left out where they would lie on another road's surface. This
+    also opens the ring's kerb across the mouth of the parking drive and removes the kerb stub at the turning head.
+    Junctions outside the area keep their crossing kerbs.
+- The removed tail: `legacy.js` treats the ground within 8 m of it as work area (`workAreaDistance`), so the hedges and
+  trees that lined it are replanted for the new layout. Parked cars are excluded from this, so the bays beside the
+  junction keep their cars. `tools/plan3_diff.py` masks 13 m round the tail (the road plus the ground graded to it).
+- The parked car on the west road needed no code change: it sits at 45 % of the road's new length, near (700,760).
+- **Measured:** outside the area and the tail, `top.png` differs in 12 pixels and `top-wide.png` in none. The view with
+  sun shadows differs in 1,738 pixels (39 m²), from shadows. Counts now: cars 94, lamps 17 (as before Plan 3), plants 13,209 → 13,176,
+  rocks 524 → 537.
+- **Side effects to know about:**
+  - Where the old west road crossed the lawn, the ground is back to its natural slope: a bank below the spine with bare
+    earth and 13 new rocks. The render shows flat lawn with a tree row there.
+  - The "Visitor Parking" hotspot view is framed on the bounding box of all parked cars, so its camera moved a little
+    now that the cars in the area changed. Nothing in the view outside the area changed.
+  - The steep grey bank between the west road and the turning head was already there below the old plaza; the
+    turning head sits closer to it.
+
 ### P3.5 Amphitheatre
 - `layout.js`: new `FEATURES.amphitheatre` values and pad.
 - `structures.js` `amphitheatre()`: arc 0…180°, upper walkway band, stage half-disc on the drive side, aisles at 45° / 90° / 135°, backdrop scaled.
+
+**Done 2026-11-13.**
+- **Position:** `pos` (586.6,671.4), rot 45°. `pos` is the middle of the straight, open side, and it lies on the outer
+  edge of the drive's NW kerb as built (the render puts it at about (592,672)). The seats are the half-ring NW of
+  that line and face SE onto the drive.
+- **Size: outer radius 10.6 m, not the 15.5 m asked for.** Measured in the model, the ring road's kerb is 10.3–10.8 m
+  from that centre (north to north-east), because the model's roads are 7 m wide and the render's about 4 m. The old
+  amphitheatre (12.35 m) already overlapped the ring's kerb by about a metre. Built as: stage r0 = 4.2 m, 5 tiers ×
+  1.0 m, 0.9 m upper walkway, 0.5 m wall. Getting to the render's size would need narrower roads or a moved ring road.
+- **Arc 0…166°,** not 180°: the last 14° at the SW end would stand on the turning head's rim.
+- **Stage:** the half-disc inside the tiers (r0), top 0.25 m above the drive. The old stage on the open side is gone,
+  since that ground is now the drive. The timber backdrop is a straight open frame along the stage's straight edge.
+- Aisles at 45° / 90° / 135°. Pad moved with the centre; radius 13 m, elev 93 and falloff 6 kept, so the ring road's
+  levels do not change.
+- Its footprint for planting and furniture is now a box over the half-ring only, so the drive beside it is not blocked.
+- The hotspot anchor is 5 m NW of `pos`, over the seats. Checked in the hotspot view: the camera frames the seats.
+- **Measured:** outside the area and the tail, `top.png` still differs in 12 pixels and `top-wide.png` in none.
+  Validator: contract OK, one warning (41 materials, budget 40). Plants now 13,191.
+- The drive drops about 3 m (1.8 m in the model) between the amphitheatre's level and the turning head over a short
+  length. It was like this before P3.5 and is not changed here.
 
 ### P3.6 Planted median
 - `vegetation.js`: add the median wedge (hedges along kerbs, trees, and the path strip as ground paint). Keep the existing scatter's exclusion rules so random trees don't land on the new drive or turning head. Kerb-hedge logic already follows roads without bays.
@@ -137,7 +217,8 @@ The marked area, as layout pixels (taken from the annotated screenshot):
 
 ## Files that will change
 `src/model/layout.js`, `src/model/structures.js`, `src/model/roads.js` (parked car only), `src/model/furniture.js`,
-`src/model/vegetation.js`, `src/hero/config.js` (car route only), `src/hero/content.js` (one sentence), the rebuilt model files,
+`src/model/vegetation.js`, `src/model/terrain.js`, `src/model/rocks.js`, `src/model/buildSite.js`, the new `src/model/legacy.js`
+(these four so that nothing outside the area changes), `src/hero/config.js` (car route only), `src/hero/content.js` (one sentence), the rebuilt model files,
 and this plan. P3.1 also added tooling that the model does not use: `tools/plan3-snapshot.html` / `.js`, a save endpoint in
 `serve.py`, and `.gitignore`.
 

@@ -1,8 +1,9 @@
 import * as THREE from 'three';
-import { roadData } from './terrain.js';
+import { roadData, covered } from './terrain.js';
 import { toY } from './layout.js';
 import { ribbon, merge, box, prep, paint, mulberry32, lerp, fbm } from './geom.js';
 import { M } from './materials.js';
+import { mergeScatter, workAreaDistance } from './legacy.js';
 
 const Y_ROAD = 0.12, Y_KERB = 0.16, Y_MARK = 0.15;
 
@@ -49,14 +50,53 @@ function carGeometry(style) {
 }
 
 const PAINTS = [['White', 0xe4e4e0, 0.34], ['Silver', 0x979ba0, 0.22], ['Black', 0x1b1d20, 0.18], ['Red', 0x7c1d18, 0.12], ['Blue', 0x243f69, 0.14]];
+const STYLES = Object.keys(CAR_STYLES), STYLE_MIX = [0.45, 0.3, 0.25];
 
-export function buildRoads() {
+/**
+ * Parked cars for one set of roads: about 72 % of the bays, each with a position, heading, paint (index into
+ * PAINTS) and body style (index into STYLES). One random sequence runs through all of them, in road order.
+ */
+function parkedCars(roadData) {
+  const rand = mulberry32(42), slots = [];
+  for (const { def, samples, length } of roadData) {
+    const closed = !!def.closed, hw = def.width / 2;
+    if (def.parking) {
+      for (let d = 1.3; d < length - 1.3; d += 2.6) {
+        const p = interp(samples, closed, d);
+        for (const [flag, sign] of [['parkL', 1], ['parkR', -1]]) {
+          if (!p[flag]) continue;
+          if (rand() < 0.72) {
+            const c = interp(samples, closed, d + 1.3);
+            if (!c[flag]) continue;
+            slots.push({ x: c.x + c.nx * sign * (hw + 2.8), z: c.z + c.nz * sign * (hw + 2.8), y: toY(c.h) + Y_ROAD, yaw: Math.atan2(c.nx * sign, c.nz * sign) + (rand() < 0.5 ? Math.PI : 0) + (rand() - 0.5) * 0.08 });
+          }
+        }
+      }
+    }
+    // one car stopped on the west road (the cars driving the hairpin road are added live: src/hero/life.js)
+    if (def.id === 'west-road') {
+      for (const f of [0.45]) {
+        const p = interp(samples, closed, f * length), q = interp(samples, closed, f * length + 1);
+        const side = rand() < 0.5 ? 1 : -1;
+        slots.push({ x: p.x + p.nx * side * 1.8, z: p.z + p.nz * side * 1.8, y: toY(p.h) + Y_ROAD, yaw: Math.atan2(q.x - p.x, q.z - p.z) + (side > 0 ? Math.PI : 0) });
+      }
+    }
+  }
+  for (const slot of slots) {
+    let r = rand(), k = 0; while (k < PAINTS.length - 1 && (r -= PAINTS[k][2]) > 0) k++;
+    let r2 = rand(), st = 0; while (st < STYLES.length - 1 && (r2 -= STYLE_MIX[st]) > 0) st++;
+    slot.paint = k; slot.style = st;
+  }
+  return slots;
+}
+
+/** legacy: the site before Plan 3 (legacy.js). Outside the Plan 3 work area the parked cars are the ones it had. */
+export function buildRoads(legacy) {
   const roads = new THREE.Group(); roads.name = 'Roads';
   const parking = new THREE.Group(); parking.name = 'Parking';
-  const rand = mulberry32(42);
   const paved = { asphalt: [], path: [] }, kerbs = [], marks = [];
   const shoulder = { pos: [], col: [] };
-  const carSlots = [];
+  const carSlots = mergeScatter(parkedCars(legacy.roadData), parkedCars(roadData), { gap: 2.2, tail: false });
 
   for (const { def, samples, length } of roadData) {
     const closed = !!def.closed;
@@ -71,8 +111,17 @@ export function buildRoads() {
     }
     paved[def.surface === 'path' ? 'path' : 'asphalt'].push(ribbon(L, R));
     if (def.kerb) {
-      kerbs.push(ribbon(L.map((p) => [p[0], p[1] + 0.04, p[2]]), KL));
-      kerbs.push(ribbon(KR, R.map((p) => [p[0], p[1] + 0.04, p[2]])));
+      // No kerb where it would lie on another road's surface (junctions and merges). Only inside the Plan 3 work
+      // area: the junctions outside it keep the crossing kerbs they always had.
+      const onRoad = (a, b) => { const x = (a[0] + b[0]) / 2, z = (a[2] + b[2]) / 2; return workAreaDistance(x, z) < 0 && covered(x, z, def, 0.7); };
+      const strip = (A, B) => {
+        for (let i = 0; i < A.length - 1; i++) {
+          if (onRoad(A[i], B[i]) || onRoad(A[i + 1], B[i + 1])) continue;
+          kerbs.push(ribbon([A[i], A[i + 1]], [B[i], B[i + 1]]));
+        }
+      };
+      strip(L.map((p) => [p[0], p[1] + 0.04, p[2]]), KL);
+      strip(KR, R.map((p) => [p[0], p[1] + 0.04, p[2]]));
     }
     // worn-earth shoulder: a strip outside each edge, opaque-ish at the kerb and fading to nothing over the grass
     const inner = def.kerb ? 0.7 : 0, wide = def.kerb ? 1.5 : 0.6;
@@ -96,6 +145,7 @@ export function buildRoads() {
     if (def.dashes) {
       for (let d = 0; d + 2 < length; d += 6) {
         const a = interp(samples, closed, d), b = interp(samples, closed, d + 2);
+        if (workAreaDistance(a.x, a.z) < 0 && (covered(a.x, a.z, def) || covered(b.x, b.z, def))) continue; // merged into another road here
         const w = 0.09;
         marks.push(ribbon(
           [[a.x + a.nx * w, toY(a.h) + Y_MARK, a.z + a.nz * w], [b.x + b.nx * w, toY(b.h) + Y_MARK, b.z + b.nz * w]],
@@ -116,20 +166,7 @@ export function buildRoads() {
           const ax = p.x + p.nx * sign * o0, az = p.z + p.nz * sign * o0;
           const bx = p.x + p.nx * sign * o1, bz = p.z + p.nz * sign * o1;
           marks.push(ribbon([[ax + tx * w, y, az + tz * w], [bx + tx * w, y, bz + tz * w]], [[ax - tx * w, y, az - tz * w], [bx - tx * w, y, bz - tz * w]]));
-          if (rand() < 0.72) {
-            const c = interp(samples, closed, d + 1.3);
-            if (!c[flag]) continue;
-            carSlots.push({ x: c.x + c.nx * sign * (hw + 2.8), z: c.z + c.nz * sign * (hw + 2.8), y: toY(c.h) + Y_ROAD, yaw: Math.atan2(c.nx * sign, c.nz * sign) + (rand() < 0.5 ? Math.PI : 0) + (rand() - 0.5) * 0.08 });
-          }
         }
-      }
-    }
-    // one car stopped on the west road (the cars driving the hairpin road are added live: src/hero/life.js)
-    if (def.id === 'west-road') {
-      for (const f of [0.45]) {
-        const p = interp(samples, closed, f * length), q = interp(samples, closed, f * length + 1);
-        const side = rand() < 0.5 ? 1 : -1;
-        carSlots.push({ x: p.x + p.nx * side * 1.8, z: p.z + p.nz * side * 1.8, y: toY(p.h) + Y_ROAD, yaw: Math.atan2(q.x - p.x, q.z - p.z) + (side > 0 ? Math.PI : 0) });
       }
     }
   }
@@ -151,15 +188,11 @@ export function buildRoads() {
   }
 
   // instanced cars: one InstancedMesh per body style and paint colour
-  const styles = Object.keys(CAR_STYLES), styleMix = [0.45, 0.3, 0.25];
+  const styles = STYLES;
   const geos = styles.map(carGeometry);
   const paints = PAINTS.map(([name, color]) => M.car(name, color));
   const buckets = styles.map(() => PAINTS.map(() => []));
-  for (const slot of carSlots) {
-    let r = rand(), k = 0; while (k < PAINTS.length - 1 && (r -= PAINTS[k][2]) > 0) k++;
-    let r2 = rand(), st = 0; while (st < styles.length - 1 && (r2 -= styleMix[st]) > 0) st++;
-    buckets[st][k].push(slot);
-  }
+  for (const slot of carSlots) buckets[slot.style][slot.paint].push(slot);
   const mtx = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1);
   styles.forEach((style, st) => PAINTS.forEach(([name], k) => {
     const list = buckets[st][k]; if (!list.length) return;
