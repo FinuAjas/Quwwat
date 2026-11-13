@@ -109,7 +109,7 @@ button { font: inherit; color: inherit; }
   .nav__logo--group { height: 20px; } .nav__logo--project { height: 38px; } .nav__divider { height: 28px; }
   .nav .btn--sand { padding: 9px 14px; font-size: 13px; }
   .hero__copy { bottom: 86px; right: var(--gutter); }
-  .hero__logo { height: 72px; }
+  .hero__logo { height: 50px; }
   .eyebrow { margin-bottom: 12px; }
   .hero__lead { margin-top: 12px; }
   .hero__lead br { display: none; }

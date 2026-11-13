@@ -8,6 +8,7 @@ and accepts two uploads from the project's own tools:
   POST /api/save-model?name=...   from tools/model-builder.html → public/models/<one of the model files>.glb
   POST /api/save-image?name=...   from the page opened with ?poster → public/assets/images/<poster>.webp
   POST /api/save-snapshot?set=before|after&name=...   from tools/plan3-snapshot.html → tools/plan3/<set>/<name>
+  POST /api/save-preview?name=...   from tools/people-preview.html → docs/previews/<name>.jpg
 """
 import argparse
 import gzip
@@ -27,6 +28,8 @@ POSTER_NAMES = {"hero-poster.webp", "hero-poster-mobile.webp"}  # the only image
 SNAPSHOT_DIR = ROOT / "tools" / "plan3"                          # before / after images for the Plan 3 "nothing else changed" check
 SNAPSHOT_SETS = {"before", "after"}
 SNAPSHOT_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,40}\.(png|json)$")
+PREVIEW_DIR = ROOT / "docs" / "previews"                         # approval stills from tools/people-preview.html
+PREVIEW_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,40}\.jpg$")
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -98,6 +101,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 return
             target = SNAPSHOT_DIR / group / name
             check = (lambda d: d[:8] == b"\x89PNG\r\n\x1a\n") if name.endswith(".png") else (lambda d: d[:1] == b"{")
+        elif url.path == "/api/save-preview":
+            name = parse_qs(url.query).get("name", [""])[0]
+            if not PREVIEW_NAME.match(name):
+                self.send_error(400, "unknown preview name")
+                return
+            target, check = PREVIEW_DIR / name, lambda d: d[:3] == bytes((255, 216, 255))
         else:
             self.send_error(404)
             return
