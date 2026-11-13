@@ -1,6 +1,6 @@
 {
  "set": "after",
- "created": "2026-11-13T14:21:01.568Z",
+ "created": "2026-11-13T14:32:18.904Z",
  "commit": null,
  "capture": {
   "tier": "high",
@@ -103,14 +103,14 @@
    "width": 1600,
    "height": 1203,
    "layoutScale": 1,
-   "kb": 4370,
-   "hash": "c8f843a92b63f2651e188fc21490dd512449fb1363f7b130e568a0e80af3d4eb",
+   "kb": 4369,
+   "hash": "31a618e01abcfe1785c4cc8c4bcda3a9d0a4c49253af586d82b908d219b21ff9",
    "framesAveraged": 5,
    "noisePixels": 0,
    "driftFromPreviousRun": {
-    "pixels": 68565,
-    "strong": 18161,
-    "worst": 127,
+    "pixels": 19955,
+    "strong": 2159,
+    "worst": 119,
     "box": [
      0,
      0,
@@ -166,13 +166,13 @@
    "width": 1280,
    "height": 800,
    "kb": 2457,
-   "hash": "f3778096a5ad043d3bf69adf3f2c77da44d15d3554172ce0051fc84af5179ffd",
+   "hash": "adf718f3ec1bfb9ae1bdeccfc8d0e3e2515e291a81e2b5f3aa6b5f06813b5866",
    "framesAveraged": 5,
-   "noisePixels": 0,
+   "noisePixels": 2,
    "driftFromPreviousRun": {
-    "pixels": 60043,
-    "strong": 16058,
-    "worst": 166,
+    "pixels": 15445,
+    "strong": 1948,
+    "worst": 123,
     "box": [
      0,
      0,
@@ -228,14 +228,14 @@
    "width": 1600,
    "height": 1203,
    "layoutScale": 1,
-   "kb": 4199,
-   "hash": "a5828337a62698739182e93ce7cadd47dd5bc649d197dc879292d77c3d98be4f",
+   "kb": 4198,
+   "hash": "ae383af254d7c713650eb81466c802fba31f55de2ee9c80d167a9521909ecdbc",
    "framesAveraged": 5,
-   "noisePixels": 1,
+   "noisePixels": 0,
    "driftFromPreviousRun": {
-    "pixels": 50704,
-    "strong": 11898,
-    "worst": 124,
+    "pixels": 16471,
+    "strong": 1402,
+    "worst": 122,
     "box": [
      0,
      0,
@@ -292,13 +292,13 @@
    "height": 1203,
    "layoutScale": 2,
    "kb": 4516,
-   "hash": "3254a3f9d0ce2cfb4f22bed62eaafe0c6b59abe9650cc0920792141f7daaf334",
+   "hash": "ec4d23d8d4ff0708147e55bff2a3b80c27344d172d43e2b1209e5a201277413a",
    "framesAveraged": 5,
    "noisePixels": 0,
    "driftFromPreviousRun": {
-    "pixels": 15067,
-    "strong": 2876,
-    "worst": 123,
+    "pixels": 6509,
+    "strong": 329,
+    "worst": 112,
     "box": [
      52,
      0,
@@ -354,13 +354,13 @@
    "width": 1280,
    "height": 800,
    "kb": 2364,
-   "hash": "5207344c46c35a0cf3a2102a3bfd914eb9d113d35b8887b3856a2a5230dcad13",
+   "hash": "2b6eff1a519371f5ee36e45aefae8bee8c6f0cee90ea34ec6347fc1d11a48997",
    "framesAveraged": 5,
    "noisePixels": 0,
    "driftFromPreviousRun": {
-    "pixels": 47788,
-    "strong": 11479,
-    "worst": 166,
+    "pixels": 13462,
+    "strong": 1581,
+    "worst": 123,
     "box": [
      3,
      0,
@@ -415,18 +415,18 @@
    "shadows": false,
    "width": 1280,
    "height": 800,
-   "kb": 1845,
-   "hash": "c4dd83e4c7b29c0798cef82344c31548a7f0c352b23a83106d3aa98bbbcf0520",
+   "kb": 1834,
+   "hash": "17df7ecf7d72f04827fdcbc741a5e8fe17a245efb01715c15b355ed9934ebc7d",
    "framesAveraged": 5,
-   "noisePixels": 0,
+   "noisePixels": 17,
    "driftFromPreviousRun": {
-    "pixels": 229807,
-    "strong": 66023,
-    "worst": 182,
+    "pixels": 15730,
+    "strong": 1821,
+    "worst": 101,
     "box": [
      0,
      0,
-     1279,
+     1278,
      799
     ]
    },
@@ -480,16 +480,16 @@
    "kb": 1836,
    "hash": "ce1082145cccd404b5098364263307e5b953e164a9a9defa620e0ef19903ae0a",
    "framesAveraged": 5,
-   "noisePixels": 0,
+   "noisePixels": 20,
    "driftFromPreviousRun": {
-    "pixels": 27689,
-    "strong": 402,
-    "worst": 73,
+    "pixels": 336,
+    "strong": 0,
+    "worst": 1,
     "box": [
      0,
      0,
      1279,
-     799
+     712
     ]
    },
    "camera": {
@@ -539,18 +539,18 @@
    "shadows": false,
    "width": 1280,
    "height": 800,
-   "kb": 2153,
-   "hash": "f96fb60ddc06789e1052ad5d27b983c55d6e3d3b14d617139df86bc917a2187e",
+   "kb": 2156,
+   "hash": "f99cdf982fbf378a001a2f3474101e3fa6383de6360319e3f7fa89fec90da5f6",
    "framesAveraged": 5,
    "noisePixels": 0,
    "driftFromPreviousRun": {
-    "pixels": 158433,
-    "strong": 32201,
-    "worst": 178,
+    "pixels": 38316,
+    "strong": 5409,
+    "worst": 199,
     "box": [
      0,
      0,
-     1278,
+     1277,
      799
     ]
    },
@@ -601,14 +601,14 @@
    "shadows": false,
    "width": 1280,
    "height": 800,
-   "kb": 2057,
-   "hash": "b513900f4436e452959d21ca17142270b152d0e4a87d59b7165a7a4299aa1689",
+   "kb": 2055,
+   "hash": "c2c77e13855f366a58df2133f84372359d54026e33b7722f9101b83ff2733f76",
    "framesAveraged": 5,
-   "noisePixels": 0,
+   "noisePixels": 18,
    "driftFromPreviousRun": {
-    "pixels": 170628,
-    "strong": 50812,
-    "worst": 183,
+    "pixels": 30235,
+    "strong": 8605,
+    "worst": 176,
     "box": [
      0,
      0,
@@ -666,7 +666,7 @@
    "kb": 1778,
    "hash": "379e4c25a02f705276f1c9a266e69abda5b81d6742931869b07a64751cbac143",
    "framesAveraged": 5,
-   "noisePixels": 0,
+   "noisePixels": 3,
    "driftFromPreviousRun": {
     "pixels": 538,
     "strong": 0,
@@ -726,18 +726,18 @@
    "width": 1280,
    "height": 800,
    "kb": 1887,
-   "hash": "7b1f718337ffb98c9ebeb20160d9d97113aaf9c2245549db829d41aa7cb006ad",
+   "hash": "ebec62c1f4979622347aec25869e40fe5f76489e098ee19e9b41e19993ca19ce",
    "framesAveraged": 5,
-   "noisePixels": 0,
+   "noisePixels": 27,
    "driftFromPreviousRun": {
-    "pixels": 12972,
-    "strong": 63,
-    "worst": 47,
+    "pixels": 448,
+    "strong": 0,
+    "worst": 1,
     "box": [
-     0,
+     1,
      0,
      1279,
-     799
+     693
     ]
    },
    "camera": {
@@ -787,19 +787,19 @@
    "shadows": false,
    "width": 1280,
    "height": 800,
-   "kb": 1772,
-   "hash": "d182debf4463f7583e7d948d7b9a0ab6a18742b704a2ce9fb50a5c094129b25a",
+   "kb": 1778,
+   "hash": "a8ee2f331187f60c5d09446d4091cc8be3bbf4e07540071ec63da10ee1a87b8b",
    "framesAveraged": 5,
-   "noisePixels": 0,
+   "noisePixels": 23,
    "driftFromPreviousRun": {
-    "pixels": 1015321,
-    "strong": 526343,
-    "worst": 199,
+    "pixels": 88498,
+    "strong": 23255,
+    "worst": 195,
     "box": [
      0,
-     0,
+     2,
      1279,
-     799
+     708
     ]
    },
    "camera": {
@@ -852,16 +852,16 @@
    "kb": 1813,
    "hash": "2c0b4a7a2c490e8bc047982488c1ebb426c4e9b87ae50783d85ae03dbf5b963e",
    "framesAveraged": 5,
-   "noisePixels": 0,
+   "noisePixels": 18,
    "driftFromPreviousRun": {
-    "pixels": 3980,
-    "strong": 23,
-    "worst": 40,
+    "pixels": 385,
+    "strong": 0,
+    "worst": 1,
     "box": [
      1,
      0,
-     1276,
-     799
+     1230,
+     798
     ]
    },
    "camera": {
@@ -912,13 +912,13 @@
    "width": 1280,
    "height": 800,
    "kb": 1827,
-   "hash": "3d18c01b8c1049f38834bfbfdf61cde931185372cc04eacb2c5a3e7f4a0c69c7",
+   "hash": "b6669fd8db5b6b6859cb6e673b6686b704b8174b1ab7f36eb13325167bd3d80d",
    "framesAveraged": 5,
-   "noisePixels": 0,
+   "noisePixels": 11,
    "driftFromPreviousRun": {
-    "pixels": 107879,
-    "strong": 16230,
-    "worst": 148,
+    "pixels": 20225,
+    "strong": 1212,
+    "worst": 181,
     "box": [
      0,
      0,
@@ -976,7 +976,7 @@
    "kb": 1841,
    "hash": "cdc1497fa9dc0d36ff60f6d36185f3fb54a69f09255cb30cce427783d794e66e",
    "framesAveraged": 5,
-   "noisePixels": 0,
+   "noisePixels": 15,
    "driftFromPreviousRun": {
     "pixels": 871,
     "strong": 0,
@@ -1032,18 +1032,18 @@
  "models": [
   {
    "file": "mountain-courtyard.glb",
-   "bytes": 3957524,
-   "sha256": "f1b4e433981e30466406134aa28169d2b2afea05d218350f1dde8cb160038165"
+   "bytes": 3969456,
+   "sha256": "577fee9f49541a1e24bf3079f3dcbc1eb0153def30734850c9faf6cc51213b65"
   },
   {
    "file": "mountain-courtyard-vegetation.glb",
-   "bytes": 1149680,
-   "sha256": "466efc20c2e7c161981ed733c8af09f3052c8f64b2e1ac15cc8ff3b26a7b99e9"
+   "bytes": 1150360,
+   "sha256": "48ad7338b8823ab5c4c3ce9f369bb18c17bc34619d1dedda66e768dc382755c8"
   },
   {
    "file": "mountain-courtyard-details.glb",
    "bytes": 170704,
-   "sha256": "3dff873154af4c08a85035ffcf0a08f020bb3b09616ef1d6b289d8cd5a69e999"
+   "sha256": "ce6ecc856abecbed9c9da7c07a04bccfd06bf93e02f0b105b291e9e0e3ce24f2"
   }
  ],
  "groups": {
@@ -1059,8 +1059,8 @@
   },
   "AuxScene/MountainCourtyard_Vegetation/Vegetation": {
    "meshes": 20,
-   "triangles": 852086,
-   "instances": 13191
+   "triangles": 853418,
+   "instances": 13204
   },
   "AuxScene/MountainCourtyard/Parking": {
    "meshes": 15,
@@ -1073,9 +1073,9 @@
    "instances": 5
   },
   "AuxScene/MountainCourtyard/Structures": {
-   "meshes": 67,
-   "triangles": 38492,
-   "instances": 206
+   "meshes": 68,
+   "triangles": 38648,
+   "instances": 207
   },
   "AuxScene/MountainCourtyard": {
    "meshes": 1,
@@ -1184,7 +1184,7 @@
    "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
    "name": "Trees_cypress",
    "triangles": 164,
-   "instances": 47
+   "instances": 46
   },
   {
    "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
@@ -1208,19 +1208,19 @@
    "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
    "name": "Trees_flower",
    "triangles": 108,
-   "instances": 155
+   "instances": 146
   },
   {
    "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
    "name": "Trees_flowering",
    "triangles": 116,
-   "instances": 10
+   "instances": 26
   },
   {
    "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
    "name": "Trees_hedge",
    "triangles": 128,
-   "instances": 244
+   "instances": 243
   },
   {
    "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
@@ -1238,7 +1238,7 @@
    "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
    "name": "Trees_oakB",
    "triangles": 294,
-   "instances": 430
+   "instances": 429
   },
   {
    "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
@@ -1250,7 +1250,7 @@
    "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
    "name": "Trees_oakC",
    "triangles": 274,
-   "instances": 157
+   "instances": 154
   },
   {
    "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
@@ -1274,7 +1274,7 @@
    "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
    "name": "Trees_rain",
    "triangles": 348,
-   "instances": 137
+   "instances": 139
   },
   {
    "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
@@ -1286,7 +1286,7 @@
    "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
    "name": "Trees_shrub",
    "triangles": 116,
-   "instances": 11
+   "instances": 21
   },
   {
    "path": "AuxScene/MountainCourtyard/Parking",
@@ -1808,6 +1808,12 @@
    "path": "AuxScene/MountainCourtyard/Structures/TurningHead",
    "name": "TurningHead_Surface",
    "triangles": 224,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures",
+   "name": "Median_Steps",
+   "triangles": 156,
    "instances": 1
   },
   {

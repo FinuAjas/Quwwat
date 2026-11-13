@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { FEATURES, PADS, SITE_BOUNDARY, P, toY } from './layout.js';
 import { box, hipRoof, merge, prep, deg } from './geom.js';
-import { roadQuery } from './terrain.js';
+import { roadQuery, roadData } from './terrain.js';
 import { building, FLOOR } from './architecture.js';
 import { M } from './materials.js';
 import { blockedBy } from './legacy.js';
@@ -328,6 +328,29 @@ function turningHead() {
 }
 
 /**
+ * Steps down the planted bank between the parking drive and the access road, where the render shows a red path.
+ * One tread about every 0.6 m, each sitting on the ground, straight across from the drive's kerb to the other road's.
+ */
+function medianSteps(heightAt) {
+  const f = FEATURES.median, drive = roadData.find((r) => r.def.id === f.roads[0]);
+  const s = drive.samples.reduce((a, b) => (Math.hypot(b.x - f.steps[0], b.z - f.steps[1]) < Math.hypot(a.x - f.steps[0], a.z - f.steps[1]) ? b : a));
+  const x0 = s.x + s.nx * (s.hl + 0.7), z0 = s.z + s.nz * (s.hl + 0.7); // outer edge of the drive's kerb
+  let len = 0.5, found = false;
+  for (; len < 25 && !found; len += 0.25) {
+    const q = roadQuery(x0 + s.nx * len, z0 + s.nz * len);
+    found = !!q && q.road.id === f.roads[1] && q.d < q.extent + 0.7;
+  }
+  if (!found) return new THREE.Group();
+  const n = Math.max(3, Math.round(len / 0.6)), run = len / n, yaw = Math.atan2(s.nx, s.nz), treads = [];
+  for (let k = 0; k < n; k++) {
+    const t = (k + 0.5) * run, x = x0 + s.nx * t, z = z0 + s.nz * t;
+    treads.push(box(1.8, 0.5, run + 0.04, x, heightAt(x, z) - 0.13, z, yaw)); // top 12 cm above the ground at its middle
+  }
+  obstacles.push({ x: x0 + s.nx * len / 2, z: z0 + s.nz * len / 2, hx: 1.6, hz: len / 2 + 0.4, rot: yaw, plan3: 'median-steps' });
+  return mesh(treads, M.path, 'Median_Steps');
+}
+
+/**
  * Compound wall round the plot: a plastered wall with a coping that follows the ground, piers every few
  * metres, and gaps wherever a road crosses the boundary (the gates stand there).
  */
@@ -374,7 +397,7 @@ function boundaryWall(heightAt) {
 
 export function buildStructures(heightAt) {
   const root = new THREE.Group(); root.name = 'Structures';
-  root.add(mainBuilding(), prayerHall(), pool(), amphitheatre(), playground(), pergolas(), shades(), gateWest(heightAt), gateSouth(), turningHead(), boundaryWall(heightAt));
+  root.add(mainBuilding(), prayerHall(), pool(), amphitheatre(), playground(), pergolas(), shades(), gateWest(heightAt), gateSouth(), turningHead(), medianSteps(heightAt), boundaryWall(heightAt));
   root.traverse((o) => { if (o.userData.snapToGround) o.position.y = heightAt(o.position.x, o.position.z); });
   return root;
 }

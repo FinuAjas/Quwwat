@@ -51,6 +51,7 @@ const LEGACY_FEATURES = {
   plaza: { pos: P(630, 732), radius: 6 },
 };
 delete LEGACY_FEATURES.turningHead;
+delete LEGACY_FEATURES.median;
 
 /** True if (x, z) is on or inside one of the obstacles ({x, z, r} discs or {x, z, hx, hz, rot} boxes), grown by pad. */
 export const blockedBy = (obstacles) => (x, z, pad = 0) => {

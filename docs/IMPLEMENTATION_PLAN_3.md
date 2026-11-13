@@ -14,7 +14,7 @@ reference render (`public/assets/images/site-render.webp`). **Nothing outside th
 | P3.3 Access road (spine) | ✅ | Spine moved onto the render's line and run into the turning head (see the notes under P3.3) |
 | P3.4 West road merge | ✅ | The west road joins the spine at (843,652); its tail to the hairpin junction is removed (see the notes under P3.4) |
 | P3.5 Amphitheatre | ✅ | Half-ring on the drive's NW kerb, facing the drive. Outer radius 10.6 m, not 15.5 m: that is all that fits (see the notes under P3.5) |
-| P3.6 Planted median | ⏳ | Tree and hedge wedge between the drive and the spine |
+| P3.6 Planted median | ✅ | A planted bank, not the render's wide flat wedge: the strip is 2–9 m wide and drops 2.5–6 m (see the notes under P3.6) |
 | P3.7 Knock-on fixes | ⏳ | Furniture, hedges and flower beds that were tied to the plaza; car route; hotspot text |
 | P3.8 Rebuild & verify | ⏳ | Rebuild the model, compare against the render, prove nothing else changed |
 
@@ -200,6 +200,23 @@ The marked area, as layout pixels (taken from the annotated screenshot):
 
 ### P3.6 Planted median
 - `vegetation.js`: add the median wedge (hedges along kerbs, trees, and the path strip as ground paint). Keep the existing scatter's exclusion rules so random trees don't land on the new drive or turning head. Kerb-hedge logic already follows roads without bays.
+
+**Done 2026-11-13.**
+- **The render's median does not exist in the model.** Measured kerb to kerb, the strip between the drive and the spine
+  is 2–9 m wide, not 17 m, and the drive stands 4–10 m of site level above the spine (2.5–6 m in the model): the drive
+  comes down from the ring road at 97 m while the spine climbs from 85 m. So it is built as a planted bank.
+- **Grading (`terrain.js`):** a road can say `banksTo: <road id>`. Between such a pair the ground slopes evenly from
+  kerb to kerb. Before, it took the level of the nearer road and left a cliff one grid cell wide down the middle.
+  Only the drive / spine pair uses it, so nothing outside the area is regraded.
+- **Planting (`vegetation.js`, `FEATURES.median`):** the kerb hedges were already there; added a row of broadleaf trees
+  down the middle (one every 4 m where there is room and no tree already) and three shrubs per 2 m of bank. It has its
+  own random sequence.
+- **The red path is a flight of steps** (`Median_Steps`, `structures.js`), from the drive's kerb straight down to the
+  spine's at (712,582), in the path colour. A painted flat strip was not possible on a slope that steep.
+- **Measured:** outside the area and the tail, `top.png` still differs in 12 pixels and `top-wide.png` in none.
+  Plants now 13,204; the model has one more mesh (123).
+- Bare earth and some grey rock colour still show on the steepest part of the bank near the turning head: the site's
+  ground shader colours steep ground that way everywhere, and it is not changed here.
 
 ### P3.7 Knock-on fixes (all inside the area, or data only)
 - `furniture.js`: remove the plaza benches and bollards. Put 4 benches along the amphitheatre's upper walkway and bollards round the turning head where no road enters.

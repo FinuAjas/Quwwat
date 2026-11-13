@@ -144,14 +144,45 @@ export function makeGround(roads, pads) {
     return { d: q.d, h: lerp(a.h, b.h, t), extent: left ? lerp(a.hl, b.hl, t) : lerp(a.hr, b.hr, t), road: q.seg.road };
   }
 
+  // A road with `banksTo: <road id>` runs close beside that road at a different level (the parking drive above the
+  // access road). Normally the ground takes the level of the nearest road, which leaves a cliff one grid cell wide
+  // half-way between the two. Between such a pair the ground instead slopes evenly from one kerb to the other.
+  const bankOf = new Map();
+  for (const r of roadData) {
+    const o = r.def.banksTo && roadData.find((t) => t.def.id === r.def.banksTo);
+    if (o) { bankOf.set(r.def, o); bankOf.set(o.def, r); }
+  }
+  /** Nearest point of one road: its position, distance, level and paved half-extent on that side. */
+  function nearestOn({ samples }, x, z) {
+    let best = null;
+    for (let i = 0; i < samples.length - 1; i++) {
+      const a = samples[i], b = samples[i + 1], r = distToSegment(x, z, a.x, a.z, b.x, b.z);
+      if (!best || r.d < best.d) best = { d: r.d, t: r.t, a, b };
+    }
+    const { a, b, t, d } = best, px = lerp(a.x, b.x, t), pz = lerp(a.z, b.z, t);
+    const left = (x - px) * lerp(a.nx, b.nx, t) + (z - pz) * lerp(a.nz, b.nz, t) > 0;
+    return { d, px, pz, h: lerp(a.h, b.h, t), extent: left ? lerp(a.hl, b.hl, t) : lerp(a.hr, b.hr, t) };
+  }
+
   /** Final graded elevation in real metres. */
   function elevationAt(x, z) {
     const e = padded(x, z);
     const q = roadQuery(x, z);
     if (!q) return e;
     const flat = q.extent + (q.road.surface === 'path' ? 0.4 : 1.2);
-    const w = 1 - smoothstep(flat, flat + (q.road.surface === 'path' ? 3 : 8), q.d);
-    return settle(lerp(e, q.h, w), x, z);
+    let w = 1 - smoothstep(flat, flat + (q.road.surface === 'path' ? 3 : 8), q.d), h = q.h;
+    const pair = bankOf.get(q.road);
+    if (pair) {
+      const mine = nearestOn(roadData.find((r) => r.def === q.road), x, z), other = nearestOn(pair, x, z);
+      const g1 = Math.max(0, mine.d - mine.extent - 0.7), g2 = Math.max(0, other.d - other.extent - 0.7); // from each kerb
+      const between = (mine.px - x) * (other.px - x) + (mine.pz - z) * (other.pz - z) < 0;
+      if (between && g1 > 0 && g1 + g2 < 16) {
+        const k = 1 - smoothstep(10, 16, g1 + g2); // only where the strip between them is narrow
+        h = lerp(h, lerp(mine.h, other.h, g1 / (g1 + g2)), k);
+        w = Math.max(w, k);
+      }
+    }
+    return settle(lerp(e, h, w), x, z);
   }
   return { roadData, roadQuery, elevationAt, covered };
 }

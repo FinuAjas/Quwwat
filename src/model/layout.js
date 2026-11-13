@@ -67,7 +67,7 @@ export const ROADS = [
     // Parking drive: leaves the ring, runs south-west along the amphitheatre's straight side (its NW kerb is the
     // amphitheatre's edge) and ends in the turning head. Bays on the SE side only, near the ring end; the model's
     // roads are wider than the render's, so bays on the NW side or further down would overlap the ring or the spine.
-    id: 'amphi-drive', width: 7, dashes: false, kerb: true,
+    id: 'amphi-drive', width: 7, dashes: false, kerb: true, banksTo: 'parking-spine', // banksTo: see terrain.js
     parking: { left: (x, z) => z > P(0, 627)[1] && z < P(0, 661)[1], right: false },
     points: pts([[724, 541], [719, 562], [707, 584], [689.6, 606.6], [661.6, 635.2], [633.6, 663.7], [605.6, 692.3], [582.5, 715.9]]),
   },
@@ -99,6 +99,9 @@ export const FEATURES = {
   // 0.5 m wall = 10.6 m: all that fits between the drive and the ring road, whose roads are wider than the render's.
   // arc: the seats stop 14 deg short at the SW end, where the turning head's rim comes in.
   amphitheatre: { pos: P(586.6, 671.4), rot: deg(45), r0: 4.2, tiers: 5, tierDepth: 1.0, tierRise: 0.5, walkway: 0.9, arc: [0, 166] },
+  // Planted bank between the parking drive and the access road (the render's median); steps: where a flight of
+  // steps crosses it, at the render's red path.
+  median: { roads: ['amphi-drive', 'parking-spine'], steps: P(712, 582) },
   turningHead: { pos: P(560, 752), radius: 7.5 }, // paved bulb where the parking drive and the spine meet
   pergolas: [
     { pos: P(530, 404), rot: deg(28), length: 17, width: 3.4 }, // along the pool deck, south side

@@ -359,6 +359,27 @@ function placeVegetation(world) {
   ringHedge(F.playground.pos, F.playground.radius + 2.4);
   if (F.plaza) ringHedge(F.plaza.pos, F.plaza.radius + 1.6, (x, z) => Math.hypot(x - F.amphitheatre.pos[0], z - F.amphitheatre.pos[1]) > 14); // old layout
 
+  // 3b) Plan 3: the planted bank between the parking drive and the access road. The kerb hedges above already line
+  // both roads; this adds a row of broadleaf trees down the middle and shrubs on the slope. Its own random sequence.
+  if (F.median) {
+    const mr = mulberry32(303), drive = roadData.find((r) => r.def.id === F.median.roads[0]);
+    const treeNear = (x, z, r) => Object.entries(lists).some(([k, l]) => !SMALL.has(k) && !k.startsWith('far') && l.some((t) => Math.hypot(t.x - x, t.z - z) < r));
+    drive.samples.forEach((s, i) => {
+      const at = (t) => [s.x + s.nx * (s.hl + 0.7 + t), s.z + s.nz * (s.hl + 0.7 + t)]; // t metres out from the drive's kerb
+      let g = 0.25, hit = null; // g: width of the strip here, kerb to kerb
+      for (; g < 20 && !hit; g += 0.25) { const q = roadQuery(...at(g)); if (q && q.road !== drive.def && q.d < q.extent + 0.7) hit = q; }
+      if (!hit || hit.road.id !== F.median.roads[1] || g < 2.2) return;
+      if (i % 2 === 0) {
+        const [x, z] = at(g / 2);
+        if (!isBlocked(x, z, 1) && !treeNear(x, z, 3)) put(['oakA', 'rain', 'oakC'][Math.floor(mr() * 3)], x, z, (g > 4 ? 5.4 : 4.6) + mr() * 1.2, 0.9 + mr() * 0.25, mr() * Math.PI * 2);
+      }
+      for (let k = 0; k < 3; k++) {
+        const [bx, bz] = at(g * (0.3 + mr() * 0.4)), along = (mr() - 0.5) * 1.6, x = bx + s.tx * along, z = bz + s.tz * along;
+        if (!isBlocked(x, z, 0.5)) put(mr() < 0.6 ? 'shrub' : 'flowering', x, z, 1.4 + mr() * 1.0, 0.8 + mr() * 0.4, mr() * Math.PI * 2);
+      }
+    });
+  }
+
   // 4) flower beds: drifts along the road verges, and rings at the gates and prayer hall
   const bed = (x, z, n, spread) => {
     for (let i = 0; i < n; i++) {
