@@ -1,0 +1,3 @@
+# Plan 3 before/after snapshot images (about 40 MB per set). The manifests next to them are kept:
+# they record the model file hashes and the commit, so the images can be re-made with tools/plan3-snapshot.html.
+tools/plan3/*/*.png

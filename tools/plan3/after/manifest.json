@@ -1,0 +1,1826 @@
+{
+ "set": "after",
+ "created": "2026-11-13T14:48:40.078Z",
+ "commit": null,
+ "capture": {
+  "tier": "high",
+  "look": "golden",
+  "time": 1000,
+  "hidden": [
+   "Mist",
+   "Traffic",
+   "Birds",
+   "Grass",
+   "HotspotRing",
+   "Fountain_Particles"
+  ],
+  "postProcessing": false
+ },
+ "layout": {
+  "pxToMetres": 0.15,
+  "originPx": [
+   800,
+   600
+  ],
+  "frame": {
+   "w": 1600,
+   "h": 1203
+  },
+  "note": "top.png: 1 image pixel = 1 layout pixel; top-wide.png: 1 image pixel = 2 layout pixels, same centre"
+ },
+ "areaPx": [
+  [
+   997,
+   566
+  ],
+  [
+   965,
+   680
+  ],
+  [
+   895,
+   758
+  ],
+  [
+   833,
+   808
+  ],
+  [
+   776,
+   845
+  ],
+  [
+   717,
+   883
+  ],
+  [
+   642,
+   905
+  ],
+  [
+   551,
+   906
+  ],
+  [
+   445,
+   878
+  ],
+  [
+   388,
+   787
+  ],
+  [
+   381,
+   680
+  ],
+  [
+   442,
+   594
+  ],
+  [
+   523,
+   548
+  ],
+  [
+   640,
+   520
+  ],
+  [
+   780,
+   500
+  ],
+  [
+   917,
+   482
+  ]
+ ],
+ "views": [
+  {
+   "name": "top",
+   "file": "beauty-top.png",
+   "kind": "top",
+   "shadows": true,
+   "width": 1600,
+   "height": 1203,
+   "layoutScale": 1,
+   "kb": 4369,
+   "hash": "f907b9aa14ebf3dc7b021f2d664f70e973de5c51a5cc34a749b5c1cc4989f556",
+   "framesAveraged": 5,
+   "noisePixels": 0,
+   "driftFromPreviousRun": {
+    "pixels": 1983,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     0,
+     0,
+     1599,
+     1200
+    ]
+   },
+   "camera": {
+    "type": "orthographic",
+    "projection": [
+     0.008333333333333333,
+     0,
+     0,
+     0,
+     0,
+     0.011083402604599613,
+     0,
+     0,
+     0,
+     0,
+     -0.002224694104560623,
+     0,
+     0,
+     0.0024937655860348498,
+     -1.0022246941045607,
+     1
+    ],
+    "view": [
+     1,
+     0,
+     0,
+     0,
+     0,
+     2.220446049250313e-16,
+     1,
+     0,
+     0,
+     -1,
+     2.220446049250313e-16,
+     0,
+     0,
+     -5.773159728050814e-14,
+     -260,
+     1
+    ]
+   }
+  },
+  {
+   "name": "preset-aerial",
+   "file": "beauty-preset-aerial.png",
+   "kind": "preset",
+   "shadows": true,
+   "width": 1280,
+   "height": 800,
+   "kb": 2458,
+   "hash": "a0d4e261b7fcc969b419dcd6abe436d3cf8e87430f1938e7936167cae0978735",
+   "framesAveraged": 5,
+   "noisePixels": 2,
+   "driftFromPreviousRun": {
+    "pixels": 1176,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     0,
+     0,
+     1278,
+     798
+    ]
+   },
+   "camera": {
+    "type": "perspective",
+    "projection": [
+     1.982246751477008,
+     0,
+     0,
+     0,
+     0,
+     3.1715948023632126,
+     0,
+     0,
+     0,
+     0,
+     -1.0006668889629877,
+     -1,
+     0,
+     0,
+     -2.0006668889629875,
+     0
+    ],
+    "view": [
+     0.9930935730746598,
+     0.0801305092094143,
+     -0.0856986383301701,
+     0,
+     6.938893903907228e-18,
+     0.7304380132879422,
+     0.6829789958292743,
+     0,
+     0.11732499783850553,
+     -0.6782620513030373,
+     0.7253932965256784,
+     0,
+     29.66327324792571,
+     -18.408140820727596,
+     -221.90139830957162,
+     1
+    ]
+   }
+  },
+  {
+   "name": "top",
+   "file": "top.png",
+   "kind": "top",
+   "shadows": false,
+   "width": 1600,
+   "height": 1203,
+   "layoutScale": 1,
+   "kb": 4199,
+   "hash": "567b72c46703bb66241a06879e29e69fe0a1ff354bfeecf3edc5146ce6d066d9",
+   "framesAveraged": 5,
+   "noisePixels": 0,
+   "driftFromPreviousRun": {
+    "pixels": 2146,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     0,
+     0,
+     1598,
+     1202
+    ]
+   },
+   "camera": {
+    "type": "orthographic",
+    "projection": [
+     0.008333333333333333,
+     0,
+     0,
+     0,
+     0,
+     0.011083402604599613,
+     0,
+     0,
+     0,
+     0,
+     -0.002224694104560623,
+     0,
+     0,
+     0.0024937655860348498,
+     -1.0022246941045607,
+     1
+    ],
+    "view": [
+     1,
+     0,
+     0,
+     0,
+     0,
+     2.220446049250313e-16,
+     1,
+     0,
+     0,
+     -1,
+     2.220446049250313e-16,
+     0,
+     0,
+     -5.773159728050814e-14,
+     -260,
+     1
+    ]
+   }
+  },
+  {
+   "name": "top-wide",
+   "file": "top-wide.png",
+   "kind": "top",
+   "shadows": false,
+   "width": 1600,
+   "height": 1203,
+   "layoutScale": 2,
+   "kb": 4516,
+   "hash": "991a46647b632501c0f4f135ba0d4975fd5412fb35682de6ee4a1303d6ff8118",
+   "framesAveraged": 5,
+   "noisePixels": 5,
+   "driftFromPreviousRun": {
+    "pixels": 2776,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     52,
+     0,
+     1597,
+     1202
+    ]
+   },
+   "camera": {
+    "type": "orthographic",
+    "projection": [
+     0.004166666666666667,
+     0,
+     0,
+     0,
+     0,
+     0.005541701302299806,
+     0,
+     0,
+     0,
+     0,
+     -0.002224694104560623,
+     0,
+     0,
+     0.0024937655860348498,
+     -1.0022246941045607,
+     1
+    ],
+    "view": [
+     1,
+     0,
+     0,
+     0,
+     0,
+     2.220446049250313e-16,
+     1,
+     0,
+     0,
+     -1,
+     2.220446049250313e-16,
+     0,
+     0,
+     -5.773159728050814e-14,
+     -260,
+     1
+    ]
+   }
+  },
+  {
+   "name": "preset-aerial",
+   "file": "preset-aerial.png",
+   "kind": "preset",
+   "shadows": false,
+   "width": 1280,
+   "height": 800,
+   "kb": 2364,
+   "hash": "0fc62e729ca7af66756d0dbf9b44e4d31c03b9323af93ba2ee27343aa4c78270",
+   "framesAveraged": 5,
+   "noisePixels": 0,
+   "driftFromPreviousRun": {
+    "pixels": 1221,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     3,
+     0,
+     1278,
+     798
+    ]
+   },
+   "camera": {
+    "type": "perspective",
+    "projection": [
+     1.982246751477008,
+     0,
+     0,
+     0,
+     0,
+     3.1715948023632126,
+     0,
+     0,
+     0,
+     0,
+     -1.0006668889629877,
+     -1,
+     0,
+     0,
+     -2.0006668889629875,
+     0
+    ],
+    "view": [
+     0.9930935730746598,
+     0.0801305092094143,
+     -0.0856986383301701,
+     0,
+     6.938893903907228e-18,
+     0.7304380132879422,
+     0.6829789958292743,
+     0,
+     0.11732499783850553,
+     -0.6782620513030373,
+     0.7253932965256784,
+     0,
+     29.66327324792571,
+     -18.408140820727596,
+     -221.90139830957162,
+     1
+    ]
+   }
+  },
+  {
+   "name": "preset-main-building",
+   "file": "preset-main-building.png",
+   "kind": "preset",
+   "shadows": false,
+   "width": 1280,
+   "height": 800,
+   "kb": 1837,
+   "hash": "abb550d1b6d0380f5fb317d173f4464abd029ead47474ee7b46638b2250049f7",
+   "framesAveraged": 5,
+   "noisePixels": 17,
+   "driftFromPreviousRun": {
+    "pixels": 309,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     1,
+     0,
+     1278,
+     796
+    ]
+   },
+   "camera": {
+    "type": "perspective",
+    "projection": [
+     1.982246751477008,
+     0,
+     0,
+     0,
+     0,
+     3.1715948023632126,
+     0,
+     0,
+     0,
+     0,
+     -1.0006668889629877,
+     -1,
+     0,
+     0,
+     -2.0006668889629875,
+     0
+    ],
+    "view": [
+     0.8320502943378436,
+     -0.28027684217230386,
+     0.4786827753682277,
+     0,
+     0,
+     0.8629576456357777,
+     0.5052762628886847,
+     0,
+     -0.554700196225229,
+     -0.42041526325845574,
+     0.7180241630523415,
+     0,
+     11.094003924504582,
+     -24.000548537596757,
+     -50.04894351350024,
+     0.9999999999999998
+    ]
+   }
+  },
+  {
+   "name": "preset-recreation",
+   "file": "preset-recreation.png",
+   "kind": "preset",
+   "shadows": false,
+   "width": 1280,
+   "height": 800,
+   "kb": 1836,
+   "hash": "ce1082145cccd404b5098364263307e5b953e164a9a9defa620e0ef19903ae0a",
+   "framesAveraged": 5,
+   "noisePixels": 18,
+   "driftFromPreviousRun": {
+    "pixels": 336,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     0,
+     0,
+     1279,
+     712
+    ]
+   },
+   "camera": {
+    "type": "perspective",
+    "projection": [
+     1.982246751477008,
+     0,
+     0,
+     0,
+     0,
+     3.1715948023632126,
+     0,
+     0,
+     0,
+     0,
+     -1.0006668889629877,
+     -1,
+     0,
+     0,
+     -2.0006668889629875,
+     0
+    ],
+    "view": [
+     0.9844275755084821,
+     0.08411780911226643,
+     -0.15435848784127254,
+     0,
+     0,
+     0.87808138802353,
+     0.4785113123079448,
+     0,
+     0.1757906384836575,
+     -0.4710597310286921,
+     0.8644075319111263,
+     0,
+     57.16711563488543,
+     -17.78847449730239,
+     -46.77062181590558,
+     1.0000000000000002
+    ]
+   }
+  },
+  {
+   "name": "spot-parking",
+   "file": "spot-parking.png",
+   "kind": "hotspot",
+   "shadows": false,
+   "width": 1280,
+   "height": 800,
+   "kb": 2157,
+   "hash": "1ff4d7829b1f6babbce089743aa478b9a2538709cf2a7bcdde7eae6f7d298602",
+   "framesAveraged": 5,
+   "noisePixels": 15,
+   "driftFromPreviousRun": {
+    "pixels": 808,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     0,
+     0,
+     1277,
+     799
+    ]
+   },
+   "camera": {
+    "type": "perspective",
+    "projection": [
+     1.982246751477008,
+     0,
+     0,
+     0,
+     0,
+     3.1715948023632126,
+     0,
+     0,
+     0,
+     0,
+     -1.0006668889629877,
+     -1,
+     0,
+     0,
+     -2.0006668889629875,
+     0
+    ],
+    "view": [
+     0.932004671541296,
+     -0.2223229472953644,
+     0.28625128703833563,
+     0,
+     0,
+     0.7897758032492468,
+     0.6133956150821482,
+     0,
+     -0.3624462611549483,
+     -0.5716875787595087,
+     0.7360747380985775,
+     0,
+     11.902298786262234,
+     -19.76520532233056,
+     -131.45479127592142,
+     1
+    ]
+   }
+  },
+  {
+   "name": "spot-main-building",
+   "file": "spot-main-building.png",
+   "kind": "hotspot",
+   "shadows": false,
+   "width": 1280,
+   "height": 800,
+   "kb": 2057,
+   "hash": "dd08c94be016100d2cddd8add5d3a639338119e2518c460b6b36f1ebeee30d2a",
+   "framesAveraged": 5,
+   "noisePixels": 25,
+   "driftFromPreviousRun": {
+    "pixels": 611,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     0,
+     0,
+     1279,
+     799
+    ]
+   },
+   "camera": {
+    "type": "perspective",
+    "projection": [
+     1.982246751477008,
+     0,
+     0,
+     0,
+     0,
+     3.1715948023632126,
+     0,
+     0,
+     0,
+     0,
+     -1.0006668889629877,
+     -1,
+     0,
+     0,
+     -2.0006668889629875,
+     0
+    ],
+    "view": [
+     0.932004671541296,
+     -0.22232294729536442,
+     0.2862512870383357,
+     0,
+     -2.7755575615628907e-17,
+     0.7897758032492468,
+     0.6133956150821481,
+     0,
+     -0.36244626115494843,
+     -0.5716875787595086,
+     0.7360747380985775,
+     0,
+     17.825332515220015,
+     -28.086005992731188,
+     -94.04744093889285,
+     1
+    ]
+   }
+  },
+  {
+   "name": "spot-prayer-hall",
+   "file": "spot-prayer-hall.png",
+   "kind": "hotspot",
+   "shadows": false,
+   "width": 1280,
+   "height": 800,
+   "kb": 1778,
+   "hash": "0b441d7e80988280d51615f409a112ab88e183c0abf417927528ceaf4b6ac3c8",
+   "framesAveraged": 5,
+   "noisePixels": 3,
+   "driftFromPreviousRun": {
+    "pixels": 541,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     0,
+     0,
+     1274,
+     794
+    ]
+   },
+   "camera": {
+    "type": "perspective",
+    "projection": [
+     1.982246751477008,
+     0,
+     0,
+     0,
+     0,
+     3.1715948023632126,
+     0,
+     0,
+     0,
+     0,
+     -1.0006668889629877,
+     -1,
+     0,
+     0,
+     -2.0006668889629875,
+     0
+    ],
+    "view": [
+     0.932004671541296,
+     -0.22232294729536434,
+     0.2862512870383357,
+     0,
+     2.7755575615628914e-17,
+     0.7897758032492469,
+     0.613395615082148,
+     0,
+     -0.3624462611549483,
+     -0.5716875787595086,
+     0.7360747380985776,
+     0,
+     27.115739722517894,
+     -66.47600013367965,
+     16.82981329204805,
+     1
+    ]
+   }
+  },
+  {
+   "name": "spot-swimming-pool",
+   "file": "spot-swimming-pool.png",
+   "kind": "hotspot",
+   "shadows": false,
+   "width": 1280,
+   "height": 800,
+   "kb": 1887,
+   "hash": "ebec62c1f4979622347aec25869e40fe5f76489e098ee19e9b41e19993ca19ce",
+   "framesAveraged": 5,
+   "noisePixels": 18,
+   "driftFromPreviousRun": {
+    "pixels": 448,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     1,
+     0,
+     1279,
+     693
+    ]
+   },
+   "camera": {
+    "type": "perspective",
+    "projection": [
+     1.982246751477008,
+     0,
+     0,
+     0,
+     0,
+     3.1715948023632126,
+     0,
+     0,
+     0,
+     0,
+     -1.0006668889629877,
+     -1,
+     0,
+     0,
+     -2.0006668889629875,
+     0
+    ],
+    "view": [
+     0.932004671541296,
+     -0.22232294729536434,
+     0.28625128703833563,
+     0,
+     -2.7755575615628914e-17,
+     0.789775803249247,
+     0.613395615082148,
+     0,
+     -0.3624462611549483,
+     -0.5716875787595086,
+     0.7360747380985776,
+     0,
+     23.856567084543002,
+     -37.585407919249,
+     -53.49504582745714,
+     1
+    ]
+   }
+  },
+  {
+   "name": "spot-amphitheater",
+   "file": "spot-amphitheater.png",
+   "kind": "hotspot",
+   "shadows": false,
+   "width": 1280,
+   "height": 800,
+   "kb": 1782,
+   "hash": "5d514be537e3fbbe53feb1de87c3b53afa1a8b178aa8309876d4522856158bce",
+   "framesAveraged": 5,
+   "noisePixels": 24,
+   "driftFromPreviousRun": {
+    "pixels": 168,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     4,
+     2,
+     1275,
+     671
+    ]
+   },
+   "camera": {
+    "type": "perspective",
+    "projection": [
+     1.982246751477008,
+     0,
+     0,
+     0,
+     0,
+     3.1715948023632126,
+     0,
+     0,
+     0,
+     0,
+     -1.0006668889629877,
+     -1,
+     0,
+     0,
+     -2.0006668889629875,
+     0
+    ],
+    "view": [
+     0.932004671541296,
+     -0.2223229472953645,
+     0.28625128703833563,
+     0,
+     2.7755575615628914e-17,
+     0.7897758032492468,
+     0.6133956150821483,
+     0,
+     -0.3624462611549483,
+     -0.5716875787595088,
+     0.7360747380985775,
+     0,
+     35.720508378748676,
+     -8.528612034541933,
+     -53.1213560444328,
+     1
+    ]
+   }
+  },
+  {
+   "name": "spot-recreation-zone",
+   "file": "spot-recreation-zone.png",
+   "kind": "hotspot",
+   "shadows": false,
+   "width": 1280,
+   "height": 800,
+   "kb": 1813,
+   "hash": "2c0b4a7a2c490e8bc047982488c1ebb426c4e9b87ae50783d85ae03dbf5b963e",
+   "framesAveraged": 5,
+   "noisePixels": 0,
+   "driftFromPreviousRun": {
+    "pixels": 385,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     1,
+     0,
+     1230,
+     798
+    ]
+   },
+   "camera": {
+    "type": "perspective",
+    "projection": [
+     1.982246751477008,
+     0,
+     0,
+     0,
+     0,
+     3.1715948023632126,
+     0,
+     0,
+     0,
+     0,
+     -1.0006668889629877,
+     -1,
+     0,
+     0,
+     -2.0006668889629875,
+     0
+    ],
+    "view": [
+     0.932004671541296,
+     -0.22232294729536434,
+     0.2862512870383357,
+     0,
+     2.7755575615628914e-17,
+     0.7897758032492469,
+     0.613395615082148,
+     0,
+     -0.3624462611549483,
+     -0.5716875787595086,
+     0.7360747380985776,
+     0,
+     58.37455926086984,
+     -42.348858387939785,
+     -5.945101159293286,
+     1
+    ]
+   }
+  },
+  {
+   "name": "spot-gate-west",
+   "file": "spot-gate-west.png",
+   "kind": "hotspot",
+   "shadows": false,
+   "width": 1280,
+   "height": 800,
+   "kb": 1827,
+   "hash": "ac2bda0e78f3298c31f29afa8699d68abb015e137a4e337a1ddb0b7a920504a0",
+   "framesAveraged": 5,
+   "noisePixels": 0,
+   "driftFromPreviousRun": {
+    "pixels": 345,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     0,
+     0,
+     1278,
+     799
+    ]
+   },
+   "camera": {
+    "type": "perspective",
+    "projection": [
+     1.982246751477008,
+     0,
+     0,
+     0,
+     0,
+     3.1715948023632126,
+     0,
+     0,
+     0,
+     0,
+     -1.0006668889629877,
+     -1,
+     0,
+     0,
+     -2.0006668889629875,
+     0
+    ],
+    "view": [
+     0.932004671541296,
+     -0.22232294729536434,
+     0.28625128703833563,
+     0,
+     -2.7755575615628914e-17,
+     0.789775803249247,
+     0.613395615082148,
+     0,
+     -0.3624462611549483,
+     -0.5716875787595086,
+     0.7360747380985776,
+     0,
+     51.22635890213567,
+     17.15678501655722,
+     -64.48596346134029,
+     1
+    ]
+   }
+  },
+  {
+   "name": "spot-gate-south",
+   "file": "spot-gate-south.png",
+   "kind": "hotspot",
+   "shadows": false,
+   "width": 1280,
+   "height": 800,
+   "kb": 1841,
+   "hash": "cdc1497fa9dc0d36ff60f6d36185f3fb54a69f09255cb30cce427783d794e66e",
+   "framesAveraged": 5,
+   "noisePixels": 14,
+   "driftFromPreviousRun": {
+    "pixels": 871,
+    "strong": 0,
+    "worst": 1,
+    "box": [
+     0,
+     2,
+     1279,
+     799
+    ]
+   },
+   "camera": {
+    "type": "perspective",
+    "projection": [
+     1.982246751477008,
+     0,
+     0,
+     0,
+     0,
+     3.1715948023632126,
+     0,
+     0,
+     0,
+     0,
+     -1.0006668889629877,
+     -1,
+     0,
+     0,
+     -2.0006668889629875,
+     0
+    ],
+    "view": [
+     0.932004671541296,
+     -0.22232294729536434,
+     0.28625128703833563,
+     0,
+     -2.7755575615628914e-17,
+     0.789775803249247,
+     0.613395615082148,
+     0,
+     -0.3624462611549483,
+     -0.5716875787595086,
+     0.7360747380985776,
+     0,
+     -9.85148392506508,
+     65.44391343968832,
+     -102.07738772732986,
+     1
+    ]
+   }
+  }
+ ],
+ "models": [
+  {
+   "file": "mountain-courtyard.glb",
+   "bytes": 3969456,
+   "sha256": "3c08234980d3adefc1d3fd0002564ff0dac96a29c52c866c537d2f5242d6c24a"
+  },
+  {
+   "file": "mountain-courtyard-vegetation.glb",
+   "bytes": 1150360,
+   "sha256": "48ad7338b8823ab5c4c3ce9f369bb18c17bc34619d1dedda66e768dc382755c8"
+  },
+  {
+   "file": "mountain-courtyard-details.glb",
+   "bytes": 171196,
+   "sha256": "48b28ebd25f9e393e6aade0220dfa386cfdd3b1995270bd1ceff717ba4baaadd"
+  }
+ ],
+ "groups": {
+  "AuxScene/MountainCourtyard_Details/Furniture": {
+   "meshes": 11,
+   "triangles": 5984,
+   "instances": 50
+  },
+  "AuxScene/MountainCourtyard_Details/Rocks": {
+   "meshes": 3,
+   "triangles": 42960,
+   "instances": 537
+  },
+  "AuxScene/MountainCourtyard_Vegetation/Vegetation": {
+   "meshes": 20,
+   "triangles": 853418,
+   "instances": 13204
+  },
+  "AuxScene/MountainCourtyard/Parking": {
+   "meshes": 15,
+   "triangles": 32852,
+   "instances": 94
+  },
+  "AuxScene/MountainCourtyard/Roads": {
+   "meshes": 5,
+   "triangles": 3278,
+   "instances": 5
+  },
+  "AuxScene/MountainCourtyard/Structures": {
+   "meshes": 68,
+   "triangles": 38648,
+   "instances": 207
+  },
+  "AuxScene/MountainCourtyard": {
+   "meshes": 1,
+   "triangles": 72160,
+   "instances": 1
+  }
+ },
+ "meshes": [
+  {
+   "path": "AuxScene/MountainCourtyard_Details/Furniture/Sign_South",
+   "name": "Sign_South_Base",
+   "triangles": 48,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Details/Furniture/Sign_South",
+   "name": "Sign_South_Board",
+   "triangles": 12,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Details/Furniture/Sign_South",
+   "name": "Sign_South_FaceA",
+   "triangles": 2,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Details/Furniture/Sign_South",
+   "name": "Sign_South_FaceB",
+   "triangles": 2,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Details/Furniture/Sign_West",
+   "name": "Sign_West_Base",
+   "triangles": 48,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Details/Furniture/Sign_West",
+   "name": "Sign_West_Board",
+   "triangles": 12,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Details/Furniture/Sign_West",
+   "name": "Sign_West_FaceA",
+   "triangles": 2,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Details/Furniture/Sign_West",
+   "name": "Sign_West_FaceB",
+   "triangles": 2,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Details/Furniture",
+   "name": "Benches",
+   "triangles": 132,
+   "instances": 10
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Details/Furniture",
+   "name": "Bollards",
+   "triangles": 180,
+   "instances": 14
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Details/Furniture",
+   "name": "Street_Lamps",
+   "triangles": 112,
+   "instances": 18
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Details/Rocks",
+   "name": "Rocks_A",
+   "triangles": 80,
+   "instances": 187
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Details/Rocks",
+   "name": "Rocks_B",
+   "triangles": 80,
+   "instances": 189
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Details/Rocks",
+   "name": "Rocks_C",
+   "triangles": 80,
+   "instances": 161
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_areca",
+   "triangles": 360,
+   "instances": 26
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_areca_mid",
+   "triangles": 96,
+   "instances": 200
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_cypress",
+   "triangles": 164,
+   "instances": 46
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_cypress_mid",
+   "triangles": 46,
+   "instances": 89
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_farA",
+   "triangles": 20,
+   "instances": 3116
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_farB",
+   "triangles": 20,
+   "instances": 3148
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_flower",
+   "triangles": 108,
+   "instances": 146
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_flowering",
+   "triangles": 116,
+   "instances": 26
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_hedge",
+   "triangles": 128,
+   "instances": 243
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_oakA",
+   "triangles": 336,
+   "instances": 360
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_oakA_mid",
+   "triangles": 62,
+   "instances": 1655
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_oakB",
+   "triangles": 294,
+   "instances": 429
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_oakB_mid",
+   "triangles": 56,
+   "instances": 1649
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_oakC",
+   "triangles": 274,
+   "instances": 154
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_oakC_mid",
+   "triangles": 54,
+   "instances": 812
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_palm",
+   "triangles": 220,
+   "instances": 42
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_palm_mid",
+   "triangles": 40,
+   "instances": 328
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_rain",
+   "triangles": 348,
+   "instances": 139
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_rain_mid",
+   "triangles": 64,
+   "instances": 575
+  },
+  {
+   "path": "AuxScene/MountainCourtyard_Vegetation/Vegetation",
+   "name": "Trees_shrub",
+   "triangles": 116,
+   "instances": 21
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_Hatch_Black",
+   "triangles": 348,
+   "instances": 4
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_Hatch_Blue",
+   "triangles": 348,
+   "instances": 3
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_Hatch_Red",
+   "triangles": 348,
+   "instances": 6
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_Hatch_Silver",
+   "triangles": 348,
+   "instances": 8
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_Hatch_White",
+   "triangles": 348,
+   "instances": 15
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_Sedan_Black",
+   "triangles": 352,
+   "instances": 11
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_Sedan_Blue",
+   "triangles": 352,
+   "instances": 3
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_Sedan_Red",
+   "triangles": 352,
+   "instances": 3
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_Sedan_Silver",
+   "triangles": 352,
+   "instances": 10
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_Sedan_White",
+   "triangles": 352,
+   "instances": 8
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_SUV_Black",
+   "triangles": 348,
+   "instances": 6
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_SUV_Blue",
+   "triangles": 348,
+   "instances": 2
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_SUV_Red",
+   "triangles": 348,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_SUV_Silver",
+   "triangles": 348,
+   "instances": 4
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Parking",
+   "name": "Cars_SUV_White",
+   "triangles": 348,
+   "instances": 10
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Roads",
+   "name": "Footpath",
+   "triangles": 22,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Roads",
+   "name": "Road_Kerbs",
+   "triangles": 1050,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Roads",
+   "name": "Road_Markings",
+   "triangles": 410,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Roads",
+   "name": "Road_Shoulders",
+   "triangles": 1212,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Roads",
+   "name": "Road_Surface",
+   "triangles": 584,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Amphitheater",
+   "name": "Amphi_Backdrop",
+   "triangles": 84,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Amphitheater",
+   "name": "Amphi_Risers",
+   "triangles": 1288,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Amphitheater",
+   "name": "Amphi_Seats",
+   "triangles": 2576,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Amphitheater",
+   "name": "Amphi_Stage",
+   "triangles": 260,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Amphitheater",
+   "name": "Amphi_Steps",
+   "triangles": 3400,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Amphitheater",
+   "name": "Amphi_Wall",
+   "triangles": 1288,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Boundary",
+   "name": "PlotBoundary",
+   "triangles": 1902,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Boundary",
+   "name": "PlotBoundary_Piers",
+   "triangles": 32,
+   "instances": 140
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_South/SecurityCabin",
+   "name": "SecurityCabin_Glazing",
+   "triangles": 48,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_South/SecurityCabin",
+   "name": "SecurityCabin_Joinery",
+   "triangles": 336,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_South/SecurityCabin",
+   "name": "SecurityCabin_Plinth",
+   "triangles": 36,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_South/SecurityCabin",
+   "name": "SecurityCabin_Ridge",
+   "triangles": 192,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_South/SecurityCabin",
+   "name": "SecurityCabin_Roof",
+   "triangles": 8,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_South/SecurityCabin",
+   "name": "SecurityCabin_Trim",
+   "triangles": 108,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_South/SecurityCabin",
+   "name": "SecurityCabin_Walls",
+   "triangles": 12,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_South",
+   "name": "SouthGate_Barrier",
+   "triangles": 24,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_South",
+   "name": "SouthGate_Leaves",
+   "triangles": 528,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_South",
+   "name": "SouthGate_Lintel",
+   "triangles": 180,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_South",
+   "name": "SouthGate_Pillars",
+   "triangles": 24,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_South",
+   "name": "SouthGate_Ridge",
+   "triangles": 312,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_South",
+   "name": "SouthGate_Roof",
+   "triangles": 8,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_South",
+   "name": "SouthGate_Trim",
+   "triangles": 48,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_West",
+   "name": "WestGate_Leaves",
+   "triangles": 432,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_West",
+   "name": "WestGate_Pergola",
+   "triangles": 480,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/EntranceGate_West",
+   "name": "WestGate_Piers",
+   "triangles": 96,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/MainBuilding",
+   "name": "MainBuilding_Glazing",
+   "triangles": 672,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/MainBuilding",
+   "name": "MainBuilding_Joinery",
+   "triangles": 4356,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/MainBuilding",
+   "name": "MainBuilding_Plinth",
+   "triangles": 192,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/MainBuilding",
+   "name": "MainBuilding_Ridge",
+   "triangles": 1560,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/MainBuilding",
+   "name": "MainBuilding_Roof",
+   "triangles": 64,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/MainBuilding",
+   "name": "MainBuilding_Trim",
+   "triangles": 2168,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/MainBuilding",
+   "name": "MainBuilding_Walls",
+   "triangles": 48,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Pergolas",
+   "name": "Pergola_1",
+   "triangles": 780,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Pergolas",
+   "name": "Pergola_2",
+   "triangles": 456,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Pergolas",
+   "name": "Pergola_3",
+   "triangles": 552,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Pergolas",
+   "name": "Pergola_4",
+   "triangles": 480,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Pergolas",
+   "name": "Pergola_5",
+   "triangles": 444,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/PrayerHall",
+   "name": "PrayerHall_Glazing",
+   "triangles": 120,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/PrayerHall",
+   "name": "PrayerHall_Joinery",
+   "triangles": 864,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/PrayerHall",
+   "name": "PrayerHall_Plinth",
+   "triangles": 84,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/PrayerHall",
+   "name": "PrayerHall_Ridge",
+   "triangles": 936,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/PrayerHall",
+   "name": "PrayerHall_Roof",
+   "triangles": 24,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/PrayerHall",
+   "name": "PrayerHall_Trim",
+   "triangles": 288,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/PrayerHall",
+   "name": "PrayerHall_Walls",
+   "triangles": 36,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/RecreationZone",
+   "name": "Play_Blue",
+   "triangles": 176,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/RecreationZone",
+   "name": "Play_Green",
+   "triangles": 48,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/RecreationZone",
+   "name": "Play_Red",
+   "triangles": 128,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/RecreationZone",
+   "name": "Play_Rim",
+   "triangles": 192,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/RecreationZone",
+   "name": "Play_Steel",
+   "triangles": 848,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/RecreationZone",
+   "name": "Play_Surface",
+   "triangles": 192,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/RecreationZone",
+   "name": "Play_Yellow",
+   "triangles": 48,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Shades/Shade_1",
+   "name": "Shade_1_Canopy",
+   "triangles": 4,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Shades/Shade_1",
+   "name": "Shade_1_Post",
+   "triangles": 24,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Shades/Shade_1",
+   "name": "Shade_1_Seating",
+   "triangles": 144,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Shades/Shade_2",
+   "name": "Shade_2_Canopy",
+   "triangles": 4,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Shades/Shade_2",
+   "name": "Shade_2_Post",
+   "triangles": 24,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/Shades/Shade_2",
+   "name": "Shade_2_Seating",
+   "triangles": 144,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/SwimmingPool",
+   "name": "Fountain_Base",
+   "triangles": 296,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/SwimmingPool",
+   "name": "Fountain_Spray",
+   "triangles": 48,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/SwimmingPool",
+   "name": "Pool_Coping",
+   "triangles": 448,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/SwimmingPool",
+   "name": "Pool_Deck",
+   "triangles": 188,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/SwimmingPool",
+   "name": "Pool_Ladder",
+   "triangles": 288,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/SwimmingPool",
+   "name": "Pool_Lounger_Pads",
+   "triangles": 120,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/SwimmingPool",
+   "name": "Pool_Loungers",
+   "triangles": 300,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/SwimmingPool",
+   "name": "Pool_Water",
+   "triangles": 62,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/TurningHead",
+   "name": "TurningHead_Kerb",
+   "triangles": 2268,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures/TurningHead",
+   "name": "TurningHead_Surface",
+   "triangles": 224,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard/Structures",
+   "name": "Median_Steps",
+   "triangles": 156,
+   "instances": 1
+  },
+  {
+   "path": "AuxScene/MountainCourtyard",
+   "name": "Terrain",
+   "triangles": 72160,
+   "instances": 1
+  }
+ ]
+}

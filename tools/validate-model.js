@@ -121,12 +121,19 @@ function render(rows, label) {
   window.__validation = { label, rows };
 }
 
-async function check(url, label, size) {
+/** Check one model. `urls` may list several files that together make up the model (core first). */
+async function check(urls, label, size) {
+  urls = [].concat(urls);
   summary.textContent = `Checking ${label}…`; report.innerHTML = '';
   try {
-    if (size === undefined) size = Number((await fetch(url, { method: 'HEAD' })).headers.get('X-Uncompressed-Length') ?? 0) || (await (await fetch(url)).arrayBuffer()).byteLength;
-    const gltf = await loader.loadAsync(url);
-    render(validate(gltf.scene, size), label);
+    if (size === undefined) {
+      size = 0;
+      for (const url of urls) size += Number((await fetch(url, { method: 'HEAD' })).headers.get('X-Uncompressed-Length') ?? 0) || (await (await fetch(url)).arrayBuffer()).byteLength;
+    }
+    const scenes = [];
+    for (const url of urls) scenes.push((await loader.loadAsync(url)).scene);
+    const whole = scenes.length === 1 ? scenes[0] : new THREE.Group().add(...scenes);
+    render(validate(whole, size), label);
   } catch (err) {
     summary.innerHTML = `<span class="fail">Could not load ${esc(label)}: ${esc(err.message)}</span>`;
     window.__validation = { label, error: err.message };
@@ -141,4 +148,6 @@ drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.ad
 drop.addEventListener('dragleave', () => drop.classList.remove('over'));
 drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); take(e.dataTransfer.files[0]); });
 
-check('../public/models/mountain-courtyard.glb', 'public/models/mountain-courtyard.glb');
+// The project's own model is delivered as three files (see tools/model-builder.js); check them as one.
+const PROJECT = ['mountain-courtyard.glb', 'mountain-courtyard-vegetation.glb', 'mountain-courtyard-details.glb'];
+check(PROJECT.map((f) => `../public/models/${f}`), `public/models/ (${PROJECT.length} files)`);

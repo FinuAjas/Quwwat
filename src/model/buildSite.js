@@ -1,10 +1,13 @@
 import * as THREE from 'three';
 import { HOTSPOTS } from './layout.js';
-import { buildTerrain, bakeGroundShade } from './terrain.js';
+import { buildTerrain, bakeGroundShade, roadData, roadQuery } from './terrain.js';
+import { makeWorld, legacyWorld } from './legacy.js';
+import { FEATURES } from './layout.js';
 import { buildRoads } from './roads.js';
 import { buildStructures, obstacles } from './structures.js';
 import { buildVegetation } from './vegetation.js';
 import { buildRocks } from './rocks.js';
+import { buildFurniture } from './furniture.js';
 
 /**
  * Builds the complete Mountain Courtyard site as a THREE.Group named "MountainCourtyard".
@@ -19,12 +22,17 @@ export function buildSite() {
   const root = new THREE.Group(); root.name = 'MountainCourtyard';
 
   const { mesh: terrain, heightAt } = buildTerrain();
-  const { roads, parking, carCount } = buildRoads();
   const structures = buildStructures(heightAt);
-  const veg = buildVegetation(heightAt);
-  const rocks = buildRocks(heightAt);
+  // Everything scattered (parked cars, furniture, plants, rocks) is placed on two "worlds": the site as it is now,
+  // and as it was before Plan 3. Outside the Plan 3 work area the old placement is kept: see legacy.js.
+  const world = makeWorld({ roadData, roadQuery }, heightAt, obstacles, FEATURES);
+  const legacy = legacyWorld(obstacles);
+  const { roads, parking, carCount } = buildRoads(legacy);
+  const furniture = buildFurniture(heightAt, world, legacy); // before the planting, so hedges and trees keep clear of it
+  const veg = buildVegetation(heightAt, world, legacy);
+  const rocks = buildRocks(heightAt, world, legacy);
   bakeGroundShade(terrain, veg.occluders, obstacles);
-  root.add(terrain, roads, parking, structures, veg.group, rocks.group);
+  root.add(terrain, roads, parking, structures, furniture.group, veg.group, rocks.group);
 
   const anchors = new THREE.Group(); anchors.name = 'Hotspots';
   for (const h of HOTSPOTS) {
@@ -39,6 +47,6 @@ export function buildSite() {
   root.add(anchors);
   root.userData = { generator: 'mountain-courtyard procedural model v1', units: 'metres', up: 'Y', north: '-Z (approx.)' };
 
-  const stats = { ms: Math.round(performance.now() - t0), trees: veg.total, treeTris: Math.round(veg.tris), cars: carCount, rocks: rocks.total };
+  const stats = { ms: Math.round(performance.now() - t0), trees: veg.total, treeTris: Math.round(veg.tris), cars: carCount, rocks: rocks.total, ...furniture.counts };
   return { root, heightAt, stats };
 }

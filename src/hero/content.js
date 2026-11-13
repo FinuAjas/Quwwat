@@ -15,7 +15,7 @@ export const HOTSPOT_CONTENT = {
   },
   amphitheater: {
     label: 'Amphitheatre', eyebrow: 'Recreation', priority: 1,
-    text: 'An open-air amphitheatre cut into the natural slope, with tiered seating facing a stage and plaza for performances and community events.',
+    text: 'An open-air amphitheatre cut into the natural slope, with tiered seating facing a stage for performances and community events.',
     tags: ['Tiered seating', 'Open-air stage'],
   },
   'recreation-zone': {

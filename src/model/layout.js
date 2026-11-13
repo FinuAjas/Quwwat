@@ -1,7 +1,7 @@
 // Site layout digitised from the rendered master plan (1600×1200 px image).
 // World frame: X = east (image right), Z = south (image down), Y = up. 1 px = 0.15 m.
 // Origin = image pixel (800, 600).
-import { deg } from './geom.js';
+import { deg, samplePath } from './geom.js';
 
 export const PX = 0.15;
 export const P = (x, y) => [(x - 800) * PX, (y - 600) * PX];
@@ -31,9 +31,19 @@ export const PADS = [
   { id: 'courtyard', c: P(615, 402), rx: 47, rz: 34, rot: 0, elev: 97, falloff: 14 },
   { id: 'prayer', c: P(415, 108), rx: 10, rz: 10, rot: 0, elev: 105, falloff: 8 },
   { id: 'playground', c: P(300, 388), rx: 9.5, rz: 9.5, rot: 0, elev: 97.5, falloff: 7 },
-  { id: 'amphitheatre', c: P(585, 672), rx: 13, rz: 13, rot: 0, elev: 93, falloff: 6 },
-  { id: 'plaza', c: P(630, 732), rx: 7.5, rz: 7.5, rot: 0, elev: 92, falloff: 5 },
+  { id: 'amphitheatre', c: P(586.6, 671.4), rx: 13, rz: 13, rot: 0, elev: 93, falloff: 6 },
+  { id: 'turning-head', c: P(560, 752), rx: 8.5, rz: 8.5, rot: 0, elev: 90, falloff: 5, firm: true }, // firm: see terrain.js
   { id: 'gate-south', c: P(1050, 1100), rx: 8, rz: 6, rot: 0, elev: 52.5, falloff: 6 },
+];
+
+// The access road ("spine"), Plan 3: from the hairpin junction to the turning head, on the render's line.
+// Its first stretch, from the junction to x = 990 px, lies outside the Plan 3 work area and must not move, so it is
+// taken point by point from the road's previous curve; from there it eases onto the new line.
+const SPINE_BEFORE = pts([[1040, 550], [950, 588], [840, 620], [740, 655], [672, 690], [640, 722]]);
+const SPINE_POINTS = [
+  ...samplePath(SPINE_BEFORE, false, 1.5).samples.filter((s) => s.x > P(990, 0)[0]).map((s) => [s.x, s.z]),
+  ...pts([[960, 588], [930, 607], [900, 626], [873, 640], [843, 652], [813, 663.5], [785, 675.5], [753, 688], [724, 700],
+    [693, 712], [662, 724], [631, 736], [602, 748]]),
 ];
 
 // no bays along the south side of the ring (amphitheatre) or beside the children's play area
@@ -47,14 +57,25 @@ export const ROADS = [
       [392, 318], [350, 410], [362, 500], [420, 572], [520, 580], [610, 565]]),
   },
   {
+    // Access road from the hairpin junction to the turning head. Bays on the north side stop at x = 768 px:
+    // west of that the parking drive's own bays fill the wedge between the two roads.
     id: 'parking-spine', width: 7, dashes: true, kerb: true,
-    parking: { left: false, right: (x) => x > -16 && x < 34 },
-    points: pts([[1040, 550], [950, 588], [840, 620], [740, 655], [672, 690], [640, 722]]),
+    parking: { left: false, right: (x) => x > P(768, 0)[0] && x < 34 },
+    points: SPINE_POINTS,
   },
-  { id: 'connector', width: 6.5, dashes: false, kerb: true, points: pts([[700, 545], [712, 592], [738, 652]]) },
   {
-    id: 'west-road', width: 7, dashes: true, kerb: true,
-    points: pts([[1040, 555], [960, 640], [860, 692], [760, 742], [660, 800], [585, 858], [520, 905]]),
+    // Parking drive: leaves the ring, runs south-west along the amphitheatre's straight side (its NW kerb is the
+    // amphitheatre's edge) and ends in the turning head. Bays on the SE side only, near the ring end; the model's
+    // roads are wider than the render's, so bays on the NW side or further down would overlap the ring or the spine.
+    id: 'amphi-drive', width: 7, dashes: false, kerb: true, banksTo: 'parking-spine', // banksTo: see terrain.js
+    parking: { left: (x, z) => z > P(0, 627)[1] && z < P(0, 661)[1], right: false },
+    points: pts([[724, 541], [719, 562], [707, 584], [689.6, 606.6], [661.6, 635.2], [633.6, 663.7], [605.6, 692.3], [582.5, 715.9]]),
+  },
+  {
+    // From the west gate up to the access road, on the render's line; it merges into the spine at (843,652).
+    // Listed from the merge down to the gate. Plan 3 removed its old tail to the hairpin junction.
+    id: 'west-road', width: 7, dashes: true, kerb: true, joins: 'parking-spine',
+    points: pts([[843, 652], [822, 667], [800, 684], [770, 705.5], [735, 731], [700, 760], [660, 800], [585, 858], [520, 905]]),
   },
   {
     id: 'hairpin-road', width: 7, dashes: true, kerb: true,
@@ -73,10 +94,17 @@ export const FEATURES = {
   pool: { pos: P(535, 355), rot: deg(28), length: 32, width: 11 },
   prayerHall: { pos: P(415, 108), rot: deg(-8) },
   playground: { pos: P(300, 388), radius: 6.8 },
-  amphitheatre: { pos: P(585, 672), rot: deg(33), r0: 4.5, tiers: 7, tierDepth: 1.05, tierRise: 0.5 },
-  plaza: { pos: P(630, 732), radius: 6 },
+  // Plan 3: pos is the middle of the straight, open side, which lies on the parking drive's NW kerb; the seats are a
+  // half-ring on the NW side (rot 45 deg = parallel to the drive). Outer radius = r0 + tiers * tierDepth + walkway +
+  // 0.5 m wall = 10.6 m: all that fits between the drive and the ring road, whose roads are wider than the render's.
+  // arc: the seats stop 14 deg short at the SW end, where the turning head's rim comes in.
+  amphitheatre: { pos: P(586.6, 671.4), rot: deg(45), r0: 4.2, tiers: 5, tierDepth: 1.0, tierRise: 0.5, walkway: 0.9, arc: [0, 166] },
+  // Planted bank between the parking drive and the access road (the render's median); steps: where a flight of
+  // steps crosses it, at the render's red path.
+  median: { roads: ['amphi-drive', 'parking-spine'], steps: P(712, 582) },
+  turningHead: { pos: P(560, 752), radius: 7.5 }, // paved bulb where the parking drive and the spine meet
   pergolas: [
-    { pos: P(478, 392), rot: deg(28), length: 17, width: 3.4 },
+    { pos: P(530, 404), rot: deg(28), length: 17, width: 3.4 }, // along the pool deck, south side
     { pos: P(668, 330), rot: deg(-60), length: 9, width: 3 },
     { pos: P(820, 572), rot: deg(26), length: 11, width: 3.2 },
     { pos: P(915, 515), rot: deg(26), length: 10, width: 3.2 },
@@ -91,13 +119,21 @@ export const FEATURES = {
 export const HOTSPOTS = [
   { id: 'main-building', title: 'Convention Centre', group: 'MainBuilding', at: FEATURES.mainBuilding.pos, lift: 15 },
   { id: 'swimming-pool', title: 'Infinity Swimming Pool', group: 'SwimmingPool', at: FEATURES.pool.pos, lift: 5 },
-  { id: 'amphitheater', title: 'Amphitheatre', group: 'Amphitheater', at: FEATURES.amphitheatre.pos, lift: 7 },
+  { id: 'amphitheater', title: 'Amphitheatre', group: 'Amphitheater', at: [FEATURES.amphitheatre.pos[0] - 3.5, FEATURES.amphitheatre.pos[1] - 3.5], lift: 7 }, // over the seats, 5 m NW of the stage edge
   { id: 'recreation-zone', title: "Children's Play Area", group: 'RecreationZone', at: FEATURES.playground.pos, lift: 6 },
   { id: 'prayer-hall', title: 'Prayer Hall', group: 'PrayerHall', at: FEATURES.prayerHall.pos, lift: 10 },
   { id: 'parking', title: 'Visitor Parking', group: 'Parking', at: P(600, 214), lift: 4 },
   { id: 'gate-south', title: 'Entrance Gate — Nellankandi', group: 'EntranceGate_South', at: FEATURES.gateSouth.pos, lift: 8 },
   { id: 'gate-west', title: 'Pergola Gate — West', group: 'EntranceGate_West', at: FEATURES.gateWest.pos, lift: 7 },
 ];
+
+// Plan 3 work area (docs/IMPLEMENTATION_PLAN_3.md): the amphitheatre and south parking area, as layout pixels.
+// Every Plan 3 geometry change must lie inside this outline. Used only by tools and checks, never by the model.
+export const PLAN3_AREA_PX = [
+  [997, 566], [965, 680], [895, 758], [833, 808], [776, 845], [717, 883], [642, 905], [551, 906], [445, 878],
+  [388, 787], [381, 680], [442, 594], [523, 548], [640, 520], [780, 500], [917, 482],
+];
+export const PLAN3_AREA = pts(PLAN3_AREA_PX); // the same outline in world metres [x, z]
 
 // Terrain mesh extents (metres).
 export const TERRAIN = { innerX: [-100, 130], innerZ: [-92, 94], step: 1.5, outer: 700, outerSegs: 26 };

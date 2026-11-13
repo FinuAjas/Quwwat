@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { SITE_BOUNDARY } from './layout.js';
-import { roadQuery } from './terrain.js';
-import { isBlocked } from './structures.js';
+import { mergeScatter } from './legacy.js';
 import { mergeVertices, mulberry32, fbm, signedDistToPolygon, smoothstep } from './geom.js';
 import { M } from './materials.js';
 
@@ -44,7 +43,11 @@ function boulder(seed) {
  * Boulders and outcrops where the ground is steep or stony — mostly in the forest round the plot, a few
  * on the plot's own banks. Three boulder shapes, instanced; each placement is a small cluster.
  */
-export function buildRocks(heightAt) {
+const KINDS = 3; // boulder shapes
+
+/** Where the rocks go in one world (legacy.js): one list per boulder shape, each rock with its size, pose and tint. */
+function placeRocks(world) {
+  const { roadQuery, isBlocked, heightAt } = world;
   const rand = mulberry32(31), spots = [];
   for (let gx = -244; gx <= 274; gx += 6) for (let gz = -244; gz <= 244; gz += 6) {
     const x = gx + (rand() - 0.5) * 5.6, z = gz + (rand() - 0.5) * 5.6;
@@ -60,10 +63,22 @@ export function buildRocks(heightAt) {
       spots.push({ x: x + Math.cos(a) * d, z: z + Math.sin(a) * d, s, sy: 0.7 + rand() * 0.6, rot: rand() * 6.28, tilt: (rand() - 0.5) * 0.5 });
     }
   }
+  const lists = Array.from({ length: KINDS }, () => []);
+  const cap = 190 * KINDS, stride = Math.max(1, spots.length / cap); // even thinning if there are too many
+  for (let i = 0; i < spots.length && Math.floor(i / stride) < cap; i += stride) lists[Math.floor(rand() * KINDS)].push(spots[Math.floor(i)]);
+  for (const list of lists) for (const t of list) {
+    const b = 0.8 + rand() * 0.45;
+    t.rgb = [b * (1 + rand() * 0.1), b, b * (1 - rand() * 0.12)];
+  }
+  return lists;
+}
+
+/** world: the current site; legacy: the site before Plan 3. Outside the Plan 3 work area the rocks are the old ones. */
+export function buildRocks(heightAt, world, legacy) {
+  const old = placeRocks(legacy), now = placeRocks(world);
+  const lists = old.map((list, k) => mergeScatter(list, now[k], { gap: 1.5 }));
   const group = new THREE.Group(); group.name = 'Rocks';
-  const kinds = [boulder(3), boulder(17), boulder(41)], lists = kinds.map(() => []);
-  const cap = 190 * kinds.length, stride = Math.max(1, spots.length / cap); // even thinning if there are too many
-  for (let i = 0; i < spots.length && Math.floor(i / stride) < cap; i += stride) lists[Math.floor(rand() * kinds.length)].push(spots[Math.floor(i)]);
+  const kinds = [boulder(3), boulder(17), boulder(41)];
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), tint = new THREE.Color();
   let total = 0;
   kinds.forEach((geo, k) => {
@@ -74,8 +89,7 @@ export function buildRocks(heightAt) {
     list.forEach((t, i) => {
       q.setFromEuler(e.set(t.tilt, t.rot, t.tilt * 0.6, 'YXZ'));
       im.setMatrixAt(i, m4.compose(v.set(t.x, heightAt(t.x, t.z) - 0.12 * t.s, t.z), q, sc.set(t.s, t.s * t.sy, t.s)));
-      const b = 0.8 + rand() * 0.45;
-      im.setColorAt(i, tint.setRGB(b * (1 + rand() * 0.1), b, b * (1 - rand() * 0.12)));
+      im.setColorAt(i, tint.setRGB(...t.rgb));
     });
     im.instanceColor.needsUpdate = true;
     im.computeBoundingSphere();

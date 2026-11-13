@@ -16,6 +16,7 @@ import { createPost } from './post.js';
 import { createTraffic, createBirds } from './life.js';
 import { createSurfaces } from './surfaces.js';
 import { createGrass } from './grass.js';
+import { createFountain } from './fountain.js';
 
 /**
  * The interactive 3D hero. Loaded on demand by main.js (after the WebGL / data-saver checks and the
@@ -48,6 +49,7 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   const heightAt = createHeightSampler(site.terrain);
   const traffic = createTraffic(scene, site, heightAt, lights.sun);
   const grass = createGrass(scene, site, heightAt);
+  const fountain = createFountain(scene, site);
   const rig = createCameraRig(camera, renderer.domElement, heightAt);
   bindUI(rig, { hero });
   const hotspots = createHotspots({ camera, dom: renderer.domElement, hero, site, rig, heightAt });
@@ -62,20 +64,35 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   lights.fitShadows([site.root.getObjectByName('Structures'), site.root.getObjectByName('Roads'), ...site.clickable]);
   renderer.shadowMap.needsUpdate = true;
 
+  // The rest of the model (forest, then furniture and rocks) has been downloading alongside the core. Each file is
+  // added when it is ready; if the scene is already on screen by then, the forest rises from the ground.
+  let revealed = false;
+  const partsReady = site.loadExtras(async (part) => {
+    const plants = foliage.apply(part);
+    surfaces.apply(part);
+    await renderer.compileAsync(part, camera, scene); // compile off-screen first, so adding it doesn't hitch
+    if (revealed && plants.first) foliage.growIn();
+    scene.add(part);
+    renderer.shadowMap.needsUpdate = true;
+  });
+
   // Developer step: open the page with ?poster to re-render the poster images shown before the 3D loads (needs serve.py).
   if (new URLSearchParams(location.search).has('poster')) {
+    await partsReady; // the poster must show the whole model
     window.__posters = await savePosters(renderer, camera, post).catch((err) => ({ error: String(err) }));
     console.info('Poster images', window.__posters);
   }
-  // Render stills from the camera presets for the thumbnails and the Site Images gallery (optional: never block the scene).
-  try {
-    const captures = await capturePresets(renderer, scene, camera, ['aerial', 'main-building', 'recreation'], { large: [1280, 800], render: post.render });
+  // Once the whole model is in: render stills from the camera presets for the thumbnails and the Site Images
+  // gallery (optional: never block the scene). If the scene is live by then, re-draw the current view at once.
+  partsReady.then(() => {
+    const stills = capturePresets(renderer, scene, camera, ['aerial', 'main-building', 'recreation'], { large: [1280, 800], render: post.render });
+    if (revealed) post.render();
+    return stills;
+  }).then((captures) => {
     applyThumbnails(hero, captures);
     const shots = [['aerial', '3D aerial view'], ['main-building', 'Convention centre — 3D view'], ['recreation', 'Pool & play area — 3D view']];
     page.addImages(shots.filter(([k]) => captures[k]).map(([k, caption]) => ({ src: captures[k].large, caption })));
-  } catch (err) {
-    console.warn('Preset thumbnails could not be rendered', err);
-  }
+  }).catch((err) => console.warn('Preset thumbnails could not be rendered', err));
 
   const clock = new THREE.Clock();
   function frame() {
@@ -87,6 +104,7 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
     traffic.update(t);
     birds.update(t);
     grass.update(t, camera);
+    fountain.update(t, camera, renderer.domElement.height);
     site.update(t);
     foliage.update(t, camera);
     rig.update();
@@ -105,17 +123,7 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   onProgress(1);
   rig.intro();
   renderer.setAnimationLoop(frame);
-
-  // Remaining model parts (vegetation, details) stream in after the first interactive frame.
-  if (site.hasExtras) {
-    site.loadExtras(async (part) => {
-      foliage.apply(part);
-      surfaces.apply(part);
-      await renderer.compileAsync(part, camera, scene); // compile off-screen first, so adding it doesn't hitch
-      scene.add(part);
-      renderer.shadowMap.needsUpdate = true;
-    });
-  }
-  window.__hero = { renderer, scene, camera, rig, lights, site, perf, heightAt, hotspots, popups, page, post, traffic, birds, grass };
+  revealed = true;
+  window.__hero = { renderer, scene, camera, rig, lights, site, perf, heightAt, hotspots, popups, page, post, traffic, birds, grass, foliage, partsReady };
   return { onViewChange };
 }

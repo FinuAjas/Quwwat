@@ -86,6 +86,10 @@ export class SegmentIndex {
       const k = this.key(i, j); let arr = this.map.get(k); if (!arr) this.map.set(k, (arr = [])); arr.push(id);
     }
   }
+  /** Every segment that could be within reach of (x, z). */
+  around(x, z) {
+    return (this.map.get(this.key(Math.floor(x / this.cell), Math.floor(z / this.cell))) ?? []).map((id) => this.segs[id]);
+  }
   nearest(x, z) {
     const arr = this.map.get(this.key(Math.floor(x / this.cell), Math.floor(z / this.cell)));
     if (!arr) return null;

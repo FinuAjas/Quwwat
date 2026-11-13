@@ -55,12 +55,18 @@ export const LOOK_NAME = LOOKS[requested] ? requested : DEFAULT_LOOK;
 const LOOK = LOOKS[LOOK_NAME];
 
 export const CONFIG = {
-  // `core` (terrain, roads, buildings, hotspots) loads first; `extras` (e.g. vegetation, details) stream in after.
-  models: { core: './public/models/mountain-courtyard.glb', extras: [] },
+  // `core` (terrain, roads, buildings, cars, hotspots) is shown as soon as it has loaded; the `extras` download at the
+  // same time and are added as they arrive — the forest grows in, then the site furniture and rocks appear.
+  // tools/model-builder.html writes all three files. An artist model delivered as one file: set extras to [].
+  models: {
+    core: './public/models/mountain-courtyard.glb',
+    extras: ['./public/models/mountain-courtyard-vegetation.glb', './public/models/mountain-courtyard-details.glb'],
+  },
   dracoPath: 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/gltf/',
   basisPath: 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/basis/',
   lightMapIntensity: 1.0,
-  foliage: { wind: 0.012, translucency: 0.35 }, // sway as a fraction of plant height; back-light strength
+  // sway as a fraction of plant height; back-light strength; seconds the forest takes to rise when it arrives late
+  foliage: { wind: 0.012, translucency: 0.35, growSeconds: 1.2 },
 
   siteCenter: [15, 0, 0],
   // Low tier: only buildings/cars cast shadows (trees still receive them).
@@ -105,14 +111,18 @@ export const CONFIG = {
   // cover = 0–1 share of the ground in shade, soft = edge softness.
   clouds: { size: 210, wind: [5.5, 2.2], cover: 0.4, soft: 0.2 },
 
-  // Moving cars: they drive `inbound` (road centreline, [x, z]) from the south gate up to the ring-road junction, go once
-  // round `loop`, and leave the way they came on the other side of the road. lane = offset to the left of travel (m).
+  // Moving cars: they drive `inbound` (road centreline, [x, z]) from the south gate up the hairpin road, along the access
+  // road, round the turning head and up the parking drive to the ring road, go once round `loop`, and leave the way
+  // they came on the other side of the road. lane = offset to the left of travel (m).
   // Junction corners and the hairpin carry extra points so the driving line is a round arc, not a sharp corner.
   traffic: {
     count: QUALITY.cars, speed: 7.5, cornerSpeed: 3, lane: 1.75,
     inbound: [[37.5, 78.75], [39, 58.5], [45, 42], [55.5, 22.5], [67.5, 0], [78, -19.2], [87, -36],
       [88.5, -38.9], [89.3, -42], [88.5, -45.2], [86.2, -47.5], [83, -48.3], [79.9, -47.5], [77.5, -45.2], // hairpin
-      [67.5, -37.2], [52.5, -21.75], [36, -7.5], [22.5, -1.8], [6, 3], [-3.8, 6.4], [-8.1, 6], [-11.3, 3.2], [-13.2, -1.2]],
+      [67.5, -37.2], [52.5, -21.75], [36, -7.5],                                                             // hairpin junction
+      [30, -4.95], [24, -1.8], [15, 3.9], [6.45, 7.8], [-2.25, 11.33], [-11.4, 15], [-20.7, 18.6], [-27.75, 21.45], // access road
+      [-32.54, 24.8], [-36, 26.8], [-39.46, 24.8], [-39.46, 20.8], [-36, 18.8],                               // round the turning head
+      [-32.63, 17.39], [-29.16, 13.85], [-24.96, 9.56], [-20.76, 5.28], [-16.56, 0.99], [-13.95, -2.4]],      // up the parking drive
     loop: [[-16.5, -5.9], [-20.9, -6.9], [-28.5, -5.25], [-42, -3], [-57, -4.2], [-65.7, -15], [-67.5, -28.5], [-61.2, -42.3], [-48, -52.8],
       [-30, -57.9], [-13.5, -55.2], [0, -46.8], [7.8, -36], [9, -21.3], [0, -11.7], [-9.2, -9.6], [-12.6, -6.8]],
     colors: [0xe4e4e0, 0x979ba0, 0x1b1d20, 0x7c1d18, 0x243f69], // used only if the model has no `Cars_*` meshes to copy
@@ -136,9 +146,10 @@ export const CONFIG = {
   // Leave textured artist materials out: their detail belongs in the textures.
   surfaces: {
     amount: 1,
-    wall: ['Wall_Plaster'],
+    wall: ['Wall_Plaster', 'Wall_Trim'],
     roof: ['Roof_Tile'],
     stone: ['Wall_Stone', 'Amphi_Seat', 'Amphi_Stage', 'Paving_Kerb'],
+    timber: ['Timber_Pergola', 'Timber_Frame'],
     terrain: ['Terrain'],
     asphalt: ['Paving_Road'],
     marking: ['Road_Marking'],

@@ -4,23 +4,28 @@ import { frameCamera } from './scene.js';
 
 /**
  * Renders still images of the 3D scene from the camera presets (desktop framing), used as the
- * thumbnail backgrounds and as extra "Site Images". Runs once while the loader is visible.
- * Returns { [presetName]: { thumb: objectURL, large: objectURL } }.
+ * thumbnail backgrounds and as extra "Site Images".
+ *
+ * Safe to call while the scene is live: the camera is moved, rendered and put back in one synchronous
+ * step (before this function first yields), so the animation loop and the orbit controls never see the
+ * borrowed camera. The caller should render its own frame straight after the call, so the canvas does not
+ * show the last still for a frame; only the image encoding is asynchronous.
+ * Returns a promise of { [presetName]: { thumb: objectURL, large: objectURL } }.
  */
 export async function capturePresets(renderer, scene, camera, names, { thumb = [336, 216], large = [1600, 1000], render = () => renderer.render(scene, camera) } = {}) {
   const canvas = renderer.domElement;
   if (!canvas.width || !canvas.height) return {}; // page loaded while hidden / zero-sized: skip, thumbnails are optional
   const saved = { pos: camera.position.clone(), quat: camera.quaternion.clone(), view: camera.view && { ...camera.view }, aspect: camera.aspect, fov: camera.fov };
   const target = new THREE.Vector3();
-  const out = {};
+  const stills = [];
 
   const crop = (w, h) => {
-    // largest centred crop of the canvas with the requested aspect, drawn into a w×h canvas
+    // largest centred crop of the canvas with the requested aspect, copied into a w×h canvas
     const c = document.createElement('canvas'); c.width = w; c.height = h;
     const sw = canvas.width, sh = canvas.height, a = w / h;
     let cw = sw, ch = sw / a; if (ch > sh) { ch = sh; cw = sh * a; }
     c.getContext('2d').drawImage(canvas, (sw - cw) / 2, (sh - ch) / 2, cw, ch, 0, 0, w, h);
-    return new Promise((res) => c.toBlob((b) => res(URL.createObjectURL(b)), 'image/webp', 0.86));
+    return c;
   };
 
   camera.clearViewOffset();
@@ -32,16 +37,22 @@ export async function capturePresets(renderer, scene, camera, names, { thumb = [
     camera.position.fromArray(p.position);
     camera.lookAt(target.fromArray(p.target));
     camera.updateMatrixWorld();
-    render(); // drawImage must run in the same task, before the buffer is cleared
-    const [tw, th] = thumb, [lw, lh] = large;
-    const thumbP = crop(tw, th), largeP = crop(lw, lh);
-    out[name] = { thumb: await thumbP, large: await largeP };
+    render(); // the copies below must be taken in the same task, before the drawing buffer is cleared
+    stills.push({ name, thumb: crop(...thumb), large: crop(...large) });
   }
-
   camera.position.copy(saved.pos); camera.quaternion.copy(saved.quat);
   camera.aspect = saved.aspect; camera.fov = saved.fov;
   if (saved.view?.enabled) camera.setViewOffset(saved.view.fullWidth, saved.view.fullHeight, saved.view.offsetX, saved.view.offsetY, saved.view.width, saved.view.height);
   camera.updateProjectionMatrix();
+  camera.updateMatrixWorld();
+
+  // ---- from here on the scene is untouched: encode the copies ----
+  const encode = (c) => new Promise((res) => c.toBlob((blob) => res(blob ? URL.createObjectURL(blob) : null), 'image/webp', 0.86));
+  const out = {};
+  for (const s of stills) {
+    const [t, l] = await Promise.all([encode(s.thumb), encode(s.large)]);
+    if (t && l) out[s.name] = { thumb: t, large: l };
+  }
   return out;
 }
 

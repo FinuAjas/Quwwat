@@ -7,13 +7,14 @@ import { CONFIG } from './config.js';
  *  - asphalt   : aggregate speckle, darker repair patches, hairline cracks;  marking: worn, faded paint
  *  - brick / flagstone / tile : paver patterns with per-stone colour and joints (tile follows the object, e.g. the pool)
  *  - rubber    : granule speckle (play surface)
+ *  - timber    : wood grain along the member, weathered grey patches (pergolas, frames, beams)
  *  - wall / roof / stone : building weathering — fading, rain streaks and ground grime; tile variation and moss; mottling
  *  - every building also gets its own slight lighter / darker, warmer / cooler cast
  * All of it is computed in the fragment shader from world (or object) position: no textures or UVs, on every tier.
  * Fine detail fades out with distance, so the aerial view does not shimmer.
  * Textured artist materials should not be listed: their detail belongs in the textures.
  */
-const KINDS = ['wall', 'roof', 'stone', 'terrain', 'asphalt', 'marking', 'brick', 'flagstone', 'tile', 'rubber'];
+const KINDS = ['wall', 'roof', 'stone', 'terrain', 'asphalt', 'marking', 'brick', 'flagstone', 'tile', 'rubber', 'timber'];
 
 export function createSurfaces() {
   const W = CONFIG.surfaces;
@@ -115,6 +116,14 @@ export function createSurfaces() {
               c *= mix(1.0, (0.92 + 0.16 * wxHash(floor(q))) * mix(0.7, 1.0, joint), mid * ${A});
             #elif ${is('rubber')}
               c *= 1.0 + (broad - 0.5) * 0.14 * ${A} + (wxHash(floor(p.xz * 60.0)) - 0.5) * 0.3 * near * ${A};
+            #elif ${is('timber')}
+              // grain runs along the member: pick the plane the surface lies in
+              vec3 an = abs(normalize(vWxNormal));
+              vec2 gp = an.y > 0.6 ? p.xz : (an.x > an.z ? p.zy : p.xy);
+              float grain = wxNoise(vec2(gp.x * 1.3 + gp.y * 0.4, (gp.y - gp.x * 0.3) * 26.0));
+              float grey = smoothstep(0.5, 0.85, wxNoise(p.xz * 0.7 + p.y * 0.5 + 5.0));
+              c *= 1.0 + ((broad - 0.5) * 0.2 + (grain - 0.5) * 0.34 * mid) * ${A};
+              c = mix(c, vec3(dot(c, vec3(0.33))) * vec3(1.05, 1.0, 0.94), grey * 0.4 * ${A});
             #endif
             #if KIND < 3
               // per-building cast: slightly lighter / darker and warmer / cooler

@@ -9,7 +9,6 @@ If your model follows the contract below, it drops in with **no code changes**.
 |---|---|
 | `public/models/mountain-courtyard.glb` | Current blockout — import into Blender as your scale/position guide (File → Import → glTF) |
 | `public/assets/images/site-render.webp` | Target look and layout (the rendered aerial) |
-| `public/assets/images/master-plan.webp` | Engineer's master plan (labels, uses) |
 | `Contour Map.pdf` (from client) | Survey contours and spot levels, scale 1:800 |
 | Reference hero screenshot / video (from client) | Mood: lush forest, soft light, mist |
 | `src/model/layout.js` | Every coordinate of the blockout in metres, if you need exact numbers |

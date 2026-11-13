@@ -5,21 +5,28 @@
 
 Serves the project folder with correct MIME types (incl. .js modules / .glb / .wasm)
 and accepts two uploads from the project's own tools:
-  POST /api/save-model            from tools/model-builder.html → public/models/mountain-courtyard.glb
+  POST /api/save-model?name=...   from tools/model-builder.html → public/models/<one of the model files>.glb
   POST /api/save-image?name=...   from the page opened with ?poster → public/assets/images/<poster>.webp
+  POST /api/save-snapshot?set=before|after&name=...   from tools/plan3-snapshot.html → tools/plan3/<set>/<name>
 """
 import argparse
 import gzip
 import http.server
+import re
 import socketserver
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 ROOT = Path(__file__).resolve().parent
-MODEL_PATH = ROOT / "public" / "models" / "mountain-courtyard.glb"
+MODEL_DIR = ROOT / "public" / "models"
+# the only model files the server will write (core first; the others stream in after it)
+MODEL_NAMES = ("mountain-courtyard.glb", "mountain-courtyard-vegetation.glb", "mountain-courtyard-details.glb")
 MAX_UPLOAD = 80 * 1024 * 1024
 IMAGE_DIR = ROOT / "public" / "assets" / "images"
 POSTER_NAMES = {"hero-poster.webp", "hero-poster-mobile.webp"}  # the only images the server will write
+SNAPSHOT_DIR = ROOT / "tools" / "plan3"                          # before / after images for the Plan 3 "nothing else changed" check
+SNAPSHOT_SETS = {"before", "after"}
+SNAPSHOT_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,40}\.(png|json)$")
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -72,13 +79,25 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         url = urlsplit(self.path)
         if url.path == "/api/save-model":
-            target, check = MODEL_PATH, lambda d: d[:4] == b"glTF"
+            name = parse_qs(url.query).get("name", [MODEL_NAMES[0]])[0]
+            if name not in MODEL_NAMES:
+                self.send_error(400, "unknown model name")
+                return
+            target, check = MODEL_DIR / name, lambda d: d[:4] == b"glTF"
         elif url.path == "/api/save-image":
             name = parse_qs(url.query).get("name", [""])[0]
             if name not in POSTER_NAMES:
                 self.send_error(400, "unknown image name")
                 return
             target, check = IMAGE_DIR / name, lambda d: d[:4] == b"RIFF" and d[8:12] == b"WEBP"
+        elif url.path == "/api/save-snapshot":
+            q = parse_qs(url.query)
+            group, name = q.get("set", [""])[0], q.get("name", [""])[0]
+            if group not in SNAPSHOT_SETS or not SNAPSHOT_NAME.match(name):
+                self.send_error(400, "unknown snapshot set or name")
+                return
+            target = SNAPSHOT_DIR / group / name
+            check = (lambda d: d[:8] == b"\x89PNG\r\n\x1a\n") if name.endswith(".png") else (lambda d: d[:1] == b"{")
         else:
             self.send_error(404)
             return
