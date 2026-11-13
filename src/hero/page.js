@@ -1,6 +1,6 @@
 /**
  * Page-level hero UI that works before (and without) the 3D model:
- * mobile menu, 3D / Master Plan / Site Images view switcher, image gallery.
+ * mobile menu, 3D / Site Images view switcher, image gallery.
  */
 export function bindPage(hero, { onViewChange = () => {} } = {}) {
   const $ = (s) => hero.querySelector(s);
@@ -35,7 +35,7 @@ export function bindPage(hero, { onViewChange = () => {} } = {}) {
 
   // ---------- view switcher (tabs) ----------
   const tabs = $$('.views__tab');
-  const panels = { plan: $('#panel-plan'), images: $('#panel-images') };
+  const panels = { images: $('#panel-images') };
   function setView(view, focus = false) {
     tabs.forEach((t) => {
       const on = t.dataset.view === view;

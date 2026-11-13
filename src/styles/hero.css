@@ -212,7 +212,7 @@ button { font: inherit; color: inherit; }
   .nav.is-open .nav__links { opacity: 1; visibility: visible; transform: none; }
 }
 
-/* master plan / site images panels */
+/* site images panel */
 .panel { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; padding: 110px calc(var(--gutter) + 80px) 120px calc(var(--gutter) + 470px);
   background: radial-gradient(circle at 60% 50%, #2b3f2a, #101810); animation: panel-in .35s ease; }
 .panel[hidden] { display: none; }
