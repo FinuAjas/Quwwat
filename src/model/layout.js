@@ -99,5 +99,13 @@ export const HOTSPOTS = [
   { id: 'gate-west', title: 'Pergola Gate — West', group: 'EntranceGate_West', at: FEATURES.gateWest.pos, lift: 7 },
 ];
 
+// Plan 3 work area (docs/IMPLEMENTATION_PLAN_3.md): the amphitheatre and south parking area, as layout pixels.
+// Every Plan 3 geometry change must lie inside this outline. Used only by tools and checks, never by the model.
+export const PLAN3_AREA_PX = [
+  [997, 566], [965, 680], [895, 758], [833, 808], [776, 845], [717, 883], [642, 905], [551, 906], [445, 878],
+  [388, 787], [381, 680], [442, 594], [523, 548], [640, 520], [780, 500], [917, 482],
+];
+export const PLAN3_AREA = pts(PLAN3_AREA_PX); // the same outline in world metres [x, z]
+
 // Terrain mesh extents (metres).
 export const TERRAIN = { innerX: [-100, 130], innerZ: [-92, 94], step: 1.5, outer: 700, outerSegs: 26 };

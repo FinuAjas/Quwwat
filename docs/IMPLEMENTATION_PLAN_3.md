@@ -9,7 +9,7 @@ reference render (`public/assets/images/site-render.webp`). **Nothing outside th
 
 | Task | Status | Summary |
 |---|---|---|
-| P3.1 Lock the boundary | ⏳ | Save the marked outline and take "before" images, so we can prove nothing else changed |
+| P3.1 Lock the boundary | ✅ | Outline saved as `PLAN3_AREA`; 15 "before" images and a manifest saved in `tools/plan3/before/` (see the notes under P3.1) |
 | P3.2 Parking drive + turning head | ⏳ | Replace the short connector stub with the long parking drive and its turning head |
 | P3.3 Access road (spine) | ⏳ | Move the spine onto the render's line and run it into the turning head |
 | P3.4 West road merge | ⏳ | The west road joins the spine inside the marked area. Its tail to the hairpin junction is removed (approved 2026-11-13) |
@@ -90,6 +90,18 @@ The marked area, as layout pixels (taken from the annotated screenshot):
 1. Add the outline above to `layout.js` as `PLAN3_AREA`. It is used only by tools and checks, not by the model.
 2. With the current model, capture **before** images: a top-down orthographic frame of the whole site plus the eight camera presets, at a fixed size, with the intro, cars, birds and clouds frozen.
 
+**Done 2026-11-13** (branch `p3-south-area`, model as of commit `ebe1334`).
+- `src/model/layout.js`: `PLAN3_AREA_PX` (layout pixels) and `PLAN3_AREA` (world metres). Nothing in the model reads them.
+- New tool `tools/plan3-snapshot.html` (`?set=before` or `?set=after`, needs `serve.py`). It loads the real page in a hidden frame, stops the animation, pins the scene clock, hides mist, cars, birds, grass tufts and fountain droplets, and renders at fixed sizes with no post-processing (blur, bloom and ambient occlusion would smear a local change over its neighbours).
+- `serve.py`: new `POST /api/save-snapshot`, which writes only into `tools/plan3/before|after/`.
+- Saved in `tools/plan3/before/`: 15 PNG images and `manifest.json`. The images (37 MB) are git-ignored; the manifest is kept.
+  - **Strict views, sun shadows off (13):** `top.png` (1600×1203, 1 image pixel = 1 layout pixel, north up, so the render and the area outline overlay directly), `top-wide.png` (same centre, 2 layout pixels per image pixel, includes the surrounding forest), the 3 camera presets and one view per hotspot (8), at 1280×800. Shadows are off so that a change inside the area cannot show up outside it as a moved shadow.
+  - **Beauty views, shadows on (2):** `beauty-top.png`, `beauty-preset-aerial.png`, for looking at.
+  - The page has **3** camera presets, not 8; the "eight" above are the 8 hotspot views.
+- The manifest records each view's camera matrices (to project the area outline into perspective views), the SHA-256 and size of the three model files, and triangle and instance counts for all 122 meshes and per group.
+- **Repeatability, measured:** even frozen, up to 22 scattered pixels per view flicker from frame to frame, so each image is the per-pixel median of 5 frames. Between two fresh page loads no pixel differed by more than 1 level out of 255 in any view. **P3.8 should therefore count a pixel as changed only if a channel differs by more than a few levels** (the tool reports pixels over 24 levels as "strong").
+- Baseline counts (whole model): Terrain 72,160 triangles; Roads 5 meshes / 3,484; Parking 15 meshes / 95 cars; Structures 67 meshes / 39,048; Furniture 11 meshes / 53 instances; Rocks 524; Vegetation 20 meshes / 13,209 plants.
+
 ### P3.2 Parking drive + turning head
 - `layout.js`: replace the `connector` road with `amphi-drive` (centreline, width, parking rules above). Remove `ringNoParking`'s special case only if it covers ground that is now the drive mouth. The ring's own parking must not change: check the bay count on the ring before and after.
 - `layout.js`: add pad `turning-head`. Remove pad `plaza`.
@@ -126,7 +138,8 @@ The marked area, as layout pixels (taken from the annotated screenshot):
 ## Files that will change
 `src/model/layout.js`, `src/model/structures.js`, `src/model/roads.js` (parked car only), `src/model/furniture.js`,
 `src/model/vegetation.js`, `src/hero/config.js` (car route only), `src/hero/content.js` (one sentence), the rebuilt model files,
-and this plan.
+and this plan. P3.1 also added tooling that the model does not use: `tools/plan3-snapshot.html` / `.js`, a save endpoint in
+`serve.py`, and `.gitignore`.
 
 ## Decisions and open points
 1. **West-road tail (P3.4):** approved on 2026-11-13. The ~10 m of west road just outside the marked area is removed.
