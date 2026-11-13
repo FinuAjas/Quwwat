@@ -26,14 +26,19 @@
     <div class="hero__vignette" aria-hidden="true"></div>
 
     <header class="nav">
-      <a class="nav__brand" href="#" aria-label="Quwwat Group — Mountain Courtyard">
+      <a class="nav__brand" href="index.html" aria-label="Quwwat Group — Mountain Courtyard">
         <img src="./public/assets/logos/quwwat_group_logo_white.webp" width="136" height="32" alt="Quwwat Group" class="nav__logo nav__logo--group" />
         <span class="nav__divider" aria-hidden="true"></span>
         <img src="./public/assets/logos/mountain_courtyard_logo_white.webp" width="135" height="64" alt="Mountain Courtyard" class="nav__logo nav__logo--project" />
       </a>
       <nav class="nav__links" id="nav-links" aria-label="Primary">
-        <a href="#" class="is-active">Home</a>
-        <a href="#">Project <span aria-hidden="true">▾</span></a>
+        <div class="nav__dropdown">
+          <button class="nav__trigger" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="nav-projects">Project <span class="nav__caret" aria-hidden="true">▾</span></button>
+          <ul class="nav__menu" id="nav-projects">
+            <li><a href="index.html">Mountain Courtyard</a></li>
+            <li><a href="">Goodhope Luxury Flates</a></li>
+          </ul>
+        </div>
         <a href="#">Amenities</a>
         <a href="#">Gallery</a>
         <a href="#">Location</a>

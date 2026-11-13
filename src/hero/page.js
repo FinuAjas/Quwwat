@@ -8,14 +8,28 @@ export function bindPage(hero, { onViewChange = () => {} } = {}) {
 
   // ---------- mobile menu ----------
   const nav = $('.nav'), toggle = $('.nav__toggle');
+  const drop = $('.nav__dropdown'), dropBtn = $('.nav__trigger');
+  const setDrop = (open) => {
+    drop.classList.toggle('is-open', open);
+    dropBtn.setAttribute('aria-expanded', String(open));
+  };
   const setMenu = (open) => {
     nav.classList.toggle('is-open', open);
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    if (!open) setDrop(false);
   };
   toggle.addEventListener('click', () => setMenu(!nav.classList.contains('is-open')));
-  document.addEventListener('click', (e) => { if (!nav.contains(e.target)) setMenu(false); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
+  dropBtn.addEventListener('click', () => setDrop(!drop.classList.contains('is-open')));
+  document.addEventListener('click', (e) => {
+    if (!nav.contains(e.target)) setMenu(false);
+    else if (!drop.contains(e.target)) setDrop(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (drop.classList.contains('is-open')) dropBtn.focus();
+    setMenu(false);
+  });
   $$('.nav__links a').forEach((a) => a.addEventListener('click', () => setMenu(false)));
 
   // ---------- gallery ----------
