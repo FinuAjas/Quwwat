@@ -1,6 +1,6 @@
 {
  "set": "after",
- "created": "2026-11-13T14:32:18.904Z",
+ "created": "2026-11-13T14:48:40.078Z",
  "commit": null,
  "capture": {
   "tier": "high",
@@ -104,13 +104,13 @@
    "height": 1203,
    "layoutScale": 1,
    "kb": 4369,
-   "hash": "31a618e01abcfe1785c4cc8c4bcda3a9d0a4c49253af586d82b908d219b21ff9",
+   "hash": "f907b9aa14ebf3dc7b021f2d664f70e973de5c51a5cc34a749b5c1cc4989f556",
    "framesAveraged": 5,
    "noisePixels": 0,
    "driftFromPreviousRun": {
-    "pixels": 19955,
-    "strong": 2159,
-    "worst": 119,
+    "pixels": 1983,
+    "strong": 0,
+    "worst": 1,
     "box": [
      0,
      0,
@@ -165,14 +165,14 @@
    "shadows": true,
    "width": 1280,
    "height": 800,
-   "kb": 2457,
-   "hash": "adf718f3ec1bfb9ae1bdeccfc8d0e3e2515e291a81e2b5f3aa6b5f06813b5866",
+   "kb": 2458,
+   "hash": "a0d4e261b7fcc969b419dcd6abe436d3cf8e87430f1938e7936167cae0978735",
    "framesAveraged": 5,
    "noisePixels": 2,
    "driftFromPreviousRun": {
-    "pixels": 15445,
-    "strong": 1948,
-    "worst": 123,
+    "pixels": 1176,
+    "strong": 0,
+    "worst": 1,
     "box": [
      0,
      0,
@@ -228,14 +228,14 @@
    "width": 1600,
    "height": 1203,
    "layoutScale": 1,
-   "kb": 4198,
-   "hash": "ae383af254d7c713650eb81466c802fba31f55de2ee9c80d167a9521909ecdbc",
+   "kb": 4199,
+   "hash": "567b72c46703bb66241a06879e29e69fe0a1ff354bfeecf3edc5146ce6d066d9",
    "framesAveraged": 5,
    "noisePixels": 0,
    "driftFromPreviousRun": {
-    "pixels": 16471,
-    "strong": 1402,
-    "worst": 122,
+    "pixels": 2146,
+    "strong": 0,
+    "worst": 1,
     "box": [
      0,
      0,
@@ -292,13 +292,13 @@
    "height": 1203,
    "layoutScale": 2,
    "kb": 4516,
-   "hash": "ec4d23d8d4ff0708147e55bff2a3b80c27344d172d43e2b1209e5a201277413a",
+   "hash": "991a46647b632501c0f4f135ba0d4975fd5412fb35682de6ee4a1303d6ff8118",
    "framesAveraged": 5,
-   "noisePixels": 0,
+   "noisePixels": 5,
    "driftFromPreviousRun": {
-    "pixels": 6509,
-    "strong": 329,
-    "worst": 112,
+    "pixels": 2776,
+    "strong": 0,
+    "worst": 1,
     "box": [
      52,
      0,
@@ -354,13 +354,13 @@
    "width": 1280,
    "height": 800,
    "kb": 2364,
-   "hash": "2b6eff1a519371f5ee36e45aefae8bee8c6f0cee90ea34ec6347fc1d11a48997",
+   "hash": "0fc62e729ca7af66756d0dbf9b44e4d31c03b9323af93ba2ee27343aa4c78270",
    "framesAveraged": 5,
    "noisePixels": 0,
    "driftFromPreviousRun": {
-    "pixels": 13462,
-    "strong": 1581,
-    "worst": 123,
+    "pixels": 1221,
+    "strong": 0,
+    "worst": 1,
     "box": [
      3,
      0,
@@ -415,19 +415,19 @@
    "shadows": false,
    "width": 1280,
    "height": 800,
-   "kb": 1834,
-   "hash": "17df7ecf7d72f04827fdcbc741a5e8fe17a245efb01715c15b355ed9934ebc7d",
+   "kb": 1837,
+   "hash": "abb550d1b6d0380f5fb317d173f4464abd029ead47474ee7b46638b2250049f7",
    "framesAveraged": 5,
    "noisePixels": 17,
    "driftFromPreviousRun": {
-    "pixels": 15730,
-    "strong": 1821,
-    "worst": 101,
+    "pixels": 309,
+    "strong": 0,
+    "worst": 1,
     "box": [
-     0,
+     1,
      0,
      1278,
-     799
+     796
     ]
    },
    "camera": {
@@ -480,7 +480,7 @@
    "kb": 1836,
    "hash": "ce1082145cccd404b5098364263307e5b953e164a9a9defa620e0ef19903ae0a",
    "framesAveraged": 5,
-   "noisePixels": 20,
+   "noisePixels": 18,
    "driftFromPreviousRun": {
     "pixels": 336,
     "strong": 0,
@@ -539,14 +539,14 @@
    "shadows": false,
    "width": 1280,
    "height": 800,
-   "kb": 2156,
-   "hash": "f99cdf982fbf378a001a2f3474101e3fa6383de6360319e3f7fa89fec90da5f6",
+   "kb": 2157,
+   "hash": "1ff4d7829b1f6babbce089743aa478b9a2538709cf2a7bcdde7eae6f7d298602",
    "framesAveraged": 5,
-   "noisePixels": 0,
+   "noisePixels": 15,
    "driftFromPreviousRun": {
-    "pixels": 38316,
-    "strong": 5409,
-    "worst": 199,
+    "pixels": 808,
+    "strong": 0,
+    "worst": 1,
     "box": [
      0,
      0,
@@ -601,14 +601,14 @@
    "shadows": false,
    "width": 1280,
    "height": 800,
-   "kb": 2055,
-   "hash": "c2c77e13855f366a58df2133f84372359d54026e33b7722f9101b83ff2733f76",
+   "kb": 2057,
+   "hash": "dd08c94be016100d2cddd8add5d3a639338119e2518c460b6b36f1ebeee30d2a",
    "framesAveraged": 5,
-   "noisePixels": 18,
+   "noisePixels": 25,
    "driftFromPreviousRun": {
-    "pixels": 30235,
-    "strong": 8605,
-    "worst": 176,
+    "pixels": 611,
+    "strong": 0,
+    "worst": 1,
     "box": [
      0,
      0,
@@ -664,11 +664,11 @@
    "width": 1280,
    "height": 800,
    "kb": 1778,
-   "hash": "379e4c25a02f705276f1c9a266e69abda5b81d6742931869b07a64751cbac143",
+   "hash": "0b441d7e80988280d51615f409a112ab88e183c0abf417927528ceaf4b6ac3c8",
    "framesAveraged": 5,
    "noisePixels": 3,
    "driftFromPreviousRun": {
-    "pixels": 538,
+    "pixels": 541,
     "strong": 0,
     "worst": 1,
     "box": [
@@ -728,7 +728,7 @@
    "kb": 1887,
    "hash": "ebec62c1f4979622347aec25869e40fe5f76489e098ee19e9b41e19993ca19ce",
    "framesAveraged": 5,
-   "noisePixels": 27,
+   "noisePixels": 18,
    "driftFromPreviousRun": {
     "pixels": 448,
     "strong": 0,
@@ -787,19 +787,19 @@
    "shadows": false,
    "width": 1280,
    "height": 800,
-   "kb": 1778,
-   "hash": "a8ee2f331187f60c5d09446d4091cc8be3bbf4e07540071ec63da10ee1a87b8b",
+   "kb": 1782,
+   "hash": "5d514be537e3fbbe53feb1de87c3b53afa1a8b178aa8309876d4522856158bce",
    "framesAveraged": 5,
-   "noisePixels": 23,
+   "noisePixels": 24,
    "driftFromPreviousRun": {
-    "pixels": 88498,
-    "strong": 23255,
-    "worst": 195,
+    "pixels": 168,
+    "strong": 0,
+    "worst": 1,
     "box": [
-     0,
+     4,
      2,
-     1279,
-     708
+     1275,
+     671
     ]
    },
    "camera": {
@@ -852,7 +852,7 @@
    "kb": 1813,
    "hash": "2c0b4a7a2c490e8bc047982488c1ebb426c4e9b87ae50783d85ae03dbf5b963e",
    "framesAveraged": 5,
-   "noisePixels": 18,
+   "noisePixels": 0,
    "driftFromPreviousRun": {
     "pixels": 385,
     "strong": 0,
@@ -912,17 +912,17 @@
    "width": 1280,
    "height": 800,
    "kb": 1827,
-   "hash": "b6669fd8db5b6b6859cb6e673b6686b704b8174b1ab7f36eb13325167bd3d80d",
+   "hash": "ac2bda0e78f3298c31f29afa8699d68abb015e137a4e337a1ddb0b7a920504a0",
    "framesAveraged": 5,
-   "noisePixels": 11,
+   "noisePixels": 0,
    "driftFromPreviousRun": {
-    "pixels": 20225,
-    "strong": 1212,
-    "worst": 181,
+    "pixels": 345,
+    "strong": 0,
+    "worst": 1,
     "box": [
      0,
      0,
-     1279,
+     1278,
      799
     ]
    },
@@ -976,7 +976,7 @@
    "kb": 1841,
    "hash": "cdc1497fa9dc0d36ff60f6d36185f3fb54a69f09255cb30cce427783d794e66e",
    "framesAveraged": 5,
-   "noisePixels": 15,
+   "noisePixels": 14,
    "driftFromPreviousRun": {
     "pixels": 871,
     "strong": 0,
@@ -1033,7 +1033,7 @@
   {
    "file": "mountain-courtyard.glb",
    "bytes": 3969456,
-   "sha256": "577fee9f49541a1e24bf3079f3dcbc1eb0153def30734850c9faf6cc51213b65"
+   "sha256": "3c08234980d3adefc1d3fd0002564ff0dac96a29c52c866c537d2f5242d6c24a"
   },
   {
    "file": "mountain-courtyard-vegetation.glb",
@@ -1042,15 +1042,15 @@
   },
   {
    "file": "mountain-courtyard-details.glb",
-   "bytes": 170704,
-   "sha256": "ce6ecc856abecbed9c9da7c07a04bccfd06bf93e02f0b105b291e9e0e3ce24f2"
+   "bytes": 171196,
+   "sha256": "48b28ebd25f9e393e6aade0220dfa386cfdd3b1995270bd1ceff717ba4baaadd"
   }
  ],
  "groups": {
   "AuxScene/MountainCourtyard_Details/Furniture": {
    "meshes": 11,
-   "triangles": 4016,
-   "instances": 38
+   "triangles": 5984,
+   "instances": 50
   },
   "AuxScene/MountainCourtyard_Details/Rocks": {
    "meshes": 3,
@@ -1136,13 +1136,13 @@
    "path": "AuxScene/MountainCourtyard_Details/Furniture",
    "name": "Benches",
    "triangles": 132,
-   "instances": 6
+   "instances": 10
   },
   {
    "path": "AuxScene/MountainCourtyard_Details/Furniture",
    "name": "Bollards",
    "triangles": 180,
-   "instances": 6
+   "instances": 14
   },
   {
    "path": "AuxScene/MountainCourtyard_Details/Furniture",

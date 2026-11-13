@@ -1,0 +1,58 @@
+Pixels changed outside the work area (+3 m), threshold 12/255
+  beauty-top.png outside:    1734 px (      39 m²)   inside:  111039 px   outside box (image px): (310, 472, 1218, 953)
+  top.png        outside:      12 px (       0 m²)   inside:   92303 px   outside box (image px): (520, 482, 977, 953)
+  top-wide.png   outside:       0 px (       0 m²)   inside:   23211 px
+
+Model groups (meshes / triangles / instances): before -> after
+  MountainCourtyard                                         1/72160/1 -> 1/72160/1             
+  MountainCourtyard/Parking                               15/33212/95 -> 15/32852/94              <- changed
+  MountainCourtyard/Roads                                    5/3484/5 -> 5/3278/5                 <- changed
+  MountainCourtyard/Structures                           67/39048/202 -> 68/38648/207             <- changed
+  MountainCourtyard_Details/Furniture                      11/6592/53 -> 11/5984/50               <- changed
+  MountainCourtyard_Details/Rocks                         3/41920/524 -> 3/42960/537              <- changed
+  MountainCourtyard_Vegetation/Vegetation             20/854762/13209 -> 20/853418/13204          <- changed
+
+Meshes that differ:
+  Parking/Cars_Hatch_Black                                           (348, 8) -> (348, 4)
+  Parking/Cars_Hatch_Silver                                         (348, 11) -> (348, 8)
+  Parking/Cars_Hatch_White                                          (348, 10) -> (348, 15)
+  Parking/Cars_SUV_Black                                             (348, 3) -> (348, 6)
+  Parking/Cars_SUV_Blue                                              (348, 3) -> (348, 2)
+  Parking/Cars_SUV_Red                                               (348, 2) -> (348, 1)
+  Parking/Cars_SUV_Silver                                            (348, 2) -> (348, 4)
+  Parking/Cars_SUV_White                                             (348, 9) -> (348, 10)
+  Parking/Cars_Sedan_Blue                                            (352, 5) -> (352, 3)
+  Parking/Cars_Sedan_Red                                             (352, 4) -> (352, 3)
+  Parking/Cars_Sedan_Silver                                         (352, 11) -> (352, 10)
+  Parking/Cars_Sedan_White                                           (352, 7) -> (352, 8)
+  Roads/Road_Kerbs                                                  (1188, 1) -> (1050, 1)
+  Roads/Road_Markings                                                (448, 1) -> (410, 1)
+  Roads/Road_Shoulders                                              (1232, 1) -> (1212, 1)
+  Roads/Road_Surface                                                 (594, 1) -> (584, 1)
+  Structures/Amphitheater/Amphi_Backdrop                             (848, 1) -> (84, 1)
+  Structures/Amphitheater/Amphi_Risers                              (1932, 1) -> (1288, 1)
+  Structures/Amphitheater/Amphi_Stage                                (420, 1) -> (260, 1)
+  Structures/Amphitheater/Amphi_Steps                               (4760, 1) -> (3400, 1)
+  Structures/Boundary/PlotBoundary                                  (1830, 1) -> (1902, 1)
+  Structures/Boundary/PlotBoundary_Piers                            (32, 136) -> (32, 140)
+  Structures/Median_Steps                                                None -> (156, 1)
+  Structures/Plaza/Plaza_Edge                                        (160, 1) -> None
+  Structures/Plaza/Plaza_Paving                                      (160, 1) -> None
+  Structures/TurningHead/TurningHead_Kerb                                None -> (2268, 1)
+  Structures/TurningHead/TurningHead_Surface                             None -> (224, 1)
+  Furniture/Bollards                                                (180, 18) -> (180, 14)
+  Furniture/Street_Lamps                                            (112, 17) -> (112, 18)
+  Rocks/Rocks_A                                                     (80, 180) -> (80, 187)
+  Rocks/Rocks_B                                                     (80, 186) -> (80, 189)
+  Rocks/Rocks_C                                                     (80, 158) -> (80, 161)
+  Vegetation/Trees_cypress                                          (164, 47) -> (164, 46)
+  Vegetation/Trees_flower                                          (108, 150) -> (108, 146)
+  Vegetation/Trees_flowering                                        (116, 10) -> (116, 26)
+  Vegetation/Trees_hedge                                           (128, 262) -> (128, 243)
+  Vegetation/Trees_oakB                                            (294, 431) -> (294, 429)
+  Vegetation/Trees_oakC                                            (274, 156) -> (274, 154)
+  Vegetation/Trees_palm                                             (220, 45) -> (220, 42)
+  Vegetation/Trees_rain                                            (348, 137) -> (348, 139)
+  Vegetation/Trees_shrub                                            (116, 13) -> (116, 21)
+
+Difference images: C:\Users\finua\Desktop\Mountain Courtyard\tools\plan3\diff

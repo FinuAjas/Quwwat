@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { FEATURES, SITE_BOUNDARY } from './layout.js';
-import { mergeScatter } from './legacy.js';
+import { FEATURES, SITE_BOUNDARY, PADS, toY } from './layout.js';
+import { mergeScatter, blockedBy } from './legacy.js';
 import { box, merge, prep, paint, signedDistToPolygon, mulberry32 } from './geom.js';
 import { M } from './materials.js';
 
@@ -95,6 +95,15 @@ function placeFurniture(world) {
   const ring = (c, r, anglesDeg) => anglesDeg.forEach((a) => { const t = (a * Math.PI) / 180; bench(c[0] + Math.cos(t) * r, c[1] + Math.sin(t) * r, c[0], c[1]); });
   if (F.plaza) ring(F.plaza.pos, F.plaza.radius + 1.5, [20, 95, 160, 235, 300]); // the old round plaza (legacy.js)
   ring(F.playground.pos, F.playground.radius + 1.9, [75, 130, 185, 240, 290]);
+  if (F.amphitheatre.walkway) { // Plan 3: four benches on the amphitheatre's upper walkway, between the aisles, facing the stage
+    const a = F.amphitheatre, r = a.r0 + a.tiers * a.tierDepth + a.walkway / 2, c = Math.cos(a.rot), sn = Math.sin(a.rot);
+    const y = toY(PADS.find((p) => p.id === 'amphitheatre').elev) + a.tiers * a.tierRise; // the walkway's surface, not the ground
+    for (const d of [24, 68, 112, 152]) {
+      const t = (d * Math.PI) / 180, lx = r * Math.cos(t), lz = -r * Math.sin(t);
+      const x = a.pos[0] + lx * c + lz * sn, z = a.pos[1] - lx * sn + lz * c;
+      benches.push({ x, z, y, r: 1.3, yaw: Math.atan2(a.pos[0] - x, a.pos[1] - z) });
+    }
+  }
   { // in front of the prayer hall, facing it
     const [px, pz] = F.prayerHall.pos, rot = F.prayerHall.rot;
     for (const lx of [-3.2, 3.2]) {
@@ -112,6 +121,14 @@ function placeFurniture(world) {
   if (F.plaza) for (let a = 0; a < 360; a += 24) {
     const t = (a * Math.PI) / 180, x = F.plaza.pos[0] + Math.cos(t) * (F.plaza.radius + 0.38), z = F.plaza.pos[1] + Math.sin(t) * (F.plaza.radius + 0.38);
     if (offRoad(x, z, 0.5)) bollards.push({ x, z, yaw: 0 });
+  }
+  if (F.turningHead) { // Plan 3: round the turning head, where no road enters and the amphitheatre is not in the way
+    const others = blockedBy(obstacles.filter((o) => o.plan3 !== 'turning-head')); // its own footprint would block them all
+    for (let a = 0; a < 360; a += 24) {
+      const t = (a * Math.PI) / 180, R = F.turningHead.radius + 1.05;
+      const x = F.turningHead.pos[0] + Math.cos(t) * R, z = F.turningHead.pos[1] + Math.sin(t) * R;
+      if (offRoad(x, z, 1.2) && !others(x, z, 0.3)) bollards.push({ x, z, yaw: 0 });
+    }
   }
   {
     const [gx, gz] = F.gateWest.pos, rot = F.gateWest.rot;
@@ -146,7 +163,7 @@ export function buildFurniture(heightAt, world, legacy) {
     if (!list.length) return;
     const im = new THREE.InstancedMesh(geo, M.furniture, list.length);
     im.name = name; im.userData = { castShadow: true, receiveShadow: true };
-    list.forEach((o, i) => { q.setFromAxisAngle(up, o.yaw); im.setMatrixAt(i, m4.compose(v.set(o.x, heightAt(o.x, o.z), o.z), q, one)); });
+    list.forEach((o, i) => { q.setFromAxisAngle(up, o.yaw); im.setMatrixAt(i, m4.compose(v.set(o.x, o.y ?? heightAt(o.x, o.z), o.z), q, one)); });
     group.add(im);
   };
   instanced('Street_Lamps', lampGeometry(), lamps);

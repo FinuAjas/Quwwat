@@ -15,8 +15,8 @@ reference render (`public/assets/images/site-render.webp`). **Nothing outside th
 | P3.4 West road merge | ✅ | The west road joins the spine at (843,652); its tail to the hairpin junction is removed (see the notes under P3.4) |
 | P3.5 Amphitheatre | ✅ | Half-ring on the drive's NW kerb, facing the drive. Outer radius 10.6 m, not 15.5 m: that is all that fits (see the notes under P3.5) |
 | P3.6 Planted median | ✅ | A planted bank, not the render's wide flat wedge: the strip is 2–9 m wide and drops 2.5–6 m (see the notes under P3.6) |
-| P3.7 Knock-on fixes | ⏳ | Furniture, hedges and flower beds that were tied to the plaza; car route; hotspot text |
-| P3.8 Rebuild & verify | ⏳ | Rebuild the model, compare against the render, prove nothing else changed |
+| P3.7 Knock-on fixes | ✅ | Walkway benches, turning-head bollards, new car route, hotspot text (see the notes under P3.7) |
+| P3.8 Rebuild & verify | ✅ | Model and posters rebuilt; 12 pixels differ outside the area; layout matches the render, sizes do not (see the notes under P3.8) |
 
 ## What is wrong now
 
@@ -225,12 +225,55 @@ The marked area, as layout pixels (taken from the annotated screenshot):
 - `src/hero/content.js`: the amphitheatre text says "facing a stage and plaza". Change it to "facing a stage".
 - Hotspot `amphitheater` follows `FEATURES.amphitheatre.pos` automatically. Check that its label still sits over the seats.
 
+**Done 2026-11-13.**
+- `furniture.js`: four benches on the amphitheatre's upper walkway (at 24°, 68°, 112° and 152°, between the aisles,
+  facing the stage, standing on the walkway's surface) and eight bollards round the turning head, 1 m outside its
+  kerb, where no road enters and the amphitheatre is not in the way. The plaza's benches, bollards, hedge ring and
+  flower beds went in P3.2.
+- `src/hero/config.js` `traffic.inbound`: hairpin → access road → clockwise round the turning head (4 m radius) → up
+  the parking drive → ring. The `loop` round the ring is unchanged.
+  **Checked by calculation, not by watching:** the driven line (centre line and the 1.75 m left lane, with a 0.9 m car
+  half-width) was sampled every 1.5 m against the road surfaces. Inside the area it leaves the asphalt at one place
+  only, by up to 0.9 m, on the corner from the drive onto the ring. The real code moves cars towards the middle of
+  the road on tight left turns, which this check did not model. The other spots it reported are on the ring and the
+  hairpin, on the unchanged part of the route.
+- `src/hero/content.js`: "facing a stage and plaza" → "facing a stage".
+- Hotspot anchor: moved over the seats in P3.5.
+- **Measured:** outside the area and the tail, `top.png` still differs in 12 pixels and `top-wide.png` in none.
+  Validator: contract OK, one warning (41 materials, budget 40). Furniture now: lamps 18, benches 10, bollards 14.
+
 ### P3.8 Rebuild & verify
 1. Rebuild the model with the usual one-command script (`tools/build_assets.py`), then reload with `?tier=ultra`.
 2. **Render match:** top-down view of the area next to the render crop (380–1000 × 480–910 px). Drive, turning head, median, amphitheatre orientation and the west-road merge must line up within ~2 m.
 3. **Nothing else changed:** capture the same **after** images as in P3.1 and pixel-diff them, masked by `PLAN3_AREA` plus a 3 m margin. Any difference outside the mask is a failure, except the removed west-road tail. Also compare per-group triangle and instance counts between the old and new GLB. Only `Roads`, `Parking`, `Amphitheater`, `Plaza` (removed), the turning head, furniture and vegetation may differ, and only by amounts that fit the area.
 4. `tools/validate-model.html` still passes: the hotspot groups (`Amphitheater`, `Parking`, `EntranceGate_West`, …) exist, and the triangle and draw-call budgets hold.
 5. Moving cars follow the new route without cutting corners or driving through the median. No console errors.
+
+**Done 2026-11-13.**
+1. **Rebuild:** `python tools/build_assets.py --no-open --port 5173` rebuilt the three model files and both posters.
+   Size report: first view 1,637 KB (budget 2,200), whole page 2,459 KB (budget 6,000), model on disk 5.05 MB (budget 10).
+   The page loads at `?tier=ultra` with no console errors.
+2. **Render match** (`tools/plan3/work/compare-p38.png`: render, model before, model after, same crop):
+   - On the render's lines, within ~2 m: the parking drive, the turning head, the spine and the west-road merge.
+   - Matches in layout but **not in size**: the amphitheatre (10.6 m outer radius against ~15.5 m) and the median (a
+     2–9 m planted bank against a ~17 m flat wedge). Both follow from the model's roads being 7 m wide against the
+     render's ~4 m, and from the drive standing above the spine. Bays line one side of the drive, not both.
+   - Not in the render: the bare bank with rocks below the spine where the old west road ran.
+3. **Nothing else changed** (`tools/plan3_diff.py`, output saved as `tools/plan3/work/final-diff.txt`):
+   - Outside the area (+3 m) and the approved tail: `top.png` 12 pixels, `top-wide.png` 0 pixels. The script still exits
+     with 1 because of those 12 pixels.
+   - `beauty-top.png` (sun shadows on): 1,734 pixels (39 m²), shadows cast from inside the area.
+   - Counts, before → after: Terrain 72,160 triangles (same); Roads 3,484 → 3,278 triangles; Parking 95 → 94 cars;
+     Structures 67 → 68 meshes; Furniture 53 → 50 instances (lamps 17 → 18, benches 10, bollards 18 → 14);
+     Rocks 524 → 537; Vegetation 13,209 → 13,204 plants.
+   - The "Visitor Parking" and "Pergola Gate — West" hotspot views differ over the whole frame: their cameras are
+     framed on groups that changed inside the area (see P3.4). The other perspective views were not masked or measured.
+4. **Validator:** contract OK, 27 passed, one warning (41 materials, budget 40). All eight hotspot groups exist.
+5. **Moving cars:** the page's own animation was stepped through one full lap (127 s, every 0.2 s) and one car's
+   position tested against the road surfaces with a 0.9 m half-width. Inside the area it is off the asphalt in three
+   samples: by 0.62 m and 0.19 m on the corner from the drive onto the ring (the kerb is open there), and by 0.12 m at
+   the turning head. It does not cross the median. Steepest pitch inside the area: 10°. Three more samples, up to
+   1.11 m, are on the ring road's north side, on the unchanged part of the route.
 
 ## Files that will change
 `src/model/layout.js`, `src/model/structures.js`, `src/model/roads.js` (parked car only), `src/model/furniture.js`,
