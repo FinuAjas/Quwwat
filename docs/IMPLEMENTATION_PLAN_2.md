@@ -17,30 +17,30 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 | R4 Atmosphere | Code | ✅ 3 · ➖ 1 | Distance haze, valley mist, softer mist banks, horizon ridges. Sun shafts skipped. |
 | R5 Ground materials | Code (procedural) | ✅ 6 | Terrain, road and paving detail from shaders, soft earth shoulders, grass tufts near the camera, rocks — all generated in code, no texture files. |
 | R6 Vegetation | Code (procedural) | ✅ 5 | Leaf-card trees, palms, shrubs, hedges and flower beds, three distance levels, noise-driven forest — all generated in code. An artist's hand-modelled trees can still replace them later. |
-| R7 Architecture detail | Artist | 🟡 1 · 🎨 7 | Only the animated water exists. Everything else is the artist's; caustics is a code task. |
+| R7 Architecture detail | Code (procedural) | ✅ 8 | Building kit with windows, doors, verandahs, eaves and ridge caps; tiled pool floor with caustics and fountain particles; amphitheatre steps and backdrop; play equipment; lamps, benches, bollards, signs and a compound wall; three car styles. An artist model can still replace it. |
 | R8 Life & motion | Code | ✅ 4 | Spline fly-in (skippable), drifting cloud shadows, moving cars and birds, settling camera moves. |
 | R9 Pipeline & performance | Both | ✅ 2 · 🟡 2 · ⏳ 1 · 🎨 1 | Poster image and three benchmark-picked tiers done; load size checked. Build script (needs Node.js), real-phone test and Lighthouse pending. |
 
-**Task count:** 41 done · 3 partial · 1 pending (code) · 8 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
+**Task count:** 49 done · 2 partial · 1 pending (code) · 1 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
 
-### Completed so far (R0–R4, R8, R9.4, R9.5)
+### Completed so far (R0–R8, R9.4, R9.5)
 - The page accepts an artist-built model without code changes, and `tools/validate-model.html` checks a model against the brief.
 - Golden-hour look by default, with midday and overcast available (`?look=`).
-- Real-world colours, per-tree tints, lawn mottling; model re-exported (3.2 MB, 95 parked cars).
+- Real-world colours, per-tree tints, lawn mottling; model re-exported (5.1 MB before gzip, 95 parked cars, 1.05 M triangles, 122 draw calls).
 - Sky-based reflections and ambient light, fitted shadow map, desktop contact shadows, baked ground shading for all devices.
 - Bloom, tilt-shift blur, vignette, film grain and a slight colour fringe.
 - Distance haze, valley mist, softer mist banks and three layers of horizon hills; camera can tilt to 80°.
 - A 6.5 s opening flight over the forest (skippable), cloud shadows drifting across the land, cars driving the access road and ring, a flock of birds, and camera moves that ease into place.
 - A poster image of the scene is on screen from the first paint and stays when 3D is unavailable or data saver is on; the 3D code is only downloaded when it will be used.
 - Three quality tiers (ultra / high / low), picked by a short GPU benchmark on the first visit.
+- Ground, vegetation and architecture detail (R5–R7) generated in code: textured-looking surfaces, leaf-card trees, a Kerala-style building kit, a tiled pool with caustics and a droplet fountain, play equipment, street furniture, a compound wall and three car styles.
 
 ### Pending — code (can be done now)
 1. **R9.6** Real-phone test and Lighthouse run (the load-size check is done).
-2. **R7.4** Pool caustics (better after the artist's model).
-3. **R9.1** Asset build script (needs Node.js installed).
+2. **R9.1** Asset build script (needs Node.js installed).
 
 ### Pending — artist (see [BLENDER_ARTIST_BRIEF.md](BLENDER_ARTIST_BRIEF.md))
-- **R7** Detailed convention centre, prayer hall and cabin, PBR materials, pool shell, amphitheatre, play equipment, site furniture, realistic cars.
+- Optional: replace the procedural buildings, trees and cars (R5–R7) with hand-modelled, textured ones. The page accepts them without code changes.
 - **R9.3** Texture budget; exporting with Draco + WebP.
 
 ### Blocked until the artist delivers
@@ -66,6 +66,9 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 - Leaf-card plants take no ambient occlusion (they still cast and receive shadows and have baked ground shade).
 - Ground work (R5) was checked from the aerial view and two close views on the high tier, golden-hour look. The brick footpath, pool-deck tiles and road paint were not looked at close up; the cost of the grass tufts on a mid-range GPU is unmeasured.
 - Rock placement follows slope and noise, not the rock areas on the contour survey.
+- Architecture detail (R7) was checked in the model builder (convention centre, pool, amphitheatre, play area, south gate) and in the page on the high tier, golden-hour look (pool, convention centre front). The prayer hall, west gate, signs, lamps and benches were not looked at close up in the page; the phone tier was not checked.
+- R7 buildings are designed by rule, not from architect's drawings: window counts, door positions and the verandah are plausible, not surveyed. Windows are mounted on solid walls, so there are no interiors.
+- The model grew from about 3.2 MB to 5.1 MB with R7 (still under the 10 MB target; the checker page passes with no warnings).
 - The preset thumbnails sometimes came up blank on the first page load after re-exporting the model and were fine on the next load; not tracked down.
 - Moving cars do not cast real shadows (the shadow map is rendered once); each carries a soft blob shadow instead.
 
@@ -97,7 +100,7 @@ The artist's contract is in [BLENDER_ARTIST_BRIEF.md](BLENDER_ARTIST_BRIEF.md).
 | R4 Atmosphere | Code | Start now |
 | R5 Ground & landscape materials | **Artist** | Textures baked/authored in Blender (R5.5 grass tufts stays code) |
 | R6 Vegetation | **Artist** (models, LODs) + Code (R6.2 wind/translucency shader, phone thinning) | |
-| R7 Architecture detail | **Artist** | R7.4 pool caustics/water shader stays code |
+| R7 Architecture detail | ~~Artist~~ → done procedurally in code (see the status table) | An artist model can still replace it |
 | R8 Life & motion | Code | |
 | R9 Pipeline & performance | Artist exports Draco + WebP; Code does loading, tiers, poster | Node.js optional now |
 
@@ -172,17 +175,17 @@ Built in code (`src/model/vegetation.js`) instead of waiting for artist models. 
 | R6.4 | ✅ Done | Natural placement: clustering, size by age, denser in valleys, gaps on rock | Forest no longer looks gridded | Noise fields drive thickets and clearings, stands of old and young trees, palm groves on low ground, tall single-species stands, and bare patches on steep or stony ground. |
 | R6.5 | ✅ Done | Hedges and flower beds around buildings, ring road and paths (from the render) | Matches render landscaping | 279 hedge lengths along kerbs without parking bays, both sides of the footpath, and round the play area and plaza; flower beds at both gates, the plaza, the prayer hall and in drifts along road verges. Placement is rule-based, not traced from the render. |
 
-## Phase R7 — Architecture detail · water only; rest pending (artist)
+## Phase R7 — Architecture detail · 8 of 8 done (procedural)
 | # | Status | Task | Done when | Notes |
 |---|---|---|---|---|
-| R7.1 | 🎨 Pending — artist | Convention centre rebuild: real windows/doors with frames, columns/verandah, eaves with fascia & soffit, roof tile texture with ridge caps | Reads as Kerala-style architecture |  |
-| R7.2 | 🎨 Pending — artist | Prayer hall, security cabin to the same standard | Consistent style |  |
-| R7.3 | 🎨 Pending — artist | PBR materials: plaster (with dirt at base), tiles (normal + roughness), glass (reflective, tinted), timber pergolas (wood grain) | Close-ups hold up |  |
-| R7.4 | 🟡 Partial | Pool: tiled pool shell with depth colour, caustics shader, wet deck edge, real fountain particles | Water looks deep and clear | Done: animated water ripples/reflections. Pending — code: caustics. Pending — artist: tiled shell, wet edge, fountain. |
-| R7.5 | 🎨 Pending — artist | Amphitheatre: concrete/stone texture, step edges, stage backdrop | Not "white plastic" |  |
-| R7.6 | 🎨 Pending — artist | Playground: CC0 play-equipment models, rubber surface texture | Recognisable equipment |  |
-| R7.7 | 🎨 Pending — artist | Site furniture: street lamps, benches, bollards, signage at gates, compound wall with gate | Human scale and life |  |
-| R7.8 | 🎨 Pending — artist | Cars: replace boxes with CC0 low-poly realistic cars (4–5 models, LOD) | Cars read at a glance |  |
+| R7.1 | ✅ Done | Convention centre rebuild: real windows/doors with frames, columns/verandah, eaves with fascia & soffit, roof tile texture with ridge caps | Reads as Kerala-style architecture | Procedural building kit (`src/model/architecture.js`): timber-framed windows with stone sills and lintel bands, high-level lights on the tall halls, panelled double doors with steps, a columned entrance portico, column verandahs under lean-to tile roofs, cornice band, deeper eaves with fascia boards and a light soffit, ridge and hip caps with finials. Windows are surface-mounted on solid walls (no real openings or interiors). Roof tiles are still shader colour, not modelled. |
+| R7.2 | ✅ Done | Prayer hall, security cabin to the same standard | Consistent style | Prayer hall and security cabin are built from the same kit (doors, windows, eaves, ridge caps). The south gate is now a small gatehouse: two piers carrying a tiled hip roof over the road, with open iron gate leaves and a barrier arm. |
+| R7.3 | ✅ Done | PBR materials: plaster (with dirt at base), tiles (normal + roughness), glass (reflective, tinted), timber pergolas (wood grain) | Close-ups hold up | Procedural only, no texture maps: new `timber` surface kind (grain along the member, greyed patches) on pergolas, frames, beams and fascia; trim (columns, sills, soffits) weathers like the walls; glass was already dark and reflective. No normal or roughness maps. |
+| R7.4 | ✅ Done | Pool: tiled pool shell with depth colour, caustics shader, wet deck edge, real fountain particles | Water looks deep and clear | Water shader (`src/hero/water.js`) now draws a mosaic-tiled floor with refraction parallax, a darker tile band along the walls, moving caustics, and depth colour (shallow at the edge, deep in the middle). Raised glossy stone coping reads as the wet edge. Two-tier fountain with droplet particles (`src/hero/fountain.js`; static spray kept when reduced motion is on). Pool ladder and five loungers added; the long pergola moved from over the water onto the deck. The pool shell itself is not modelled — the floor is drawn on the water surface. |
+| R7.5 | ✅ Done | Amphitheatre: concrete/stone texture, step edges, stage backdrop | Not "white plastic" | Darker nosing strip on every step, three stair aisles of half-height steps, coping on the back wall, and an open timber backdrop frame behind the stage. Concrete mottling was already done in R5.3. |
+| R7.6 | ✅ Done | Playground: CC0 play-equipment models, rubber surface texture | Recognisable equipment | Rebuilt from primitives, not downloaded models: play tower with deck, guard panels, pyramid roof, ladder and a slide with side rails; swing set with chains and seats; see-saw with handles; roundabout with hoop handles; two spring riders. |
+| R7.7 | ✅ Done | Site furniture: street lamps, benches, bollards, signage at gates, compound wall with gate | Human scale and life | `src/model/furniture.js`: 17 street lamps along the roads, 10 benches (plaza, play area, prayer hall, footpath), 18 bollards (plaza, west gate), and a name sign at each gate (the only texture in the model, drawn on a canvas). The plot boundary is now a 1.45 m compound wall with coping and 136 piers, with gaps where roads cross it. Café tables under the two shade canopies. |
+| R7.8 | ✅ Done | Cars: replace boxes with CC0 low-poly realistic cars (4–5 models, LOD) | Cars read at a glance | Three body styles (sedan, hatchback, SUV) extruded from side profiles, with a dark glasshouse, painted roof, wheels with hubs and a dark sill, in the five paints: 15 instanced meshes, 95 cars. Generated, not CC0 models; no lights, mirrors or LOD. The moving cars pick these shapes up automatically. |
 
 ## Phase R8 — Life & motion (cinematic feel) · 4 of 4 done
 | # | Status | Task | Done when | Notes |

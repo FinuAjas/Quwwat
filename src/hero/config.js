@@ -136,9 +136,10 @@ export const CONFIG = {
   // Leave textured artist materials out: their detail belongs in the textures.
   surfaces: {
     amount: 1,
-    wall: ['Wall_Plaster'],
+    wall: ['Wall_Plaster', 'Wall_Trim'],
     roof: ['Roof_Tile'],
     stone: ['Wall_Stone', 'Amphi_Seat', 'Amphi_Stage', 'Paving_Kerb'],
+    timber: ['Timber_Pergola', 'Timber_Frame'],
     terrain: ['Terrain'],
     asphalt: ['Paving_Road'],
     marking: ['Road_Marking'],

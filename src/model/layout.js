@@ -76,7 +76,7 @@ export const FEATURES = {
   amphitheatre: { pos: P(585, 672), rot: deg(33), r0: 4.5, tiers: 7, tierDepth: 1.05, tierRise: 0.5 },
   plaza: { pos: P(630, 732), radius: 6 },
   pergolas: [
-    { pos: P(478, 392), rot: deg(28), length: 17, width: 3.4 },
+    { pos: P(530, 404), rot: deg(28), length: 17, width: 3.4 }, // along the pool deck, south side
     { pos: P(668, 330), rot: deg(-60), length: 9, width: 3 },
     { pos: P(820, 572), rot: deg(26), length: 11, width: 3.2 },
     { pos: P(915, 515), rot: deg(26), length: 10, width: 3.2 },

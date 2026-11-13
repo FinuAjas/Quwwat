@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { roadData } from './terrain.js';
 import { toY } from './layout.js';
-import { ribbon, merge, box, paint, mulberry32, lerp, fbm } from './geom.js';
+import { ribbon, merge, box, prep, paint, mulberry32, lerp, fbm } from './geom.js';
 import { M } from './materials.js';
 
 const Y_ROAD = 0.12, Y_KERB = 0.16, Y_MARK = 0.15;
@@ -14,12 +14,38 @@ function interp(samples, closed, d, step = 2) {
   return { x: lerp(a.x, b.x, t), z: lerp(a.z, b.z, t), nx: nx / l, nz: nz / l, h: lerp(a.h, b.h, t), parkL: a.parkL && b.parkL, parkR: a.parkR && b.parkR, hw: 0 };
 }
 
-function carGeometry() {
-  const body = paint(box(1.8, 0.75, 4.3, 0, 0.6, 0), 0xffffff);
-  const cabin = paint(box(1.62, 0.55, 2.3, 0, 1.25, -0.15), 0x1c2228);
-  const roof = paint(box(1.5, 0.06, 1.9, 0, 1.55, -0.15), 0xffffff);
-  const g = merge([body, cabin, roof]);
-  return g;
+/** Extrude a side profile ([z along the car, y up] points, front = +z) to the given width, centred on the car. */
+function profile(points, width) {
+  const s = new THREE.Shape(points.map(([z, y]) => new THREE.Vector2(z, y)));
+  const g = new THREE.ExtrudeGeometry(s, { depth: width, bevelEnabled: false });
+  return g.translate(0, 0, -width / 2).rotateY(-Math.PI / 2);
+}
+// Body styles as side profiles: painted lower body, dark glasshouse, painted roof, wheels and a dark sill.
+// Vertex colours multiply the paint colour: white = paint, dark = glass / rubber whatever the paint.
+const CAR_STYLES = {
+  Sedan: { len: 4.4, wheel: 1.36, width: 1.76,
+    body: [[-2.2, 0.3], [2.2, 0.3], [2.2, 0.62], [2.02, 0.8], [0.98, 0.9], [-1.3, 0.93], [-2.08, 0.9], [-2.2, 0.72]],
+    glass: [[-1.5, 0.92], [0.98, 0.89], [0.3, 1.4], [-0.95, 1.42]], roof: [-0.95, 0.3, 1.42] },
+  Hatch: { len: 3.9, wheel: 1.2, width: 1.72,
+    body: [[-1.95, 0.3], [1.95, 0.3], [1.95, 0.64], [1.78, 0.82], [0.9, 0.92], [-1.8, 0.95], [-1.95, 0.8]],
+    glass: [[-1.82, 0.94], [0.9, 0.91], [0.28, 1.44], [-1.5, 1.46]], roof: [-1.5, 0.28, 1.46] },
+  SUV: { len: 4.6, wheel: 1.42, width: 1.86,
+    body: [[-2.3, 0.36], [2.3, 0.36], [2.3, 0.78], [2.1, 1.0], [1.05, 1.08], [-2.15, 1.1], [-2.3, 0.95]],
+    glass: [[-2.12, 1.09], [1.05, 1.07], [0.45, 1.68], [-1.85, 1.7]], roof: [-1.85, 0.45, 1.7] },
+};
+function carGeometry(style) {
+  const c = CAR_STYLES[style], r = style === 'SUV' ? 0.37 : 0.32;
+  const parts = [
+    paint(prep(profile(c.body, c.width)), 0xffffff),
+    paint(prep(profile(c.glass, c.width - 0.2)), 0x161b20),
+    paint(box(c.width - 0.24, 0.05, c.roof[1] - c.roof[0], 0, c.roof[2] + 0.02, (c.roof[0] + c.roof[1]) / 2), 0xffffff),
+    paint(box(c.width + 0.02, 0.14, c.len - 0.1, 0, c.body[0][1] + 0.05, 0), 0x1d1d1f),                      // sill / bumper line
+  ];
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    parts.push(paint(prep(new THREE.CylinderGeometry(r, r, 0.24, 10).rotateZ(Math.PI / 2).translate(sx * (c.width / 2 - 0.1), r, sz * c.wheel)), 0x101012));
+    parts.push(paint(prep(new THREE.CylinderGeometry(r * 0.55, r * 0.55, 0.26, 8).rotateZ(Math.PI / 2).translate(sx * (c.width / 2 - 0.1), r, sz * c.wheel)), 0x8f9296)); // hub
+  }
+  return merge(parts);
 }
 
 const PAINTS = [['White', 0xe4e4e0, 0.34], ['Silver', 0x979ba0, 0.22], ['Black', 0x1b1d20, 0.18], ['Red', 0x7c1d18, 0.12], ['Blue', 0x243f69, 0.14]];
@@ -124,21 +150,24 @@ export function buildRoads() {
     const m = new THREE.Mesh(g, M.shoulder); m.name = 'Road_Shoulders'; m.userData = { receiveShadow: true }; roads.add(m);
   }
 
-  // instanced cars, one InstancedMesh per paint colour
-  const carGeo = carGeometry();
-  const buckets = PAINTS.map(() => []);
+  // instanced cars: one InstancedMesh per body style and paint colour
+  const styles = Object.keys(CAR_STYLES), styleMix = [0.45, 0.3, 0.25];
+  const geos = styles.map(carGeometry);
+  const paints = PAINTS.map(([name, color]) => M.car(name, color));
+  const buckets = styles.map(() => PAINTS.map(() => []));
   for (const slot of carSlots) {
     let r = rand(), k = 0; while (k < PAINTS.length - 1 && (r -= PAINTS[k][2]) > 0) k++;
-    buckets[k].push(slot);
+    let r2 = rand(), st = 0; while (st < styles.length - 1 && (r2 -= styleMix[st]) > 0) st++;
+    buckets[st][k].push(slot);
   }
   const mtx = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1);
-  PAINTS.forEach(([name, color], k) => {
-    const list = buckets[k]; if (!list.length) return;
-    const im = new THREE.InstancedMesh(carGeo, M.car(name, color), list.length);
-    im.name = `Cars_${name}`;
+  styles.forEach((style, st) => PAINTS.forEach(([name], k) => {
+    const list = buckets[st][k]; if (!list.length) return;
+    const im = new THREE.InstancedMesh(geos[st], paints[k], list.length);
+    im.name = `Cars_${style}_${name}`;
     im.userData = { castShadow: true };
     list.forEach((s, i) => { q.setFromAxisAngle(up, s.yaw); im.setMatrixAt(i, mtx.compose(new THREE.Vector3(s.x, s.y, s.z), q, one)); });
     parking.add(im);
-  });
+  }));
   return { roads, parking, carCount: carSlots.length };
 }

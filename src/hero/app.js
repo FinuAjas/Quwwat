@@ -16,6 +16,7 @@ import { createPost } from './post.js';
 import { createTraffic, createBirds } from './life.js';
 import { createSurfaces } from './surfaces.js';
 import { createGrass } from './grass.js';
+import { createFountain } from './fountain.js';
 
 /**
  * The interactive 3D hero. Loaded on demand by main.js (after the WebGL / data-saver checks and the
@@ -48,6 +49,7 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   const heightAt = createHeightSampler(site.terrain);
   const traffic = createTraffic(scene, site, heightAt, lights.sun);
   const grass = createGrass(scene, site, heightAt);
+  const fountain = createFountain(scene, site);
   const rig = createCameraRig(camera, renderer.domElement, heightAt);
   bindUI(rig, { hero });
   const hotspots = createHotspots({ camera, dom: renderer.domElement, hero, site, rig, heightAt });
@@ -87,6 +89,7 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
     traffic.update(t);
     birds.update(t);
     grass.update(t, camera);
+    fountain.update(t, camera, renderer.domElement.height);
     site.update(t);
     foliage.update(t, camera);
     rig.update();

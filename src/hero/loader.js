@@ -39,7 +39,7 @@ export async function loadSite(renderer, onProgress = () => {}) {
           if (t) t.anisotropy = maxAniso;
         }
         if (o.material?.name?.startsWith('Water')) {
-          water ??= createWater(o.material);
+          water ??= createWater(o.material, o.userData.poolShape);
           o.material = water.material;
         }
         // Baked lightmap: custom property `lightMap` = image file next to the GLB, sampled on UV2 (falls back to UV1).

@@ -19,6 +19,13 @@ export const M = {
   roof: std('Roof_Tile', 0xa3563a, { roughness: 0.75 }),
   glass: std('Glass', 0x1d2a31, { roughness: 0.08, metalness: 0.65 }),
   timber: std('Timber_Pergola', 0x6f2c20, { roughness: 0.7 }),
+  // architecture detail (R7)
+  trim: std('Wall_Trim', 0xe0d6c3, { roughness: 0.8 }),                     // columns, sills, cornices, soffits
+  joinery: std('Timber_Frame', 0x4a2d1e, { roughness: 0.65 }),              // window / door frames, beams, fascia
+  coping: std('Pool_Coping', 0x7f8782, { roughness: 0.28 }),                // wet stone edge round the pool
+  playYellow: std('Play_Yellow', 0xd9a31f, { roughness: 0.55 }),
+  gateIron: std('Gate_Iron', 0x1e2224, { roughness: 0.45, metalness: 0.7 }),
+  furniture: std('Site_Furniture', 0xffffff, { vertexColors: true, roughness: 0.6, metalness: 0.25 }),
   deck: std('Pool_Deck', 0xcbc3b4, { roughness: 0.8 }),
   water: std('Water', 0x2aa6d6, { roughness: 0.05, metalness: 0.1 }),
   spray: std('Fountain_Spray', 0xffffff, { roughness: 0.2, transparent: true, opacity: 0.75 }),
