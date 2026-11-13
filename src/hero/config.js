@@ -8,9 +8,9 @@ export const TIER = getTier();
 // ultra = strong desktop GPUs: smoother edges, finer shadows and ambient occlusion, a little more mist and traffic.
 // high = ordinary desktops and the fastest phones. low = phones and weak GPUs (no AO / bloom / blur).
 export const QUALITY = {
-  ultra: { pixelRatio: 2, antialias: true, msaa: 8, ao: true, aoSamples: 16, bloom: true, dof: true, shadows: true, shadowMapSize: 6144, mistCount: 34, cars: 7 },
-  high: { pixelRatio: 2, antialias: true, msaa: 4, ao: true, aoSamples: 12, bloom: true, dof: true, shadows: true, shadowMapSize: 4096, mistCount: 26, cars: 5 },
-  low: { pixelRatio: 1.5, antialias: true, msaa: 2, ao: false, bloom: false, dof: false, shadows: true, shadowMapSize: 2048, mistCount: 14, cars: 3 },
+  ultra: { pixelRatio: 2, antialias: true, msaa: 8, ao: true, aoSamples: 16, bloom: true, dof: true, shadows: true, softShadows: [16, 24], shadowMapSize: 6144, mistCount: 34, cars: 7, grass: 70000 },
+  high: { pixelRatio: 2, antialias: true, msaa: 4, ao: true, aoSamples: 12, bloom: true, dof: true, shadows: true, softShadows: [12, 16], shadowMapSize: 4096, mistCount: 26, cars: 5, grass: 40000 },
+  low: { pixelRatio: 1.5, antialias: true, msaa: 2, ao: false, bloom: false, dof: false, shadows: true, shadowMapSize: 2048, mistCount: 14, cars: 3, grass: 0 },
 }[TIER];
 
 // ---------- time-of-day looks ----------
@@ -131,6 +131,30 @@ export const CONFIG = {
   // heightFalloff: metres over which the distance haze thins with altitude.
   // valley: ground-hugging mist below `top` (world Y), fading over `falloff` metres, thickening over `reach` metres of view distance.
   atmosphere: { heightFalloff: 140, valley: { top: -10, falloff: 6, reach: 260 }, ridges: true },
+  // Procedural surface detail for flat-coloured materials, listed by material name under the kind of surface
+  // they should become (see surfaces.js). amount: 0 = off, 1 = normal.
+  // Leave textured artist materials out: their detail belongs in the textures.
+  surfaces: {
+    amount: 1,
+    wall: ['Wall_Plaster'],
+    roof: ['Roof_Tile'],
+    stone: ['Wall_Stone', 'Amphi_Seat', 'Amphi_Stage', 'Paving_Kerb'],
+    terrain: ['Terrain'],
+    asphalt: ['Paving_Road'],
+    marking: ['Road_Marking'],
+    brick: ['Paving_Path'],
+    flagstone: ['Paving_Plaza'],
+    tile: ['Pool_Deck'],
+    rubber: ['Play_Surface'],
+  },
+  // Grass tufts on the lawns (count per tier: QUALITY.grass). They shrink away between `near` and `far` metres from
+  // the camera. area = the part of the terrain to scatter over; lawnGreen = how green (linear vertex colour, 0–1) the
+  // ground must be to count as lawn; height = tuft height range in metres; wind = sway.
+  grass: { area: { minX: -100, maxX: 130, minZ: -92, maxZ: 94 }, lawnGreen: 0.1, near: 45, far: 110, height: [0.28, 0.6], wind: 0.06 },
+  // Sun shadows on the ultra / high tiers are sharp where an object meets the ground and blur with distance from it.
+  // softness = metres of blur per metre between the object and its shadow (the real sun is ~0.01; haze makes it look wider),
+  // maxBlur = widest blur in metres. Samples per tier: QUALITY.softShadows [blocker search, filter]. Phones keep plain soft shadows.
+  shadows: { softness: 0.045, maxBlur: 2.4 },
   // Ambient occlusion (ultra / high tiers): radius in metres, intensity 0–1; sample count comes from the tier
   ao: { radius: 3.2, intensity: 0.85, thickness: 1.2 },
   // sky / fog / sun / hemi / env / exposure / grade come from the active look (see LOOKS below)

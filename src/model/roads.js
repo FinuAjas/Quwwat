@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { roadData } from './terrain.js';
 import { toY } from './layout.js';
-import { ribbon, merge, box, paint, mulberry32, lerp } from './geom.js';
+import { ribbon, merge, box, paint, mulberry32, lerp, fbm } from './geom.js';
 import { M } from './materials.js';
 
 const Y_ROAD = 0.12, Y_KERB = 0.16, Y_MARK = 0.15;
@@ -29,6 +29,7 @@ export function buildRoads() {
   const parking = new THREE.Group(); parking.name = 'Parking';
   const rand = mulberry32(42);
   const paved = { asphalt: [], path: [] }, kerbs = [], marks = [];
+  const shoulder = { pos: [], col: [] };
   const carSlots = [];
 
   for (const { def, samples, length } of roadData) {
@@ -46,6 +47,23 @@ export function buildRoads() {
     if (def.kerb) {
       kerbs.push(ribbon(L.map((p) => [p[0], p[1] + 0.04, p[2]]), KL));
       kerbs.push(ribbon(KR, R.map((p) => [p[0], p[1] + 0.04, p[2]])));
+    }
+    // worn-earth shoulder: a strip outside each edge, opaque-ish at the kerb and fading to nothing over the grass
+    const inner = def.kerb ? 0.7 : 0, wide = def.kerb ? 1.5 : 0.6;
+    for (let i = 0; i < list.length - 1; i++) {
+      const a = list[i], b = list[i + 1];
+      for (const sign of [1, -1]) {
+        const edge = (s, off) => { const e = (sign > 0 ? s.hl : s.hr) + off; return [s.x + s.nx * sign * e, toY(s.h) + Y_ROAD - 0.05, s.z + s.nz * sign * e]; };
+        const reach = (s) => inner + wide * (0.75 + 0.5 * (fbm(s.x / 4 + sign * 3, s.z / 4, 2) * 0.5 + 0.5));
+        const a0 = edge(a, inner), a1 = edge(a, reach(a)), b0 = edge(b, inner), b1 = edge(b, reach(b));
+        const quad = sign > 0 ? [a0, b0, b1, a0, b1, a1] : [a0, b1, b0, a0, a1, b1]; // wound to face up
+        const alpha = sign > 0 ? [1, 1, 0, 1, 0, 0] : [1, 0, 1, 1, 0, 0];
+        quad.forEach((p, k) => {
+          const shade = 0.85 + 0.3 * (fbm(p[0] / 2.2, p[2] / 2.2, 2) * 0.5 + 0.5);
+          shoulder.pos.push(...p);
+          shoulder.col.push(0.2 * shade, 0.135 * shade, 0.08 * shade, alpha[k] * (def.kerb ? 0.7 : 0.55));
+        });
+      }
     }
     const hw = def.width / 2;
     // centre dashes: 2 m dash / 4 m gap
@@ -98,6 +116,13 @@ export function buildRoads() {
   add(paved.path, M.path, 'Footpath');
   add(kerbs, M.kerb, 'Road_Kerbs');
   add(marks, M.marking, 'Road_Markings');
+  if (shoulder.pos.length) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(shoulder.pos, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(shoulder.col, 4));
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, M.shoulder); m.name = 'Road_Shoulders'; m.userData = { receiveShadow: true }; roads.add(m);
+  }
 
   // instanced cars, one InstancedMesh per paint colour
   const carGeo = carGeometry();

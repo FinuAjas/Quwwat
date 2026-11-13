@@ -96,9 +96,11 @@ export function createPost(renderer, scene, camera) {
     ao.updateGtaoMaterial({ radius: a.radius, distanceExponent: 1, thickness: a.thickness, scale: 1, samples: QUALITY.aoSamples, distanceFallOff: 1, screenSpaceRadius: false });
     ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, radiusExponent: 1, rings: 2, samples: 12 });
     ao.blendIntensity = a.intensity;
-    // Overlays (mist sprites, selection ring) are on layer 1: hide them while AO renders its depth/normal buffers.
+    // Hide two layers while AO renders its depth/normal buffers: overlays (1: mist sprites, selection ring) and
+    // leaf-card plants (2) — that pass ignores alpha cut-outs, so every leaf card would count as a solid quad
+    // and leave dark triangles hanging in the canopy.
     const renderAO = ao.render.bind(ao);
-    ao.render = (...args) => { camera.layers.disable(1); try { renderAO(...args); } finally { camera.layers.enable(1); } };
+    ao.render = (...args) => { camera.layers.disable(1); camera.layers.disable(2); try { renderAO(...args); } finally { camera.layers.enable(1); camera.layers.enable(2); } };
     composer.addPass(ao);
   }
 

@@ -55,7 +55,7 @@ export async function loadSite(renderer, onProgress = () => {}) {
           }
           o.material = lightMapped.get(key);
         }
-        if (o.isInstancedMesh && TIER === 'low' && o.userData.vegetation) thinInstances(o, o.name.includes('_far') ? 0.45 : 0.7);
+        if (o.isInstancedMesh && TIER === 'low' && o.userData.vegetation && !o.userData.keepAll) thinInstances(o, o.name.includes('_far') ? 0.45 : 0.7);
       }
       if (o.userData.hotspotId && !o.name.startsWith('Hotspot_')) clickable.push(o);
       o.updateMatrix();
