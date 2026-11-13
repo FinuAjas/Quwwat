@@ -48,6 +48,9 @@ export function benchmark() {
     const dbg = gl.getExtension('WEBGL_debug_renderer_info');
     const renderer = String(dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
     const software = /swiftshader|llvmpipe|software|basic render/i.test(renderer);
+    // No GPU at all: the answer is already known, and the workload below would block the page for about a second
+    // on a software renderer (Lighthouse measured a 930 ms long task here).
+    if (software) return { ms: Infinity, renderer, software };
     const compile = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
     const prog = gl.createProgram();
     gl.attachShader(prog, compile(gl.VERTEX_SHADER, `#version 300 es
@@ -64,15 +67,21 @@ export function benchmark() {
     gl.useProgram(prog);
     gl.bindVertexArray(gl.createVertexArray());
     const seed = gl.getUniformLocation(prog, 'uSeed'), px = new Uint8Array(4);
-    const batch = (k) => {
+    const batch = (k, draws = BENCH.draws) => {
       const t0 = performance.now();
-      for (let j = 0; j < BENCH.draws; j++) { gl.uniform1f(seed, k + j * 0.37); gl.drawArrays(gl.TRIANGLES, 0, 3); }
+      for (let j = 0; j < draws; j++) { gl.uniform1f(seed, k + j * 0.37); gl.drawArrays(gl.TRIANGLES, 0, 3); }
       gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
       return performance.now() - t0;
     };
-    batch(0); batch(1); // warm-up: shader compile and first-use costs
+    // Warm-up (shader compile, first-use costs) with a single pass first. If one pass alone is already past the
+    // "too slow" mark, stop: a full measurement would hold the page up for seconds. (One pass also carries the
+    // fixed cost of the read-back, so it is only compared as it is, never scaled up to a full batch.)
+    batch(0, 1);
+    const probe = batch(1, 1);
+    if (probe > BENCH.tooSlow) return { ms: probe * BENCH.draws, renderer, software };
+    batch(2);
     const times = [], start = performance.now();
-    while (times.length < BENCH.samples && performance.now() - start < BENCH.maxMs) times.push(batch(times.length + 2));
+    while (times.length < BENCH.samples && performance.now() - start < BENCH.maxMs) times.push(batch(times.length + 3));
     times.sort((a, b) => a - b);
     return { ms: times[times.length >> 1], renderer, software };
   } catch {
@@ -93,7 +102,7 @@ export function pickTier() {
   if (!b) { chosen = fallback; return { tier: chosen, source: 'screen-size rule' }; }
   const speed = b.software || b.ms > BENCH.slow ? 'slow' : b.ms < BENCH.fast ? 'fast' : 'medium';
   chosen = handheld ? (speed === 'fast' ? 'high' : 'low') : { fast: 'ultra', medium: 'high', slow: 'low' }[speed];
-  const result = { tier: chosen, ms: Math.round(b.ms * 100) / 100, renderer: b.renderer, tooSlow: b.software || b.ms > BENCH.tooSlow };
+  const result = { tier: chosen, ms: Number.isFinite(b.ms) ? Math.round(b.ms * 100) / 100 : null, renderer: b.renderer, tooSlow: b.software || b.ms > BENCH.tooSlow };
   // A tab opened in the background can measure many times slower than the GPU really is, so a slow result
   // is only kept for this visit and measured again next time; fast and medium results are remembered.
   try { (speed === 'slow' ? sessionStorage : localStorage).setItem(STORE_KEY, JSON.stringify(result)); } catch { /* private mode */ }

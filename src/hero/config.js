@@ -55,12 +55,18 @@ export const LOOK_NAME = LOOKS[requested] ? requested : DEFAULT_LOOK;
 const LOOK = LOOKS[LOOK_NAME];
 
 export const CONFIG = {
-  // `core` (terrain, roads, buildings, hotspots) loads first; `extras` (e.g. vegetation, details) stream in after.
-  models: { core: './public/models/mountain-courtyard.glb', extras: [] },
+  // `core` (terrain, roads, buildings, cars, hotspots) is shown as soon as it has loaded; the `extras` download at the
+  // same time and are added as they arrive — the forest grows in, then the site furniture and rocks appear.
+  // tools/model-builder.html writes all three files. An artist model delivered as one file: set extras to [].
+  models: {
+    core: './public/models/mountain-courtyard.glb',
+    extras: ['./public/models/mountain-courtyard-vegetation.glb', './public/models/mountain-courtyard-details.glb'],
+  },
   dracoPath: 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/gltf/',
   basisPath: 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/basis/',
   lightMapIntensity: 1.0,
-  foliage: { wind: 0.012, translucency: 0.35 }, // sway as a fraction of plant height; back-light strength
+  // sway as a fraction of plant height; back-light strength; seconds the forest takes to rise when it arrives late
+  foliage: { wind: 0.012, translucency: 0.35, growSeconds: 1.2 },
 
   siteCenter: [15, 0, 0],
   // Low tier: only buildings/cars cast shadows (trees still receive them).

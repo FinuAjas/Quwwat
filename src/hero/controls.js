@@ -29,6 +29,7 @@ export function createCameraRig(camera, dom, heightAt) {
     zoomToCursor: true,
   });
   dom.tabIndex = 0; // arrow keys pan when the canvas has focus (not while reading the page)
+  dom.setAttribute('role', 'application'); // a custom widget with its own keys; also makes the label below valid ARIA
   dom.setAttribute('aria-label', 'Interactive 3D site model. Drag to rotate, right-drag to pan, arrow keys to move.');
   controls.listenToKeyEvents(dom);
   controls.keyPanSpeed = 14;

@@ -19,9 +19,9 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 | R6 Vegetation | Code (procedural) | ✅ 5 | Leaf-card trees, palms, shrubs, hedges and flower beds, three distance levels, noise-driven forest — all generated in code. An artist's hand-modelled trees can still replace them later. |
 | R7 Architecture detail | Code (procedural) | ✅ 8 | Building kit with windows, doors, verandahs, eaves and ridge caps; tiled pool floor with caustics and fountain particles; amphitheatre steps and backdrop; play equipment; lamps, benches, bollards, signs and a compound wall; three car styles. An artist model can still replace it. |
 | R8 Life & motion | Code | ✅ 4 | Spline fly-in (skippable), drifting cloud shadows, moving cars and birds, settling camera moves. |
-| R9 Pipeline & performance | Both | ✅ 2 · 🟡 2 · ⏳ 1 · 🎨 1 | Poster image and three benchmark-picked tiers done; load size checked. Build script (needs Node.js), real-phone test and Lighthouse pending. |
+| R9 Pipeline & performance | Both | ✅ 3 · 🟡 2 · 🎨 1 | Poster, benchmark-picked tiers and the three-file model are done; one-command rebuild and size report exist. Mesh compression needs Node.js; real-phone test and a Lighthouse re-run are still open. |
 
-**Task count:** 49 done · 2 partial · 1 pending (code) · 1 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
+**Task count:** 50 done · 2 partial · 0 pending (code) · 1 pending (artist) · 1 waiting · 1 not built — 55 tasks in total.
 
 ### Completed so far (R0–R8, R9.4, R9.5)
 - The page accepts an artist-built model without code changes, and `tools/validate-model.html` checks a model against the brief.
@@ -36,8 +36,8 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 - Ground, vegetation and architecture detail (R5–R7) generated in code: textured-looking surfaces, leaf-card trees, a Kerala-style building kit, a tiled pool with caustics and a droplet fountain, play equipment, street furniture, a compound wall and three car styles.
 
 ### Pending — code (can be done now)
-1. **R9.6** Real-phone test and Lighthouse run (the load-size check is done).
-2. **R9.1** Asset build script (needs Node.js installed).
+1. **R9.6** Real-phone test, frame-rate check and a Lighthouse re-run once the latest fixes are published (first scores are recorded in the R9 table).
+2. **R9.1** Mesh and texture compression (Meshopt/Draco, KTX2) — needs Node.js installed; the rebuild-and-report script is done.
 
 ### Pending — artist (see [BLENDER_ARTIST_BRIEF.md](BLENDER_ARTIST_BRIEF.md))
 - Optional: replace the procedural buildings, trees and cars (R5–R7) with hand-modelled, textured ones. The page accepts them without code changes.
@@ -45,7 +45,7 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 
 ### Blocked until the artist delivers
 - **R0.7** Re-tune camera presets, pan bounds and hotspot focus distances.
-- **R9.2** Decide the file split (core / vegetation / details).
+- **R9.2** Re-decide the file split once the artist's model arrives (the procedural model is already split in three).
 - **R9.5** re-render the poster images from the artist's model (open the page with `?tier=ultra&poster` while `serve.py` is running).
 - **R8** re-tune on the artist's model: intro flight path, car route (`CONFIG.intro`, `CONFIG.traffic`).
 
@@ -54,7 +54,9 @@ while keeping the hero fast (target: 60 fps desktop, 30+ fps mid phones, ≤ 6 M
 - KTX2 textures and baked lightmaps are wired in but untested (no such assets yet).
 - Midday and overcast looks were not re-checked after the haze shader (R4) went in.
 - Frame rate in the preview pane read 72–144 fps with all desktop effects on; the pane throttles unevenly, so treat it as rough.
-- Lighthouse has produced no scores yet: the one run crashed on the 3D scene (see R9.6); it needs re-running once the fix is live.
+- Lighthouse scores exist for the poster page only (its test machine has no GPU); the 3D scene itself has never been scored. Three fixes made after that run have not been re-scored.
+- The forest's late arrival (R9.2) was checked by driving the grow-in by hand and by load order in the network log, not by watching it on a slow connection.
+- `tools/build_assets.py` was run end to end with the pages opened by hand (`--no-open`); the path where it starts its own server and opens the browser itself was not exercised.
 - A browser tab opened in the background can benchmark many times slower than the GPU really is (measured 41.7 ms vs 0.8 ms on the same machine). Slow results are therefore not remembered between visits, but that visit still gets the low tier.
 - R8 was checked in the desktop preview pane only (both tiers load without errors); the portrait/phone intro path and the cloud shadows under the midday and overcast looks were not checked by eye.
 - The tier benchmark's thresholds were calibrated on one machine only (RTX 5050 laptop, 0.8 ms → ultra); integrated-GPU desktops and phones are untested, so their tier choice is a best guess. `?debug` logs the measurement.
@@ -195,15 +197,15 @@ Built in code (`src/model/vegetation.js`) instead of waiting for artist models. 
 | R8.3 | ✅ Done | A few moving cars on the access road, birds over the forest (optional) | Scene feels alive | 5 cars (3 on phones) drive gate → hairpin → ring road → back out, keeping left and slowing in bends (`src/hero/life.js`, route in `CONFIG.traffic`). The 3 static cars on the hairpin road were removed from the model. A flock of 7 birds circles the valley. |
 | R8.4 | ✅ Done | Smoother preset transitions (eased arcs, slight camera "settle") | No mechanical moves | New ease with a long soft tail; the look-at point arrives just before the camera; long moves pull back slightly mid-flight; duration grows with distance (1.3–3 s). |
 
-## Phase R9 — Asset pipeline & performance · 2 done, 2 partial, 2 pending
+## Phase R9 — Asset pipeline & performance · 3 done, 2 partial, 1 pending (artist)
 | # | Status | Task | Done when | Notes |
 |---|---|---|---|---|
-| R9.1 | ⏳ Pending — code | `assets/` source folder + `tools/build-assets` script: textures → KTX2 (Basis), meshes → Meshopt/Draco via `gltf-transform` | One command rebuilds | Needs Node.js installed. The artist can already export Draco + WebP straight from Blender. |
-| R9.2 | 🟡 Partial | Split GLB: `site-core.glb` (terrain/buildings, loads first) + `vegetation.glb` + `details.glb` (stream in after first frame) | First view < 2 s on 4G | Loader side done (R0.2). Splitting the model into files is pending and depends on the artist's delivery. |
+| R9.1 | 🟡 Partial | `assets/` source folder + `tools/build-assets` script: textures → KTX2 (Basis), meshes → Meshopt/Draco via `gltf-transform` | One command rebuilds | Done: `python tools/build_assets.py` rebuilds the three model files and both posters in one command and prints every delivered file with its on-disk and gzip size against the budgets (`--report` prints the table only). No Node.js needed. **Not done:** Meshopt/Draco mesh compression and KTX2 textures — glTF-Transform needs Node.js, which is not installed, and loading it in the browser from a CDN was not permitted in this session. The page already loads Draco, Meshopt and KTX2 files if they are supplied. |
+| R9.2 | ✅ Done | Split GLB: `site-core.glb` (terrain/buildings, loads first) + `vegetation.glb` + `details.glb` (stream in after first frame) | First view < 2 s on 4G | The model builder writes three files: `mountain-courtyard.glb` (terrain, roads, buildings, cars — 992 KB gzipped), `-vegetation.glb` (624 KB) and `-details.glb` (furniture, rocks — 80 KB). All three download at once; the scene appears when the core is ready and the forest rises from the ground when it arrives. Thumbnails are rendered once everything is in. First view is 1.6 MB, about 1.4 s of download at 9 Mbit/s (calculated from file sizes, not measured on a phone). An artist model in one file still works: set `models.extras` to `[]`. |
 | R9.3 | 🎨 Pending — artist | Texture budget: 2k max, atlases for small props, mipmaps, anisotropy | GPU memory < 300 MB desktop | Anisotropic filtering is applied on load; the validator page flags oversized textures. |
 | R9.4 | ✅ Done | Quality tiers extended (Ultra / High / Low) + auto-detect via a 1 s GPU benchmark | Right tier picked automatically | `src/hero/tier.js`: a ~0.35 s shader benchmark on the first visit (result remembered) picks ultra / high / low on desktops and high / low on phones; `?tier=` still overrides. Ultra adds 8× MSAA, a 6144 px shadow map, 16-sample AO, more mist and cars. Thresholds calibrated on one machine only. |
 | R9.5 | ✅ Done | Static poster image (rendered from the scene) shown instantly and for no-WebGL / reduced-data users | Never a blank screen | `hero-poster.webp` (1920×1200, 132 KB) and `hero-poster-mobile.webp` (900×1600, 87 KB) show from the first paint under the hero copy. Without WebGL 2 the poster stays; with data saver it stays behind a "Load 3D model" button. `main.js` is now a small bootstrap and the 3D code (`app.js`, three.js, the model) is fetched only when needed. Preview with `?3d=off`. |
-| R9.6 | 🟡 Partial | Re-verify: fps (debug HUD), load size, mobile test on a real phone, Lighthouse | Budgets met | Done: first load is 1.85 MB compressed (model 1.23 MB, three.js 0.36 MB, images 0.15 MB) against the 6 MB budget; phone-size emulation (375×812, touch) loads the low/high tier, the portrait poster and the portrait intro without layout overlap. Lighthouse (PageSpeed Insights, mobile, live site, 13 Nov 2026) **crashed its test browser** — its machines have no GPU, so the scene ran on software rendering. Fixed: devices without graphics acceleration now keep the poster and offer the 3D behind a button. **Not done:** Lighthouse re-run after that fix is published; real-phone test; fps (the preview pane was hidden, so frame rates read there are meaningless). |
+| R9.6 | 🟡 Partial | Re-verify: fps (debug HUD), load size, mobile test on a real phone, Lighthouse | Budgets met | **Load size:** first view 1.6 MB, whole page 2.6 MB against the 6 MB budget (`python tools/build_assets.py --report`). **Lighthouse** (PageSpeed Insights, mobile, live site, 13 Nov 2026, Lighthouse 13.6): Performance 71, Accessibility 96, Best Practices 100, SEO 100; FCP 1.5 s, LCP 3.0 s, TBT 930 ms, CLS 0.005, Speed Index 4.0 s. Its test machine has no GPU, so these score the poster page, not the 3D scene. Three findings fixed afterwards and **not yet re-scored**: the GPU benchmark's long task on software renderers, the render-blocking font stylesheet, and ARIA labels on plain `div`s. An earlier run crashed its browser on the 3D scene; GPU-less devices now keep the poster. **Phone emulation** (375×812, touch): loads the right tier, portrait poster and portrait intro without overlap. **Not done:** test on a real phone; frame rate (the preview pane was hidden throughout, so fps read there is meaningless); a Lighthouse re-run after the three fixes are published. |
 
 ---
 

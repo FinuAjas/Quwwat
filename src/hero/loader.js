@@ -16,7 +16,7 @@ export function createGLTFLoader(renderer) {
 
 /**
  * Loads the site model. `CONFIG.models.core` is required and shown first; `CONFIG.models.extras`
- * (vegetation / detail files) are streamed in afterwards with `site.loadExtras()`.
+ * (vegetation / detail files) download alongside it and are handed over by `site.loadExtras()`.
  * Every file gets the same preparation: shadow flags from glTF extras, rebuilt normals where asked,
  * animated water, baked lightmaps, frozen matrices and fewer trees on low-tier devices.
  */
@@ -65,13 +65,19 @@ export async function loadSite(renderer, onProgress = () => {}) {
     return root;
   }
 
+  // Start every download now: the extras arrive while the core is being prepared, not after it.
+  const extras = (CONFIG.models.extras ?? []).map((path) => {
+    const url = new URL(path, document.baseURI).href;
+    const loading = loader.loadAsync(url);
+    loading.catch(() => {}); // reported when the part is collected in loadExtras
+    return { path, url, loading };
+  });
   const coreUrl = new URL(CONFIG.models.core, document.baseURI).href;
   const gltf = await loader.loadAsync(coreUrl, (e) => {
     // With gzip/brotli the reported total may be the compressed size (or 0), so clamp.
     if (e.total) onProgress(Math.min(0.95, e.loaded / e.total));
   });
   const root = prepare(gltf.scene, coreUrl);
-  const extras = CONFIG.models.extras ?? [];
   if (!extras.length) dispose();
 
   return {
@@ -81,12 +87,11 @@ export async function loadSite(renderer, onProgress = () => {}) {
     anchors: root.getObjectByName('Hotspots')?.children ?? [],
     update: (t) => water?.update(t),
     hasExtras: extras.length > 0,
-    /** Stream in the remaining files one by one; `onPart(root)` is called for each (add it to the scene there). */
+    /** Collect the remaining files in order as they finish; `onPart(root)` is called for each (add it to the scene there). */
     async loadExtras(onPart) {
-      for (const path of extras) {
-        const url = new URL(path, document.baseURI).href;
+      for (const { path, url, loading } of extras) {
         try {
-          const part = prepare((await loader.loadAsync(url)).scene, url);
+          const part = prepare((await loading).scene, url);
           await onPart(part);
         } catch (err) {
           console.warn(`Optional model part failed to load: ${path}`, err);

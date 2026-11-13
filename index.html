@@ -7,7 +7,9 @@
   <meta name="description" content="Mountain Courtyard by Quwwat Group — a harmonious blend of nature, recreation and community living." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <!-- Fonts load without holding up the first paint (text shows in the fallback face, then swaps) -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" /></noscript>
   <link rel="stylesheet" href="./src/styles/hero.css" />
   <link rel="modulepreload" href="./src/hero/main.js" />
   <script type="importmap">
@@ -20,7 +22,7 @@
 <body>
   <section class="hero is-loading" id="hero">
     <!-- WebGL canvas + CSS2D label layer are injected here -->
-    <div class="hero__stage" id="stage" aria-label="Interactive 3D model of Mountain Courtyard"></div>
+    <div class="hero__stage" id="stage" role="region" aria-label="Interactive 3D model of Mountain Courtyard"></div>
     <div class="hero__vignette" aria-hidden="true"></div>
 
     <header class="nav">
@@ -74,7 +76,7 @@
       <p class="panel__count" id="gallery-count" aria-live="polite"></p>
     </section>
 
-    <div class="map-controls" aria-label="Map controls">
+    <div class="map-controls" role="group" aria-label="Map controls">
       <div class="compass" id="compass" title="North"><span>N</span><i></i></div>
       <button class="ctl" data-action="fullscreen" title="Fullscreen" aria-label="Fullscreen">⛶</button>
       <button class="ctl" data-action="reset" title="Reset view" aria-label="Reset view">⟳</button>
@@ -85,7 +87,7 @@
       <button class="ctl" data-action="layers" title="Labels" aria-label="Toggle labels">◈</button>
     </div>
 
-    <div class="shots" aria-label="Camera presets">
+    <div class="shots" role="group" aria-label="Camera presets">
       <button class="shots__arrow" data-dir="-1" aria-label="Previous">‹</button>
       <div class="shots__track" id="shots">
         <button class="shot is-active" data-preset="aerial"><span>Aerial View</span></button>
