@@ -39,7 +39,19 @@ async function run() {
   renderer.setAnimationLoop(null);
   hotspots.clear?.();
   for (const name of ['HotspotRing', 'Mist']) { const o = scene.getObjectByName(name); if (o) o.visible = false; }
-  const people = buildPeople();
+  // the benches the model really has (instanced mesh in the details file), as world { x, y, z, yaw }
+  const benches = [], benchMesh = scene.getObjectByName('Benches');
+  if (benchMesh) {
+    const m = new THREE.Matrix4();
+    benchMesh.updateWorldMatrix(true, false);
+    for (let i = 0; i < benchMesh.count; i++) {
+      benchMesh.getMatrixAt(i, m); m.premultiply(benchMesh.matrixWorld);
+      const e = m.elements;
+      benches.push({ x: e[12], y: e[13], z: e[14], yaw: Math.atan2(e[8], e[10]) });
+    }
+  }
+  log(`Benches in the model: ${benches.length}`);
+  const people = buildPeople({ benches: benches.length ? benches : null });
   people.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   scene.add(people);
   let tris = 0;
@@ -74,7 +86,7 @@ async function run() {
   const out = [];
   for (const s of SHOTS) out.push(await shoot(s));
   log(`Saved ${out.filter((o) => o.saved).length} of ${out.length} images to docs/previews/`);
-  window.__preview = { shoot, out, hero, people };
+  window.__preview = { shoot, out, hero, people, benches };
 }
 
 run().catch((err) => { log(`Failed: ${err.message}`); window.__preview = { error: String(err) }; console.error(err); });

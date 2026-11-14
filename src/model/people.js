@@ -23,8 +23,15 @@ const Y = new THREE.Vector3(0, 1, 0);
 
 /** Capsule from a to b (arrays), radius r; sx widens it sideways (for torsos). */
 function limb(a, b, r, color, sx = 1, sz = 1) {
+  return span(a, b, (len) => new THREE.CapsuleGeometry(r, len, 2, 7), color, sx, sz);
+}
+/** Tapered trunk from a (radius ra) to b (radius rb): chests and waists. */
+function trunk(a, b, ra, rb, color, sx = 1, sz = 1) {
+  return span(a, b, (len) => new THREE.CylinderGeometry(rb, ra, len, 9, 1), color, sx, sz);
+}
+function span(a, b, make, color, sx, sz) {
   const A = new THREE.Vector3().fromArray(a), B = new THREE.Vector3().fromArray(b), d = B.clone().sub(A), len = d.length();
-  const g = new THREE.CapsuleGeometry(r, Math.max(len, 0.001), 2, 7);
+  const g = make(Math.max(len, 0.001));
   if (sx !== 1 || sz !== 1) g.scale(sx, 1, sz);
   g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(Y, d.normalize()));
   g.translate((A.x + B.x) / 2, (A.y + B.y) / 2, (A.z + B.z) / 2);
@@ -39,6 +46,8 @@ const POSES = {
   run: { lean: 0.22, legL: [0.95, 0.9], legR: [-0.55, 0.75], armL: [-0.9, 0.2, 1.3], armR: [0.9, 0.2, 1.4] },
   sit: { sit: true, legL: [1.5, 1.5], legR: [1.5, 1.5], armL: [0.55, 0.12, 0.7, 0.25], armR: [0.55, 0.12, 0.7, 0.25] },
   sitClap: { sit: true, legL: [1.5, 1.5], legR: [1.5, 1.5], armL: [0.9, 0.1, 1.5, 0.75], armR: [0.9, 0.1, 1.5, 0.75] },
+  sitLap: { sit: true, legL: [1.5, 1.5], legR: [1.5, 1.5], armL: [0.3, 0.06, 1.15, 0.5], armR: [0.3, 0.06, 1.15, 0.5] },
+  sitPhoto: { sit: true, legL: [1.5, 1.5], legR: [1.5, 1.5], armL: [1.15, 0.1, 1.2, 0.55], armR: [1.15, 0.1, 1.2, 0.55] },
   sitWave: { sit: true, legL: [1.5, 1.5], legR: [1.5, 1.5], armL: [0.55, 0.12, 0.7, 0.25], armR: [2.6, 0.5, 0.3] },
   cheer: { armL: [2.7, 0.45, 0.25], armR: [2.75, 0.45, 0.25] },
   wave: { armR: [2.6, 0.5, 0.35] },
@@ -84,6 +93,11 @@ function figure(o) {
     const toe = [x, ankle[1] + Math.sin(s) * H * 0.07 - limbR * 0.2, ankle[2] + Math.cos(s) * H * 0.07];
     parts.push(limb([x, ankle[1] - limbR * 0.3, ankle[2]], toe, limbR * 1.05, o.shoes ?? 0x2a2622));
   });
+  if (o.skirt && p.sit && !child) { // seated in a dress: one piece over the lap and down the shins, instead of two trouser legs
+    const [t, k] = legs[0], s = t - k, c = o.skirtColor ?? o.bottom;
+    const knee = [0, pelvisY - thigh * Math.cos(t), thigh * Math.sin(t)], hem = [0, knee[1] - shin * 0.8 * Math.cos(s), knee[2] + shin * 0.8 * Math.sin(s)];
+    parts.push(limb([0, pelvisY, -limbR], knee, limbR * 1.5, c, 2.5, 1), limb(knee, hem, limbR * 1.35, c, 2.5, 1));
+  }
   if (longSkirt) { // dress or gown: a cone from the waist to the hem
     const top = pelvisY + H * 0.1, hem = o.skirtHem ?? H * 0.05, r = o.skirt;
     parts.push(part(new THREE.CylinderGeometry(H * 0.085, r, top - hem, 14, 1).translate(0, (top + hem) / 2, r * 0.06), o.skirtColor ?? o.bottom));
@@ -91,8 +105,10 @@ function figure(o) {
 
   // torso, neck, head
   const waist = [0, pelvisY + H * 0.02, 0];
-  parts.push(limb(waist, [neck[0], neck[1] - H * 0.045, neck[2]], H * 0.07, o.top, child ? 1.35 : 1.5, 0.95));
-  parts.push(limb(pelvis, waist, H * 0.07, o.skirt ? (o.skirtColor ?? o.bottom) : o.bottom, 1.4, 0.95));
+  const wide = child ? 1.3 : o.female ? 1.38 : 1.62, chest = [neck[0], neck[1] - H * 0.03, neck[2]];
+  parts.push(trunk(waist, chest, H * (child ? 0.064 : 0.058), H * 0.073, o.top, wide, 0.84));          // narrower at the waist
+  parts.push(ball(chest, H * 0.073, o.top, [wide, 0.5, 0.84]));                                           // rounded shoulders
+  parts.push(limb(pelvis, waist, H * 0.064, o.skirt ? (o.skirtColor ?? o.bottom) : o.bottom, o.female ? 1.55 : 1.35, 0.95));
   const head = [0, neck[1] + headR * 1.25, neck[2] + headR * 0.12];
   parts.push(limb(neck, [head[0], head[1] - headR * 0.5, head[2]], headR * 0.42, o.skin));
   parts.push(ball(head, headR, o.skin, [0.92, 1.1, 0.98]));
@@ -101,7 +117,8 @@ function figure(o) {
     parts.push(part(new THREE.CylinderGeometry(headR * 0.95, shoulderW * 1.25, H * 0.13, 12, 1).scale(1, 1, 0.8).translate(neck[0], neck[1] - H * 0.02, neck[2]), o.scarf));
   } else {
     parts.push(part(new THREE.SphereGeometry(headR * 1.07, 12, 8, 0, Math.PI * 2, 0, 1.75).rotateX(-0.5).translate(head[0], head[1] + headR * 0.08, head[2] - headR * 0.04), o.hair));
-    if (o.longHair) parts.push(limb([0, head[1], head[2] - headR * 0.75], [0, neck[1] - H * 0.12, neck[2] - H * 0.06], headR * 0.55, o.hair, 1.25, 0.6));
+    if (o.bun) parts.push(ball([0, head[1] + headR * 0.25, head[2] - headR * 0.95], headR * 0.5, o.hair));
+    else if (o.longHair) parts.push(limb([0, head[1], head[2] - headR * 0.75], [0, neck[1] - H * 0.12, neck[2] - H * 0.06], headR * 0.55, o.hair, 1.25, 0.6));
   }
 
   // arms
@@ -139,25 +156,35 @@ function man(rand, pose, o = {}) {
 function woman(rand, pose, o = {}) {
   const h = 1.54 + rand() * 0.12, dress = pick(rand, DRESSES);
   return figure({
-    h, pose, skin: pick(rand, SKIN), hair: pick(rand, HAIR), longHair: true, top: dress, bottom: dress, skirt: h * 0.2, skirtColor: dress,
+    h, pose, female: true, skin: pick(rand, SKIN), hair: pick(rand, HAIR), longHair: true, bun: rand() < 0.35, top: dress, bottom: dress, skirt: h * 0.2, skirtColor: dress,
     sleeves: 'long', scarf: rand() < 0.55 ? pick(rand, SCARVES) : null, shoes: 0x5a3b2a, ...o,
   });
 }
 const adult = (rand, pose, o) => (rand() < 0.5 ? man(rand, pose, o) : woman(rand, pose, o));
 
+/** Seats a figure on a bench { x, y, z, yaw } (furniture.js: seat 0.48 m up, front faces +Z of the bench), off metres along it. */
+function sitOnBench(list, geo, b, off) {
+  put(list, geo, [b.x + Math.cos(b.yaw) * off - Math.sin(b.yaw) * 0.03, b.y + 0.49, b.z - Math.sin(b.yaw) * off - Math.cos(b.yaw) * 0.03], b.yaw);
+}
+/** The play area's benches when the model's own list is not given: furniture.js puts five round the edge, facing the middle. */
+function defaultPlayBenches() {
+  const R = FEATURES.playground.radius + 1.9;
+  return [75, 130, 185, 240, 290].map((a) => { const t = (a * Math.PI) / 180, x = Math.cos(t) * R, z = Math.sin(t) * R; return { x, y: 0, z, yaw: Math.atan2(-x, -z) }; });
+}
+
 // ---------- play area ----------
-function playPeople(rand) {
+function playPeople(rand, benches) {
   const list = [], G = 0.2; // top of the play surface (structures.js)
   // slide and tower
   const tx = -2.2, tz = -1.2;
   put(list, kid(rand, 'slide', { h: 1.12 }), [tx, G + 0.83, tz + 0.8 + 1.5], 0);
   put(list, kid(rand, 'wave', { h: 1.15 }), [tx + 0.1, G + 1.55, tz + 0.15], 0.5);
   put(list, kid(rand, 'reachUp', { h: 1.05 }), [tx, G, tz - 1.75], 0);              // waiting at the ladder
-  put(list, kid(rand, 'cheer', { h: 1.2 }), [tx + 0.5, G, tz + 0.8 + 4.2], Math.PI); // at the foot of the slide
+  put(list, kid(rand, 'cheer', { h: 1.2 }), [tx - 1.0, G, tz + 0.8 + 3.3], Math.PI / 2); // beside the foot of the slide, clear of the roundabout
   // swings: two children, one pushed by a parent
   const sx0 = 2.5, sz0 = 1.9;
   for (const c of [-0.8, 0.8]) put(list, kid(rand, 'swing', { h: 1.1 + rand() * 0.15 }), [sx0 + c, G + 0.56, sz0 + 0.14], 0);
-  put(list, woman(rand, 'push'), [sx0 - 0.8, G, sz0 - 1.35], 0);
+  put(list, woman(rand, 'push'), [sx0 - 1.12, G, sz0 - 1.3], 0.22); // behind the seat and half a step aside, out of its path
   // see-saw
   const wx = 1.9, wz = -2.9, wr = 0.45;
   for (const s of [-1, 1]) {
@@ -172,21 +199,20 @@ function playPeople(rand) {
   put(list, kid(rand, 'ride', { h: 1.0 }), [-4.3, G + 0.84, 1.6], 0.5);
   put(list, man(rand, 'holdDown'), [-4.95, G, 2.0], 0.5 + Math.PI / 2);               // dad beside the small one
   // tag across the open middle, and a ball game
-  put(list, kid(rand, 'run', { h: 1.3 }), [0.3, G, 0.1], 2.2);
-  put(list, kid(rand, 'run', { h: 1.22 }), [1.25, G, -1.0], 2.3);
+  put(list, kid(rand, 'run', { h: 1.3 }), [-0.55, G, 0.45], 2.2);
+  put(list, kid(rand, 'run', { h: 1.22 }), [0.45, G, -0.75], 2.3);
   put(list, kid(rand, 'cheer', { h: 1.18 }), [-0.6, G, -3.9], 0.9);
   put(list, kid(rand, 'walk', { h: 1.1 }), [0.9, G, -4.6], -1.6);
   list.push(part(new THREE.SphereGeometry(0.13, 12, 8).translate(0.15, G + 0.13, -4.3), 0xe8462f));
   // toddler holding a parent's hand, and a parent taking a photo
-  put(list, woman(rand, 'holdDown'), [4.6, G, 3.2], -2.3);
-  put(list, kid(rand, 'reachUp', { h: 0.86 }), [4.25, G, 2.85], -2.3);
+  put(list, woman(rand, 'holdDown'), [4.85, G, 4.1], -2.3);          // clear of the swing frame's leg
+  put(list, kid(rand, 'reachUp', { h: 0.86 }), [4.5, G, 3.75], -2.3);
   put(list, man(rand, 'photo'), [-0.4, G, 5.3], Math.PI * 0.92);
-  // parents on the benches round the edge (furniture.js: radius + 1.9, facing the middle)
-  const R = FEATURES.playground.radius + 1.9;
-  for (const [a, off, who] of [[75, -0.4, woman], [75, 0.35, man], [185, 0.3, woman], [290, -0.3, man], [130, 0.2, woman]]) {
-    const t = (a * Math.PI) / 180, bx = Math.cos(t) * R, bz = Math.sin(t) * R, yaw = Math.atan2(-bx, -bz);
-    put(list, who(rand, rand() < 0.4 ? 'sitWave' : 'sit'), [bx + Math.cos(yaw) * off, 0.5, bz - Math.sin(yaw) * off], yaw);
-  }
+  // parents on the benches round the edge: only on benches the model really has (local frame; see buildPeople)
+  const seats = [[[-0.4, woman], [0.35, man]], [[0.3, woman]], [[-0.3, man]], [[0.2, woman]], []];
+  benches.forEach((b, i) => {
+    for (const [off, who] of seats[i % seats.length]) sitOnBench(list, who(rand, pick(rand, ['sit', 'sitLap', 'sitWave'])), b, off);
+  });
   return merge(list);
 }
 
@@ -229,36 +255,48 @@ function weddingPeople(rand) {
   // family beside the couple, flower girls in front, a photographer
   put(list, woman(rand, 'stand', { scarf: 0xe6cf9a }), [-1.75, S, -1.6], Math.PI - 0.35);
   put(list, man(rand, 'stand', { top: 0x3a3f4a, bottom: 0x3a3f4a, sleeves: 'long' }), [-2.5, S, -1.35], Math.PI - 0.45);
-  put(list, man(rand, 'stand', { top: 0xe9e4d6, bottom: 0xe9e4d6, sleeves: 'long' }), [1.75, S, -1.6], Math.PI + 0.35);
+  put(list, man(rand, 'stand', { top: 0x6d7f8f, bottom: 0x6d7f8f, sleeves: 'long' }), [1.75, S, -1.6], Math.PI + 0.35);
   put(list, woman(rand, 'wave'), [2.5, S, -1.35], Math.PI + 0.45);
   put(list, kid(rand, 'bouquet', { h: 1.05, girl: true, top: 0xf6c7d2, skirt: 0.24, skirtColor: 0xf6c7d2 }), [-1.1, S, -2.7], Math.PI - 0.2);
-  put(list, kid(rand, 'cheer', { h: 1.12, girl: false, top: 0xf1ede4 }), [1.15, S, -2.75], Math.PI + 0.2);
+  put(list, kid(rand, 'cheer', { h: 1.12, girl: false, top: 0xf1ede4 }), [1.55, S, -2.5], Math.PI + 0.25);
   put(list, man(rand, 'photo', { top: 0x23262d, bottom: 0x23262d }), [0.9, S, -3.75], 0.25);
 
   // guests on the tiers: seated facing the stage, between the aisles; a few standing on the top walkway
   const aisles = [45, 90, 135];
   for (let i = 0; i < f.tiers; i++) {
-    const r = f.r0 + i * f.tierDepth + 0.42, y = (i + 1) * f.tierRise, stepDeg = (0.64 / r) * (180 / Math.PI);
+    // the lowest tier sits further back, so knees and feet stay clear of the raised stage edge
+    const r = f.r0 + i * f.tierDepth + (i ? 0.42 : 0.7), y = (i + 1) * f.tierRise, stepDeg = (0.64 / r) * (180 / Math.PI);
     for (let d = f.arc[0] + 5; d < f.arc[1] - 4; d += stepDeg) {
       if (aisles.some((a) => Math.abs(d - a) < (0.85 / r) * (180 / Math.PI))) continue;
       if (rand() > (i < 3 ? 0.86 : 0.62)) continue;
       const t = ((d + (rand() - 0.5) * 1.2) * Math.PI) / 180, x = r * Math.cos(t), z = -r * Math.sin(t);
-      const yaw = Math.atan2(-x, -z + -1.9 * 0.3) + (rand() - 0.5) * 0.25; // towards the couple
-      const q = rand(), pose = q < 0.3 ? 'sitClap' : q < 0.4 ? 'sitWave' : 'sit';
+      const turned = rand() < 0.14 ? (rand() < 0.5 ? -0.6 : 0.6) : 0;        // a few are talking to a neighbour
+      const yaw = Math.atan2(-x, -z - 0.57) + (rand() - 0.5) * 0.25 + turned; // towards the couple
+      const q = rand(), pose = q < 0.24 ? 'sitClap' : q < 0.32 ? 'sitWave' : q < 0.52 ? 'sitLap' : q < 0.6 ? 'sitPhoto' : 'sit';
       const g = rand() < 0.14 ? kid(rand, pose, { h: 1.05 + rand() * 0.25 }) : adult(rand, pose);
       put(list, g, [x, y, z], yaw);
     }
   }
   const rw = f.r0 + f.tiers * f.tierDepth + f.walkway * 0.45, yw = f.tiers * f.tierRise;
-  for (const d of [12, 36, 54, 126, 144]) {
+  for (const d of [11, 38, 53, 127, 139]) {
     const t = (d * Math.PI) / 180, x = rw * Math.cos(t), z = -rw * Math.sin(t);
     put(list, adult(rand, rand() < 0.4 ? 'wave' : rand() < 0.5 ? 'photo' : 'stand'), [x, yw, z], Math.atan2(-x, -z));
   }
+  // and seated on the walkway's four benches (furniture.js: at 24, 68, 112 and 152 degrees, facing the stage)
+  const rb = f.r0 + f.tiers * f.tierDepth + f.walkway / 2;
+  [24, 68, 112, 152].forEach((d, i) => {
+    const t = (d * Math.PI) / 180, x = rb * Math.cos(t), z = -rb * Math.sin(t), b = { x, y: yw, z, yaw: Math.atan2(-x, -z) };
+    for (const off of i % 2 ? [-0.38, 0.38] : [0.3]) sitOnBench(list, adult(rand, pick(rand, ['sit', 'sitLap', 'sitClap'])), b, off);
+  });
   return merge(list);
 }
 
-/** Group "People": one mesh per place, in the same local frames as the structures they stand on. */
-export function buildPeople() {
+/**
+ * Group "People": one mesh per place, in the same local frames as the structures they stand on.
+ * benches: the model's benches as world { x, y, z, yaw } (y = the ground under the bench). Those round the play area
+ * get parents sitting on them; without the list, the five that furniture.js places there are assumed.
+ */
+export function buildPeople({ benches = null } = {}) {
   const group = new THREE.Group(); group.name = 'People';
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0 }); mat.name = 'People';
   const padY = (id) => toY(PADS.find((p) => p.id === id).elev);
@@ -269,7 +307,12 @@ export function buildPeople() {
     group.add(m);
     return m;
   };
-  add('People_PlayArea', playPeople(mulberry32(4117)), FEATURES.playground.pos, padY('playground'), 0);
+  const pg = FEATURES.playground, py = padY('playground');
+  const near = benches
+    ? benches.map((b) => ({ x: b.x - pg.pos[0], y: b.y - py, z: b.z - pg.pos[1], yaw: b.yaw })).filter((b) => Math.hypot(b.x, b.z) < pg.radius + 3.5)
+      .sort((a, b) => Math.atan2(a.z, a.x) - Math.atan2(b.z, b.x))
+    : defaultPlayBenches();
+  add('People_PlayArea', playPeople(mulberry32(4117), near), pg.pos, py, 0);
   add('People_Wedding', weddingPeople(mulberry32(9203)), FEATURES.amphitheatre.pos, padY('amphitheatre'), FEATURES.amphitheatre.rot);
   return group;
 }
