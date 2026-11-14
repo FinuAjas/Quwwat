@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>People Preview — Mountain Courtyard</title>
+  <style>
+    body { margin: 0; padding: 24px; background: #141c15; color: #e9efe6; font: 14px/1.5 system-ui, sans-serif; }
+    h1 { font-size: 20px; margin: 0 0 4px; } p.sub { margin: 0 0 16px; opacity: .7; max-width: 900px; }
+    #log { white-space: pre-wrap; font: 12px/1.5 ui-monospace, monospace; background: #0d130e; padding: 12px; border-radius: 8px; max-width: 980px; }
+    #shots { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 16px; max-width: 1400px; }
+    figure { margin: 0; } figure img { width: 100%; border-radius: 6px; display: block; background: #000; }
+    figcaption { font-size: 12px; opacity: .8; margin-top: 4px; }
+    iframe { position: fixed; left: -4000px; top: 0; width: 1280px; height: 800px; border: 0; }
+    code { background: #22321f; padding: 1px 5px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Mountain Courtyard · people preview</h1>
+  <p class="sub">Adds the figures from <code>src/model/people.js</code> to the live scene and saves two stills to
+    <code>docs/previews/</code>: children in the play area, and a wedding in the amphitheatre. Needs <code>serve.py</code>.</p>
+  <div id="log">Starting…</div>
+  <div id="shots"></div>
+  <script type="module" src="./people-preview.js"></script>
+</body>
+</html>

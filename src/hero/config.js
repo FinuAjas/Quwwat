@@ -95,9 +95,9 @@ export const CONFIG = {
 
   // Camera presets: [target], [position]. `mobile` overrides apply to portrait/narrow screens.
   presets: {
-    aerial: { target: [-27.3, 8, -21.75], position: [-47, 165, 145], mobile: { target: [-27.3, 8, -21.75], position: [-35.5, 206, 156.5] } },
-    'main-building': { target: [-28, 8, -22], position: [8, 46, 32], mobile: { target: [-28, 8, -10], position: [0, 75, 60] } },
-    recreation: { target: [-52, 7, -34], position: [-62, 38, 22], mobile: { target: [-52, 7, -20], position: [-58, 70, 55] } },
+    aerial: { target: [-27.3, 8, -21.75], position: [-47, 165, 145], mobile: { target: [-27.3, 8, -21.75], position: [-33.9, 166.4, 120.8] } },
+    'main-building': { target: [-28, 8, -22], position: [8, 46, 32], mobile: { target: [-28, 8, -10], position: [-5.6, 61.6, 46] } },
+    recreation: { target: [-52, 7, -34], position: [-62, 38, 22], mobile: { target: [-52, 7, -20], position: [-56.8, 57.4, 40] } },
   },
   // Opening shot: the camera flies through `path` ([x, y, z] waypoints, low over the forest from the south-east)
   // and lands on the `aerial` preset; `look` is where it looks at the start. Click, scroll, a key or the button skips it.
