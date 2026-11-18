@@ -5,7 +5,8 @@ export function bindUI(rig, { hero }) {
 
   // ----- map controls -----
   const actions = {
-    fullscreen: () => (document.fullscreenElement ? document.exitFullscreen() : hero.requestFullscreen?.()),
+    // A refused request (iframe without allowfullscreen, browser policy) must not surface as an uncaught error.
+    fullscreen: () => (document.fullscreenElement ? document.exitFullscreen() : hero.requestFullscreen?.())?.catch?.((err) => console.info('Fullscreen not available here:', err.message)),
     reset: () => { setActiveShot('aerial'); return rig.goTo('aerial'); },
     'zoom-in': () => rig.zoom(0.7),
     'zoom-out': () => rig.zoom(1.4),

@@ -57,6 +57,16 @@ const requested = new URLSearchParams(location.search).get('look');
 export const LOOK_NAME = LOOKS[requested] ? requested : DEFAULT_LOOK;
 const LOOK = LOOKS[LOOK_NAME];
 
+// Desktop and other big (landscape, wider than 760 px) screens show the model this much larger than the authored
+// camera positions: each desktop preset sits 1 / DESKTOP_ZOOM of its distance from its target. Phones and portrait
+// screens use the presets' `mobile` positions, which are not changed.
+export const DESKTOP_ZOOM = 1.1;
+/** Same test the camera rig uses to pick the `mobile` presets. */
+export const isNarrowView = () => innerWidth <= 760 || innerHeight > innerWidth * 1.1;
+function closer({ target, position, ...rest }) {
+  return { target, position: position.map((v, i) => +(target[i] + (v - target[i]) / DESKTOP_ZOOM).toFixed(2)), ...rest };
+}
+
 export const CONFIG = {
   // Core model + extras (forest, then furniture and rocks). The paths live in prefetch.js, which starts the downloads
   // before this file is loaded.
@@ -74,7 +84,7 @@ export const CONFIG = {
   camera: {
     fov: 35, near: 1, far: 3000,
     target: [-27.3, 8, -21.75], // the Convention Centre, kept at the exact centre of the screen
-    position: [-47, 165, 145],  // from the south, ~45° down — like the reference aerial
+    position: closer({ target: [-27.3, 8, -21.75], position: [-47, 165, 145] }).position, // from the south, ~45° down — the aerial preset
     viewShift: 0,               // fraction of the width to shift the frame right (desktop only); 0 = centred
   },
 
@@ -93,10 +103,11 @@ export const CONFIG = {
   },
 
   // Camera presets: [target], [position]. `mobile` overrides apply to portrait/narrow screens.
+  // The desktop positions below are brought DESKTOP_ZOOM times closer to their targets (see `closer`).
   presets: {
-    aerial: { target: [-27.3, 8, -21.75], position: [-47, 165, 145], mobile: { target: [-27.3, 8, -21.75], position: [-33.9, 166.4, 120.8] } },
-    'main-building': { target: [-28, 8, -22], position: [8, 46, 32], mobile: { target: [-28, 8, -10], position: [-5.6, 61.6, 46] } },
-    recreation: { target: [-52, 7, -34], position: [-62, 38, 22], mobile: { target: [-52, 7, -20], position: [-56.8, 57.4, 40] } },
+    aerial: closer({ target: [-27.3, 8, -21.75], position: [-47, 165, 145], mobile: { target: [-27.3, 8, -21.75], position: [-33.9, 166.4, 120.8] } }),
+    'main-building': closer({ target: [-28, 8, -22], position: [8, 46, 32], mobile: { target: [-28, 8, -10], position: [-5.6, 61.6, 46] } }),
+    recreation: closer({ target: [-52, 7, -34], position: [-62, 38, 22], mobile: { target: [-52, 7, -20], position: [-56.8, 57.4, 40] } }),
   },
   // Opening shot: the camera flies through `path` ([x, y, z] waypoints, low over the forest from the south-east)
   // and lands on the `aerial` preset; `look` is where it looks at the start. Click, scroll, a key or the button skips it.

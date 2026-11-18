@@ -1,9 +1,12 @@
 import * as THREE from 'three';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { HOTSPOT_CONTENT } from './content.js';
+import { DESKTOP_ZOOM, isNarrowView } from './config.js';
 
-const FAR = { 1: 520, 2: 230 }; // label visible below this camera distance, by priority
+const FAR = { 1: 520, 2: 230 }; // label visible below this camera distance, by priority (authored camera distances)
 const FADE = 60;                // metres over which labels fade out
+// Desktop presets sit DESKTOP_ZOOM times closer than authored (config.js): scale the distances the same way, so the
+// same labels show at each preset as on the authored framing.
 const isNarrow = () => innerWidth <= 760;
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -118,8 +121,9 @@ export function createPopups({ scene, camera, stage, hero, hotspots, onResize })
     placed.length = 0;
     for (const l of labels) {
       const d = tmp.copy(l.obj.position).distanceTo(camera.position);
-      const far = FAR[l.priority] ?? FAR[2];
-      const o = THREE.MathUtils.clamp((far - d) / FADE, 0, 1);
+      const k = isNarrowView() ? 1 : 1 / DESKTOP_ZOOM;
+      const far = (FAR[l.priority] ?? FAR[2]) * k;
+      const o = THREE.MathUtils.clamp((far - d) / (FADE * k), 0, 1);
       // screen-space box of the pill; hide if it collides with a more important visible label
       tmp.project(camera);
       const lw = (l.w ||= l.el.offsetWidth || 120), lh = (l.h ||= l.el.offsetHeight || 50);
