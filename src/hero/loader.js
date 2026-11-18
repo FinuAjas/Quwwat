@@ -5,6 +5,7 @@ import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { CONFIG, TIER } from './config.js';
 import { createWater } from './water.js';
+import { takePrefetched } from './prefetch.js';
 
 /** GLTFLoader that understands Draco, Meshopt and KTX2/Basis textures (decoders are fetched only if a file needs them). */
 export function createGLTFLoader(renderer) {
@@ -65,18 +66,31 @@ export async function loadSite(renderer, onProgress = () => {}) {
     return root;
   }
 
+  // Use the bytes main.js already started downloading (prefetch.js); request the file here only if that failed
+  // or never happened (e.g. tools that import this module directly).
+  async function load(url, progress) {
+    const early = takePrefetched(url);
+    if (early) {
+      early.onProgress(progress);
+      try {
+        return await loader.parseAsync(await early.buffer, url.slice(0, url.lastIndexOf('/') + 1));
+      } catch (err) {
+        console.warn(`Prefetched model could not be used, loading it again: ${url}`, err);
+      }
+    }
+    // With gzip/brotli the reported total may be the compressed size (or 0), so clamp.
+    return loader.loadAsync(url, (e) => { if (e.total) progress(Math.min(0.99, e.loaded / e.total)); });
+  }
+
   // Start every download now: the extras arrive while the core is being prepared, not after it.
   const extras = (CONFIG.models.extras ?? []).map((path) => {
     const url = new URL(path, document.baseURI).href;
-    const loading = loader.loadAsync(url);
+    const loading = load(url, () => {});
     loading.catch(() => {}); // reported when the part is collected in loadExtras
     return { path, url, loading };
   });
   const coreUrl = new URL(CONFIG.models.core, document.baseURI).href;
-  const gltf = await loader.loadAsync(coreUrl, (e) => {
-    // With gzip/brotli the reported total may be the compressed size (or 0), so clamp.
-    if (e.total) onProgress(Math.min(0.95, e.loaded / e.total));
-  });
+  const gltf = await load(coreUrl, (p) => onProgress(Math.min(0.95, p)));
   const root = prepare(gltf.scene, coreUrl);
   if (!extras.length) dispose();
 

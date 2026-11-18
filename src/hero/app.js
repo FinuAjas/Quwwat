@@ -55,11 +55,21 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   const hotspots = createHotspots({ camera, dom: renderer.domElement, hero, site, rig, heightAt });
   const popups = createPopups({ scene, camera, stage, hero, hotspots, onResize });
 
+  // Compile shaders for the post-processing target the scene is really drawn into (linear colour, no tone mapping).
+  // Compiling with no target set built the screen variant (sRGB + tone mapping) of every material instead, which
+  // was never used and then compiled a second time on the first frame. compileAsync picks its programs
+  // synchronously, so the previous target can be restored straight away.
+  const compileFor = (...args) => {
+    const prev = renderer.getRenderTarget();
+    renderer.setRenderTarget(post.composer.readBuffer);
+    try { return renderer.compileAsync(...args); } finally { renderer.setRenderTarget(prev); }
+  };
+
   onStatus('Preparing scene…');
   onProgress(0.85);
   // Compile every shader (incl. shadow depth variants) while the loader is still visible,
   // so the first interactive frame doesn't hitch.
-  await renderer.compileAsync(scene, camera);
+  await compileFor(scene, camera);
   // Spend the whole shadow map on the plot (buildings + roads), not the surrounding forest.
   lights.fitShadows([site.root.getObjectByName('Structures'), site.root.getObjectByName('Roads'), ...site.clickable]);
   renderer.shadowMap.needsUpdate = true;
@@ -70,7 +80,7 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   const partsReady = site.loadExtras(async (part) => {
     const plants = foliage.apply(part);
     surfaces.apply(part);
-    await renderer.compileAsync(part, camera, scene); // compile off-screen first, so adding it doesn't hitch
+    await compileFor(part, camera, scene); // compile off-screen first, so adding it doesn't hitch
     if (revealed && plants.first) foliage.growIn();
     scene.add(part);
     renderer.shadowMap.needsUpdate = true;

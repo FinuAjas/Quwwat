@@ -1,5 +1,6 @@
 // Central tuning for the hero scene. World units are metres; site centre ≈ (15, 0, 0).
 import { getTier } from './tier.js';
+import { MODELS } from './prefetch.js';
 
 // 'ultra' | 'high' | 'low' — chosen by a GPU benchmark before this file loads (see tier.js).
 // Force one for testing from the address bar: ?tier=ultra, ?tier=high or ?tier=low
@@ -55,13 +56,9 @@ export const LOOK_NAME = LOOKS[requested] ? requested : DEFAULT_LOOK;
 const LOOK = LOOKS[LOOK_NAME];
 
 export const CONFIG = {
-  // `core` (terrain, roads, buildings, cars, hotspots) is shown as soon as it has loaded; the `extras` download at the
-  // same time and are added as they arrive — the forest grows in, then the site furniture and rocks appear.
-  // tools/model-builder.html writes all three files. An artist model delivered as one file: set extras to [].
-  models: {
-    core: './public/models/mountain-courtyard.glb',
-    extras: ['./public/models/mountain-courtyard-vegetation.glb', './public/models/mountain-courtyard-details.glb'],
-  },
+  // Core model + extras (forest, then furniture and rocks). The paths live in prefetch.js, which starts the downloads
+  // before this file is loaded.
+  models: MODELS,
   dracoPath: 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/gltf/',
   basisPath: 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/basis/',
   lightMapIntensity: 1.0,

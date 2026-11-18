@@ -6,6 +6,7 @@
 Serves the project folder with correct MIME types (incl. .js modules / .glb / .wasm)
 and accepts two uploads from the project's own tools:
   POST /api/save-model?name=...   from tools/model-builder.html → public/models/<one of the model files>.glb
+                                  (quantized on the way in by tools/glb_quantize.py)
   POST /api/save-image?name=...   from the page opened with ?poster → public/assets/images/<poster>.webp
   POST /api/save-snapshot?set=before|after&name=...   from tools/plan3-snapshot.html → tools/plan3/<set>/<name>
   POST /api/save-preview?name=...   from tools/people-preview.html → docs/previews/<name>.jpg
@@ -15,10 +16,14 @@ import gzip
 import http.server
 import re
 import socketserver
+import sys
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT / "tools"))
+from glb_quantize import quantize as quantize_glb  # noqa: E402
+
 MODEL_DIR = ROOT / "public" / "models"
 # the only model files the server will write (core first; the others stream in after it)
 MODEL_NAMES = ("mountain-courtyard.glb", "mountain-courtyard-vegetation.glb", "mountain-courtyard-details.glb")
@@ -118,6 +123,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if not check(data):
             self.send_error(400, "unexpected file type")
             return
+        if url.path == "/api/save-model":
+            try:
+                data = quantize_glb(data)  # smaller number types for normals, colours, UVs, instance rotations
+            except Exception as err:  # never lose an upload over it: keep the builder's file as it came
+                print(f"glb_quantize failed, saving {name} unquantized: {err}")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
         body = str(target.relative_to(ROOT)).replace("\\", "/").encode()

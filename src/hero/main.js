@@ -1,5 +1,6 @@
 import { bindPage } from './page.js';
 import { hasWebGL2, pickTier } from './tier.js';
+import { prefetchHero } from './prefetch.js';
 
 /**
  * Bootstrap (small, no three.js). The poster image in the loader is on screen from the first paint;
@@ -41,6 +42,7 @@ async function start() {
   text.textContent = 'Loading 3D model…';
   try {
     pickTier(); // already decided unless the visitor came through the poster-only page
+    prefetchHero(); // model files + three.js download alongside app.js instead of after it
     const { startHero } = await import('./app.js');
     app = await startHero({
       hero, page,

@@ -12,7 +12,8 @@ What it does
   4. prints every delivered file with its size on disk and its gzip size (what GitHub Pages sends),
      and checks the totals against the budgets below.
 
-No Node.js needed. What this script does NOT do: Draco / Meshopt mesh compression and KTX2 textures.
+No Node.js needed. serve.py quantizes each uploaded model (tools/glb_quantize.py: smaller number types for
+normals, colours, UVs and instance rotations). What this script does NOT do: Draco / Meshopt mesh compression and KTX2 textures.
 Those need the glTF-Transform tool, which runs on Node.js; the page already loads such files if an
 artist exports them from Blender (see docs/BLENDER_ARTIST_BRIEF.md).
 
