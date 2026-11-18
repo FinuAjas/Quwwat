@@ -62,6 +62,9 @@ export async function loadSite(renderer, onProgress = () => {}) {
       o.updateMatrix();
       o.matrixAutoUpdate = false; // static scene: skip per-frame matrix recomposition
     });
+    const forest = [];
+    root.traverse((o) => { if (o.isInstancedMesh && o.userData.vegetation) forest.push(o); });
+    forest.forEach(splitInstances);
     root.updateMatrixWorld(true);
     return root;
   }
@@ -114,6 +117,56 @@ export async function loadSite(renderer, onProgress = () => {}) {
       dispose();
     },
   };
+}
+
+/**
+ * Split one instanced plant mesh into compact tiles so three.js can skip the tiles outside the view (an
+ * InstancedMesh is culled as a whole, and one tree type spans the entire 1.4 km forest).
+ * Tiles are cut in half along their longer side, at the median, until each holds at most `CHUNK.tris` triangles:
+ * dense, detailed trees around the site get small tiles; cheap distant blobs stay in a few large ones, which keeps
+ * the extra draw calls in the wide aerial view low.
+ * Tiles share the geometry and material and keep the mesh's name, transform, flags and layers.
+ */
+const CHUNK = { tris: 16000, minInstances: 24 }; // 8000 culls ~1/3 more in close-ups but more than doubles the extra draw calls in the aerial view
+function splitInstances(mesh) {
+  const g = mesh.geometry, perInstance = (g.index ? g.index.count : g.attributes.position.count) / 3;
+  const maxPer = Math.max(CHUNK.minInstances, Math.floor(CHUNK.tris / perInstance));
+  if (mesh.count <= maxPer || !mesh.parent) return;
+  const m = new THREE.Matrix4(), c = new THREE.Color();
+  const pts = [];
+  for (let i = 0; i < mesh.count; i++) {
+    mesh.getMatrixAt(i, m);
+    pts.push({ i, x: m.elements[12], z: m.elements[14] });
+  }
+  const groups = [];
+  const cut = (list) => {
+    if (list.length <= maxPer) { groups.push(list.map((q) => q.i)); return; }
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const q of list) { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); z0 = Math.min(z0, q.z); z1 = Math.max(z1, q.z); }
+    const k = x1 - x0 >= z1 - z0 ? 'x' : 'z';
+    list.sort((u, v) => u[k] - v[k]);
+    const half = list.length >> 1;
+    cut(list.slice(0, half)); cut(list.slice(half));
+  };
+  cut(pts);
+  if (groups.length < 2) return;
+  for (const ids of groups) {
+    const tile = new THREE.InstancedMesh(mesh.geometry, mesh.material, ids.length);
+    ids.forEach((src, j) => {
+      mesh.getMatrixAt(src, m); tile.setMatrixAt(j, m);
+      if (mesh.instanceColor) { mesh.getColorAt(src, c); tile.setColorAt(j, c); }
+    });
+    tile.name = mesh.name;
+    tile.userData = mesh.userData;
+    tile.castShadow = mesh.castShadow; tile.receiveShadow = mesh.receiveShadow;
+    tile.layers.mask = mesh.layers.mask; tile.renderOrder = mesh.renderOrder;
+    tile.matrix.copy(mesh.matrix); tile.matrix.decompose(tile.position, tile.quaternion, tile.scale);
+    tile.matrixAutoUpdate = false;
+    tile.computeBoundingSphere();
+    mesh.parent.add(tile);
+  }
+  mesh.removeFromParent();
+  mesh.dispose(); // frees only its instance buffers; the geometry and material live on in the tiles
 }
 
 /** Keep an evenly spread fraction of instances (instances are stored in spatial order). */

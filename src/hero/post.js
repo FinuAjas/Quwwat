@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { CONFIG, QUALITY } from './config.js';
@@ -35,8 +34,8 @@ const TiltShiftShader = {
 };
 
 /**
- * Final "film" pass after tone mapping (display space):
- * chromatic aberration → black/white level → split-toning → S-curve contrast →
+ * Final pass: tone mapping + sRGB (what three's OutputPass did, folded in here to save a full-screen pass), then
+ * the "film" look in display space: chromatic aberration → black/white level → split-toning → S-curve contrast →
  * saturation (extra desaturation + olive shift for over-bright greens) → vignette → grain.
  */
 const GradeShader = {
@@ -45,7 +44,7 @@ const GradeShader = {
     tDiffuse: { value: null },
     uContrast: { value: 0.1 }, uSaturation: { value: 1 }, uGreenDesat: { value: 0.2 },
     uShadows: { value: new THREE.Vector3(1, 1, 1) }, uHighlights: { value: new THREE.Vector3(1, 1, 1) },
-    uLift: { value: 0 }, uGain: { value: 1 },
+    uLift: { value: 0 }, uGain: { value: 1 }, toneMappingExposure: { value: 1 },
     uVignette: { value: 0 }, uGrain: { value: 0 }, uAberration: { value: 0 }, uTime: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) },
   },
   vertexShader: VERT,
@@ -54,12 +53,34 @@ const GradeShader = {
     uniform float uContrast, uSaturation, uGreenDesat, uLift, uGain, uVignette, uGrain, uAberration, uTime;
     uniform vec3 uShadows, uHighlights; uniform vec2 uRes;
     varying vec2 vUv;
+    #include <tonemapping_pars_fragment>
+    vec3 wxToneMap(vec3 c) {
+      #if defined(LINEAR_TONE_MAPPING)
+        c = LinearToneMapping(c);
+      #elif defined(REINHARD_TONE_MAPPING)
+        c = ReinhardToneMapping(c);
+      #elif defined(CINEON_TONE_MAPPING)
+        c = CineonToneMapping(c);
+      #elif defined(ACES_FILMIC_TONE_MAPPING)
+        c = ACESFilmicToneMapping(c);
+      #elif defined(AGX_TONE_MAPPING)
+        c = AgXToneMapping(c);
+      #elif defined(NEUTRAL_TONE_MAPPING)
+        c = NeutralToneMapping(c);
+      #endif
+      #ifdef SRGB_TRANSFER
+        c = sRGBTransferOETF(vec4(c, 1.0)).rgb;
+      #endif
+      return c;
+    }
     float hash(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
     void main() {
       vec2 d = vUv - 0.5;
       // lens: red/blue fringes grow towards the corners (sub-pixel at the centre)
       vec2 ca = d * 2.0 * uAberration / uRes;
-      vec3 tex = vec3(texture2D(tDiffuse, vUv + ca).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv - ca).b);
+      // each sample is tone-mapped whole before its channel is taken (AgX mixes channels), as with a separate output pass
+      vec3 tex = wxToneMap(texture2D(tDiffuse, vUv).rgb);
+      if (uAberration > 0.0) tex = vec3(wxToneMap(texture2D(tDiffuse, vUv + ca).rgb).r, tex.g, wxToneMap(texture2D(tDiffuse, vUv - ca).rgb).b);
       vec3 c = tex * uGain + uLift * (1.0 - tex);
       float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
       c *= mix(uShadows, uHighlights, smoothstep(0.15, 0.85, l));
@@ -78,7 +99,7 @@ const GradeShader = {
 
 /**
  * Post-processing chain (each stage optional per quality tier):
- * scene (HDR, MSAA) → ambient occlusion → bloom → tilt-shift → tone map + sRGB → film grade.
+ * scene (HDR, MSAA) → ambient occlusion → bloom → tilt-shift → tone map + sRGB + film grade.
  */
 export function createPost(renderer, scene, camera) {
   const P = CONFIG.post;
@@ -91,7 +112,13 @@ export function createPost(renderer, scene, camera) {
   // Ground-truth ambient occlusion: soft contact darkening under trees, cars and eaves.
   let ao = null;
   if (QUALITY.ao) {
-    ao = new GTAOPass(scene, camera, w0, h0);
+    // AO is soft and low-frequency: computing it (and the extra normal/depth render of the scene) at reduced
+    // resolution costs a fraction of full size and looks the same once blended.
+    const aoScale = QUALITY.aoScale ?? 1;
+    const aoSize = (w, h) => [Math.max(1, Math.round(w * aoScale)), Math.max(1, Math.round(h * aoScale))];
+    ao = new GTAOPass(scene, camera, ...aoSize(w0, h0));
+    const setAOSize = ao.setSize.bind(ao);
+    ao.setSize = (w, h) => setAOSize(...aoSize(w, h));
     const a = CONFIG.ao;
     ao.updateGtaoMaterial({ radius: a.radius, distanceExponent: 1, thickness: a.thickness, scale: 1, samples: QUALITY.aoSamples, distanceFallOff: 1, screenSpaceRadius: false });
     ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, radiusExponent: 1, rings: 2, samples: 12 });
@@ -99,8 +126,18 @@ export function createPost(renderer, scene, camera) {
     // Hide two layers while AO renders its depth/normal buffers: overlays (1: mist sprites, selection ring) and
     // leaf-card plants (2) — that pass ignores alpha cut-outs, so every leaf card would count as a solid quad
     // and leave dark triangles hanging in the canopy.
+    // The stock "Default" output copies the whole image to the other buffer and then darkens the copy. Instead, only
+    // compute the AO here (output Off) and multiply it straight onto the image in place: one full-screen pass less.
+    ao.output = GTAOPass.OUTPUT.Off;
+    ao.needsSwap = false;
     const renderAO = ao.render.bind(ao);
-    ao.render = (...args) => { camera.layers.disable(1); camera.layers.disable(2); try { renderAO(...args); } finally { camera.layers.enable(1); camera.layers.enable(2); } };
+    ao.render = (renderer, writeBuffer, readBuffer, ...rest) => {
+      camera.layers.disable(1); camera.layers.disable(2);
+      try { renderAO(renderer, writeBuffer, readBuffer, ...rest); } finally { camera.layers.enable(1); camera.layers.enable(2); }
+      ao.blendMaterial.uniforms.intensity.value = ao.blendIntensity;
+      ao.blendMaterial.uniforms.tDiffuse.value = ao.pdRenderTarget.texture;
+      ao.renderPass(renderer, ao.blendMaterial, readBuffer);
+    };
     composer.addPass(ao);
   }
 
@@ -119,8 +156,14 @@ export function createPost(renderer, scene, camera) {
     composer.addPass(tiltH); composer.addPass(tiltV);
   }
 
-  composer.addPass(new OutputPass()); // tone mapping (renderer.toneMapping/exposure) + sRGB
   const grade = new ShaderPass(GradeShader);
+  // Tone mapping is done inside the shader (as OutputPass does), so three.js must not add its own on the way to screen.
+  grade.material.toneMapped = false;
+  const TONE = { [THREE.LinearToneMapping]: 'LINEAR', [THREE.ReinhardToneMapping]: 'REINHARD', [THREE.CineonToneMapping]: 'CINEON',
+    [THREE.ACESFilmicToneMapping]: 'ACES_FILMIC', [THREE.AgXToneMapping]: 'AGX', [THREE.NeutralToneMapping]: 'NEUTRAL' }[renderer.toneMapping];
+  grade.material.defines = { ...(TONE ? { [`${TONE}_TONE_MAPPING`]: '' } : {}),
+    ...(THREE.ColorManagement.getTransfer(renderer.outputColorSpace) === THREE.SRGBTransfer ? { SRGB_TRANSFER: '' } : {}) };
+  grade.uniforms.toneMappingExposure.value = renderer.toneMappingExposure;
   grade.uniforms.uVignette.value = P.vignette;
   grade.uniforms.uGrain.value = P.grain;
   grade.uniforms.uAberration.value = QUALITY.dof ? P.aberration : 0;
@@ -153,6 +196,7 @@ export function createPost(renderer, scene, camera) {
      */
     update(t, focusPoint, distance) {
       if (!reducedMotion) grade.uniforms.uTime.value = t;
+      grade.uniforms.toneMappingExposure.value = renderer.toneMappingExposure;
       if (!tiltH) return;
       ndc.copy(focusPoint).project(camera);
       const y = THREE.MathUtils.clamp(ndc.y * 0.5 + 0.5, 0.25, 0.75);

@@ -8,9 +8,11 @@ export const TIER = getTier();
 
 // ultra = strong desktop GPUs: smoother edges, finer shadows and ambient occlusion, a little more mist and traffic.
 // high = ordinary desktops and the fastest phones. low = phones and weak GPUs (no AO / bloom / blur).
+// aoScale = ambient-occlusion resolution as a fraction of the screen (AO is soft, so half size looks the same).
+// Ultra used 8× MSAA and a 6144² shadow map (~150 MB of GPU memory); 4× and 4096² look the same from the aerial view.
 export const QUALITY = {
-  ultra: { pixelRatio: 2, antialias: true, msaa: 8, ao: true, aoSamples: 16, bloom: true, dof: true, shadows: true, softShadows: [16, 24], shadowMapSize: 6144, mistCount: 34, cars: 7, grass: 70000 },
-  high: { pixelRatio: 2, antialias: true, msaa: 4, ao: true, aoSamples: 12, bloom: true, dof: true, shadows: true, softShadows: [12, 16], shadowMapSize: 4096, mistCount: 26, cars: 5, grass: 40000 },
+  ultra: { pixelRatio: 2, antialias: true, msaa: 4, ao: true, aoSamples: 16, aoScale: 1, bloom: true, dof: true, shadows: true, softShadows: [16, 24], shadowMapSize: 4096, mistCount: 34, cars: 7, grass: 70000 },
+  high: { pixelRatio: 2, antialias: true, msaa: 4, ao: true, aoSamples: 12, aoScale: 0.5, bloom: true, dof: true, shadows: true, softShadows: [12, 16], shadowMapSize: 4096, mistCount: 26, cars: 5, grass: 40000 },
   low: { pixelRatio: 1.5, antialias: true, msaa: 2, ao: false, bloom: false, dof: false, shadows: true, shadowMapSize: 2048, mistCount: 14, cars: 3, grass: 0 },
 }[TIER];
 
