@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { CONFIG } from './config.js';
+import { CONFIG, isNarrowView as isNarrow } from './config.js';
 
 const deg = THREE.MathUtils.degToRad;
 // Camera ease: speed peaks a third of the way in, then a long soft tail — the move "settles" instead of stopping.
@@ -8,7 +8,6 @@ const settle = (t) => 1 - (1 - t) ** 3 * (1 + 3 * t);
 // Intro ease: already moving when the loader fades (like a film cut), gliding to rest.
 const glide = (t) => 1 - (1 - t) ** 2.2;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const isNarrow = () => innerWidth <= 760 || innerHeight > innerWidth * 1.1;
 
 /**
  * Camera rig around OrbitControls:

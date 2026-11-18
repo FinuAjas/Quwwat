@@ -1,5 +1,6 @@
 // Central tuning for the hero scene. World units are metres; site centre ≈ (15, 0, 0).
 import { getTier } from './tier.js';
+import { MODELS } from './prefetch.js';
 
 // 'ultra' | 'high' | 'low' — chosen by a GPU benchmark before this file loads (see tier.js).
 // Force one for testing from the address bar: ?tier=ultra, ?tier=high or ?tier=low
@@ -7,9 +8,11 @@ export const TIER = getTier();
 
 // ultra = strong desktop GPUs: smoother edges, finer shadows and ambient occlusion, a little more mist and traffic.
 // high = ordinary desktops and the fastest phones. low = phones and weak GPUs (no AO / bloom / blur).
+// aoScale = ambient-occlusion resolution as a fraction of the screen (AO is soft, so half size looks the same).
+// Ultra used 8× MSAA and a 6144² shadow map (~150 MB of GPU memory); 4× and 4096² look the same from the aerial view.
 export const QUALITY = {
-  ultra: { pixelRatio: 2, antialias: true, msaa: 8, ao: true, aoSamples: 16, bloom: true, dof: true, shadows: true, softShadows: [16, 24], shadowMapSize: 6144, mistCount: 34, cars: 7, grass: 70000 },
-  high: { pixelRatio: 2, antialias: true, msaa: 4, ao: true, aoSamples: 12, bloom: true, dof: true, shadows: true, softShadows: [12, 16], shadowMapSize: 4096, mistCount: 26, cars: 5, grass: 40000 },
+  ultra: { pixelRatio: 2, antialias: true, msaa: 4, ao: true, aoSamples: 16, aoScale: 1, bloom: true, dof: true, shadows: true, softShadows: [16, 24], shadowMapSize: 4096, mistCount: 34, cars: 7, grass: 70000 },
+  high: { pixelRatio: 2, antialias: true, msaa: 4, ao: true, aoSamples: 12, aoScale: 0.5, bloom: true, dof: true, shadows: true, softShadows: [12, 16], shadowMapSize: 4096, mistCount: 26, cars: 5, grass: 40000 },
   low: { pixelRatio: 1.5, antialias: true, msaa: 2, ao: false, bloom: false, dof: false, shadows: true, shadowMapSize: 2048, mistCount: 14, cars: 3, grass: 0 },
 }[TIER];
 
@@ -54,14 +57,20 @@ const requested = new URLSearchParams(location.search).get('look');
 export const LOOK_NAME = LOOKS[requested] ? requested : DEFAULT_LOOK;
 const LOOK = LOOKS[LOOK_NAME];
 
+// Desktop and other big (landscape, wider than 760 px) screens show the model this much larger than the authored
+// camera positions: each desktop preset sits 1 / DESKTOP_ZOOM of its distance from its target. Phones and portrait
+// screens use the presets' `mobile` positions, which are not changed.
+export const DESKTOP_ZOOM = 1.1;
+/** Same test the camera rig uses to pick the `mobile` presets. */
+export const isNarrowView = () => innerWidth <= 760 || innerHeight > innerWidth * 1.1;
+function closer({ target, position, ...rest }) {
+  return { target, position: position.map((v, i) => +(target[i] + (v - target[i]) / DESKTOP_ZOOM).toFixed(2)), ...rest };
+}
+
 export const CONFIG = {
-  // `core` (terrain, roads, buildings, cars, hotspots) is shown as soon as it has loaded; the `extras` download at the
-  // same time and are added as they arrive — the forest grows in, then the site furniture and rocks appear.
-  // tools/model-builder.html writes all three files. An artist model delivered as one file: set extras to [].
-  models: {
-    core: './public/models/mountain-courtyard.glb',
-    extras: ['./public/models/mountain-courtyard-vegetation.glb', './public/models/mountain-courtyard-details.glb'],
-  },
+  // Core model + extras (forest, then furniture and rocks). The paths live in prefetch.js, which starts the downloads
+  // before this file is loaded.
+  models: MODELS,
   dracoPath: 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/gltf/',
   basisPath: 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/basis/',
   lightMapIntensity: 1.0,
@@ -75,7 +84,7 @@ export const CONFIG = {
   camera: {
     fov: 35, near: 1, far: 3000,
     target: [-27.3, 8, -21.75], // the Convention Centre, kept at the exact centre of the screen
-    position: [-47, 165, 145],  // from the south, ~45° down — like the reference aerial
+    position: closer({ target: [-27.3, 8, -21.75], position: [-47, 165, 145] }).position, // from the south, ~45° down — the aerial preset
     viewShift: 0,               // fraction of the width to shift the frame right (desktop only); 0 = centred
   },
 
@@ -94,10 +103,11 @@ export const CONFIG = {
   },
 
   // Camera presets: [target], [position]. `mobile` overrides apply to portrait/narrow screens.
+  // The desktop positions below are brought DESKTOP_ZOOM times closer to their targets (see `closer`).
   presets: {
-    aerial: { target: [-27.3, 8, -21.75], position: [-47, 165, 145], mobile: { target: [-27.3, 8, -21.75], position: [-33.9, 166.4, 120.8] } },
-    'main-building': { target: [-28, 8, -22], position: [8, 46, 32], mobile: { target: [-28, 8, -10], position: [-5.6, 61.6, 46] } },
-    recreation: { target: [-52, 7, -34], position: [-62, 38, 22], mobile: { target: [-52, 7, -20], position: [-56.8, 57.4, 40] } },
+    aerial: closer({ target: [-27.3, 8, -21.75], position: [-47, 165, 145], mobile: { target: [-27.3, 8, -21.75], position: [-33.9, 166.4, 120.8] } }),
+    'main-building': closer({ target: [-28, 8, -22], position: [8, 46, 32], mobile: { target: [-28, 8, -10], position: [-5.6, 61.6, 46] } }),
+    recreation: closer({ target: [-52, 7, -34], position: [-62, 38, 22], mobile: { target: [-52, 7, -20], position: [-56.8, 57.4, 40] } }),
   },
   // Opening shot: the camera flies through `path` ([x, y, z] waypoints, low over the forest from the south-east)
   // and lands on the `aerial` preset; `look` is where it looks at the start. Click, scroll, a key or the button skips it.

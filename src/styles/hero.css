@@ -262,3 +262,16 @@ button { font: inherit; color: inherit; }
   .panel__arrow { top: auto; bottom: 86px; } .panel__count { bottom: 100px; }
   .hero.view-2d .hero__copy { display: none; }
 }
+
+/* ---------- small phones: logos + "Enquire Now" + menu button must fit in one row ----------
+   At 375 px the menu button was pushed past the right edge (logos 202 px + button 126 px left no room). */
+@media (max-width: 420px) {
+  .nav { gap: 10px; }
+  .nav__brand { gap: 10px; }
+  .nav__logo--group { height: 16px; } .nav__logo--project { height: 32px; } .nav__divider { height: 24px; }
+  .nav .btn--sand { padding: 8px 12px; font-size: 12px; }
+  .nav .nav__cta span { display: none; } /* the arrow */
+  .nav__toggle { width: 38px; height: 38px; flex: none; }
+}
+/* Below 360 px there is no room for the button at all: "Contact Us" stays in the menu. */
+@media (max-width: 359px) { .nav .nav__cta { display: none; } .nav__toggle { margin-left: auto; } }
