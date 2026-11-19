@@ -7,7 +7,10 @@
   <meta name="description" content="Get in touch with Quwwat Group about Mountain Courtyard: visits, events and investment enquiries." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" /></noscript>
+  <link rel="preload" as="image" href="./public/assets/images/hero-poster.webp" media="(min-width: 761px)" fetchpriority="high" />
+  <link rel="modulepreload" href="./src/pages/site.js" />
   <link rel="stylesheet" href="./src/styles/hero.css" />
   <link rel="stylesheet" href="./src/styles/pages.css" />
   <script>document.documentElement.classList.add('js')</script>
@@ -38,7 +41,10 @@
 
   <main id="main">
   <section class="banner">
-    <img class="banner__img" src="./public/assets/images/hero-poster.webp" alt="" width="1920" height="1200" fetchpriority="high" />
+    <picture>
+      <source media="(max-width: 760px)" srcset="./public/assets/images/hero-poster-mobile.webp" />
+      <img class="banner__img" src="./public/assets/images/hero-poster.webp" alt="" width="1920" height="1200" fetchpriority="high" decoding="async" />
+    </picture>
     <div class="banner__inner">
       <p class="crumbs"><a href="index.html">Home</a><span aria-hidden="true">/</span>Contact Us</p>
       <h1>Contact Us</h1>
@@ -83,7 +89,7 @@
         <div class="info__item"><span class="tile__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></span><div><h3>Visit</h3><p>Mountain Courtyard, Nellankandi<br />Full address to be confirmed</p></div></div>
         <div class="info__item"><span class="tile__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><div><h3>Email</h3><a href="mailto:enquiries@quwwatgroup.example">enquiries@quwwatgroup.example</a></div></div>
         <div class="info__item"><span class="tile__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span><div><h3>Phone</h3><p>Number to be confirmed</p></div></div>
-        <a class="map-card" href="index.html"><img src="./public/assets/images/site-render.webp" alt="Rendered site plan of Mountain Courtyard" loading="lazy" /><span>Explore the site in 3D →</span></a>
+        <a class="map-card" href="index.html"><img src="./public/assets/images/site-render.webp" alt="Rendered site plan of Mountain Courtyard" loading="lazy" decoding="async" /><span>Explore the site in 3D →</span></a>
       </aside>
     </div>
     <p class="note">Placeholder contact details — to be replaced with the real address, email and phone before launch.</p>
