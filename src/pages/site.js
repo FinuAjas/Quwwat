@@ -1,13 +1,55 @@
 import { bindNav } from '../hero/nav.js';
 
 /** Behaviour shared by the content pages: header menu, solid header on scroll, reveal-on-scroll, contact form. */
-bindNav(document);
+bindNav(document, { idlePrefetch: true });
 
-// ---------- header turns solid once the page scrolls ----------
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- header turns solid once the page scrolls; reading-progress line; banner parallax; back-to-top ----------
 const nav = document.querySelector('.nav');
-const onScroll = () => nav.classList.toggle('is-scrolled', scrollY > 24);
-addEventListener('scroll', onScroll, { passive: true });
-onScroll();
+const bar = Object.assign(document.createElement('div'), { className: 'progress', ariaHidden: 'true' });
+const top = Object.assign(document.createElement('button'), { className: 'to-top', type: 'button', ariaLabel: 'Back to top', innerHTML: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 6-6 6 6"/></svg>' });
+top.addEventListener('click', () => scrollTo({ top: 0, behavior: calm ? 'auto' : 'smooth' }));
+document.body.append(bar, top);
+const bannerImg = document.querySelector('.banner__img');
+let ticking = false;
+function frame() {
+  ticking = false;
+  const y = scrollY, max = document.documentElement.scrollHeight - innerHeight;
+  nav.classList.toggle('is-scrolled', y > 24);
+  bar.style.transform = `scaleX(${max > 0 ? Math.min(1, y / max) : 0})`;
+  top.classList.toggle('is-shown', y > 700);
+  if (bannerImg && !calm && y < innerHeight) bannerImg.style.transform = `translate3d(0, ${(y * 0.22).toFixed(1)}px, 0) scale(1.08)`;
+}
+addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }, { passive: true });
+frame();
+
+// ---------- tiles: a soft light follows the pointer ----------
+if (!calm && matchMedia('(hover: hover)').matches) {
+  document.querySelectorAll('.tile, .info__item, .steps li').forEach((el) => el.addEventListener('pointermove', (e) => {
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    el.style.setProperty('--my', `${e.clientY - r.top}px`);
+  }, { passive: true }));
+}
+
+// ---------- numbers count up when they come into view ----------
+document.querySelectorAll('.stats b').forEach((el) => {
+  const n = parseInt(el.textContent, 10);
+  if (!Number.isFinite(n) || calm || !('IntersectionObserver' in window) || String(n) !== el.textContent.trim()) return;
+  new IntersectionObserver(([e], io) => {
+    if (!e.isIntersecting) return;
+    io.disconnect();
+    const t0 = performance.now();
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / 1100);
+      el.textContent = Math.round(n * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(step);
+    };
+    el.textContent = '0';
+    requestAnimationFrame(step);
+  }, { threshold: 0.6 }).observe(el);
+});
 
 // ---------- reveal on scroll ----------
 const items = [...document.querySelectorAll('.reveal')];

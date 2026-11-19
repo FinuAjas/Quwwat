@@ -7,7 +7,10 @@
   <meta name="description" content="Structured, transparent management of community and hospitality assets at Mountain Courtyard by Quwwat Group." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" /></noscript>
+  <link rel="preload" as="image" href="./public/assets/images/hero-poster.webp" media="(min-width: 761px)" fetchpriority="high" />
+  <link rel="modulepreload" href="./src/pages/site.js" />
   <link rel="stylesheet" href="./src/styles/hero.css" />
   <link rel="stylesheet" href="./src/styles/pages.css" />
   <script>document.documentElement.classList.add('js')</script>
@@ -38,7 +41,10 @@
 
   <main id="main">
   <section class="banner">
-    <img class="banner__img" src="./public/assets/images/hero-poster.webp" alt="" width="1920" height="1200" fetchpriority="high" />
+    <picture>
+      <source media="(max-width: 760px)" srcset="./public/assets/images/hero-poster-mobile.webp" />
+      <img class="banner__img" src="./public/assets/images/hero-poster.webp" alt="" width="1920" height="1200" fetchpriority="high" decoding="async" />
+    </picture>
     <div class="banner__inner">
       <p class="crumbs"><a href="index.html">Home</a><span aria-hidden="true">/</span>Investment Management</p>
       <h1>Investment Management</h1>
@@ -58,7 +64,7 @@
           <li>Clear, regular reporting on how the asset is performing</li>
         </ul>
       </div>
-      <figure class="split__media reveal"><img src="./public/assets/images/site-render.webp" alt="Rendered layout of the Mountain Courtyard site" loading="lazy" /><figcaption>The Mountain Courtyard site plan</figcaption></figure>
+      <figure class="split__media reveal"><img src="./public/assets/images/site-render.webp" alt="Rendered layout of the Mountain Courtyard site" loading="lazy" decoding="async" /><figcaption>The Mountain Courtyard site plan</figcaption></figure>
     </div>
   </div></section>
   <section class="section section--alt"><div class="wrap">
