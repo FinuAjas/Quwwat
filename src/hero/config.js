@@ -108,6 +108,13 @@ export const CONFIG = {
     aerial: closer({ target: [-27.3, 8, -21.75], position: [-47, 165, 145], mobile: { target: [-27.3, 8, -21.75], position: [-33.9, 166.4, 120.8] } }),
     'main-building': closer({ target: [-28, 8, -22], position: [8, 46, 32], mobile: { target: [-28, 8, -10], position: [-5.6, 61.6, 46] } }),
     recreation: closer({ target: [-52, 7, -34], position: [-62, 38, 22], mobile: { target: [-52, 7, -20], position: [-56.8, 57.4, 40] } }),
+    // One framing per hotspot (the carousel at the bottom right lists them all, in the order of index.html).
+    'swimming-pool': closer({ target: [-40, 8, -38], position: [-24, 44, -88] }),
+    amphitheater: closer({ target: [-36, 5, 7], position: [-22, 40, 52] }),
+    'prayer-hall': closer({ target: [-58, 14, -74], position: [-44, 46, -30] }),
+    parking: closer({ target: [-20, 4, -10], position: [22, 70, 62] }),
+    'gate-south': closer({ target: [40, -14, 76], position: [54, 12, 98] }),
+    'gate-west': closer({ target: [-38, -2, 43], position: [-18, 28, 80] }),
   },
   // Opening shot: the camera flies through `path` ([x, y, z] waypoints, low over the forest from the south-east)
   // and lands on the `aerial` preset; `look` is where it looks at the start. Click, scroll, a key or the button skips it.

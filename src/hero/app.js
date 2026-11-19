@@ -95,12 +95,14 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   // Once the whole model is in: render stills from the camera presets for the thumbnails and the Site Images
   // gallery (optional: never block the scene). If the scene is live by then, re-draw the current view at once.
   partsReady.then(() => {
-    const stills = capturePresets(renderer, scene, camera, ['aerial', 'main-building', 'recreation'], { large: [1280, 800], render: post.render });
+    // every carousel shot in index.html (data-preset) gets a still
+    const names = [...hero.querySelectorAll('.shot')].map((s) => s.dataset.preset);
+    const stills = capturePresets(renderer, scene, camera, names, { large: [1280, 800], render: post.render });
     if (revealed) post.render();
     return stills;
   }).then((captures) => {
     applyThumbnails(hero, captures);
-    const shots = [['aerial', '3D aerial view'], ['main-building', 'Convention centre — 3D view'], ['recreation', 'Pool & play area — 3D view']];
+    const shots = [...hero.querySelectorAll('.shot')].map((s) => [s.dataset.preset, `${s.textContent.trim()} — 3D view`]);
     page.addImages(shots.filter(([k]) => captures[k]).map(([k, caption]) => ({ src: captures[k].large, caption })));
   }).catch((err) => console.warn('Preset thumbnails could not be rendered', err));
 

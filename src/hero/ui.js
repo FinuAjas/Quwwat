@@ -29,7 +29,16 @@ export function bindUI(rig, { hero }) {
 
   // ----- preset thumbnails -----
   const shots = $$('.shot');
-  function setActiveShot(name) { shots.forEach((s) => s.classList.toggle('is-active', s.dataset.preset === name)); }
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function setActiveShot(name) {
+    shots.forEach((s) => s.classList.toggle('is-active', s.dataset.preset === name));
+    // keep the chosen thumbnail inside the strip (scrolls the strip only, never the page)
+    const on = shots.find((s) => s.dataset.preset === name), track = on?.parentElement;
+    if (!track) return;
+    const left = on.offsetLeft - track.offsetLeft;
+    if (left < track.scrollLeft || left + on.offsetWidth > track.scrollLeft + track.clientWidth)
+      track.scrollTo({ left: left - (track.clientWidth - on.offsetWidth) / 2, behavior: reduced ? 'auto' : 'smooth' });
+  }
   shots.forEach((s) => s.addEventListener('click', () => { setActiveShot(s.dataset.preset); rig.goTo(s.dataset.preset); }));
   $$('.shots__arrow').forEach((a) => a.addEventListener('click', () => {
     const i = shots.findIndex((s) => s.classList.contains('is-active'));

@@ -2,35 +2,13 @@
  * Page-level hero UI that works before (and without) the 3D model:
  * mobile menu, 3D / Site Images view switcher, image gallery.
  */
+import { bindNav } from './nav.js';
+
 export function bindPage(hero, { onViewChange = () => {} } = {}) {
   const $ = (s) => hero.querySelector(s);
   const $$ = (s) => [...hero.querySelectorAll(s)];
 
-  // ---------- mobile menu ----------
-  const nav = $('.nav'), toggle = $('.nav__toggle');
-  const drop = $('.nav__dropdown'), dropBtn = $('.nav__trigger');
-  const setDrop = (open) => {
-    drop.classList.toggle('is-open', open);
-    dropBtn.setAttribute('aria-expanded', String(open));
-  };
-  const setMenu = (open) => {
-    nav.classList.toggle('is-open', open);
-    toggle.setAttribute('aria-expanded', String(open));
-    toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
-    if (!open) setDrop(false);
-  };
-  toggle.addEventListener('click', () => setMenu(!nav.classList.contains('is-open')));
-  dropBtn.addEventListener('click', () => setDrop(!drop.classList.contains('is-open')));
-  document.addEventListener('click', (e) => {
-    if (!nav.contains(e.target)) setMenu(false);
-    else if (!drop.contains(e.target)) setDrop(false);
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    if (drop.classList.contains('is-open')) dropBtn.focus();
-    setMenu(false);
-  });
-  $$('.nav__links a').forEach((a) => a.addEventListener('click', () => setMenu(false)));
+  bindNav(hero); // mobile menu + Projects dropdown
 
   // ---------- gallery ----------
   const gallery = [{ src: './public/assets/images/site-render.webp', caption: 'Rendered site layout', alt: 'Rendered aerial layout of Mountain Courtyard' }];
