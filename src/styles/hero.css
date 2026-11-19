@@ -42,7 +42,7 @@ button { font: inherit; color: inherit; }
 .btn__play { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--sand); color: var(--sand-ink); font-size: 11px; }
 
 /* ---------- hero copy ---------- */
-.hero__copy { position: absolute; z-index: 2; left: var(--gutter); bottom: 112px; max-width: 460px; pointer-events: none; }
+.hero__copy { position: absolute; z-index: 2; left: var(--gutter); bottom: 34px; max-width: 460px; pointer-events: none; }
 .hero__copy > * { pointer-events: auto; }
 .eyebrow { display: flex; align-items: center; gap: 14px; margin: 0 0 18px; font-size: 13px; letter-spacing: .38em; text-transform: uppercase; color: var(--ink-soft); }
 .eyebrow::after { content: ""; width: 64px; height: 1px; background: var(--ink-soft); }
@@ -71,7 +71,10 @@ button { font: inherit; color: inherit; }
 /* ---------- camera preset thumbnails ---------- */
 .shots { position: absolute; z-index: 2; right: var(--gutter); bottom: 34px; display: flex; align-items: center; gap: 10px; padding: 14px;
   border-radius: 18px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(10px); }
-.shots__track { display: flex; gap: 12px; }
+/* nine shots, three in view: the strip scrolls (arrows, swipe or wheel) and snaps to a thumbnail */
+.shots__track { display: flex; gap: 12px; max-width: calc(3 * 168px + 2 * 12px); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 2px; margin: -2px; }
+.shots__track::-webkit-scrollbar { display: none; }
+.shot { flex: none; scroll-snap-align: start; }
 .shot { position: relative; width: 168px; height: 108px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; overflow: hidden;
   background: linear-gradient(160deg, #6f9a4a, #2f4d24) center/cover; }
 .shot.is-active { border-color: #fff; }
@@ -103,12 +106,13 @@ button { font: inherit; color: inherit; }
   .nav__links { display: none; }
   .nav .btn--sand { margin-left: auto; }
   .shot { width: 128px; height: 84px; }
+  .shots__track { max-width: calc(3 * 128px + 2 * 12px); }
 }
 @media (max-width: 760px) {
   .nav { padding-top: 14px; gap: 12px; }
   .nav__logo--group { height: 20px; } .nav__logo--project { height: 38px; } .nav__divider { height: 28px; }
   .nav .btn--sand { padding: 9px 14px; font-size: 13px; }
-  .hero__copy { bottom: 86px; right: var(--gutter); }
+  .hero__copy { bottom: 28px; right: var(--gutter); }
   .hero__logo { height: 50px; }
   .eyebrow { margin-bottom: 12px; }
   .hero__lead { margin-top: 12px; }
