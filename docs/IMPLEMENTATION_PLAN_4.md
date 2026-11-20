@@ -15,8 +15,8 @@ Goal: put people into the 3D model in two places, so the site feels alive and sh
 |---|---|---|
 | H0 Preview | ✅ | Figures built in `src/model/people.js`; two approval images in `docs/previews/` (see the notes under H0) |
 | H1 Approve the look | ✅ | Stylised figures, attire and crowd as in the preview, arch and petals kept, always visible (see Decisions) |
-| H2 Fix and refine the figures | ⏳ | Apply the H1 decisions, fix the known flaws, re-render the two images |
-| H3 Make them light | ⏳ | Cut from 290,000 triangles to about 45,000 or fewer |
+| H2 Fix and refine the figures | ✅ | Flaws fixed, figures refined, both images re-rendered (see the notes under H2) |
+| H3 Make them light | ⏳ | Cut from 334,000 triangles to about 45,000 or fewer |
 | H4 Put them in the model | ⏳ | Add the `People` group to the site build and the exported model files |
 | H5 Make them behave in the page | ⏳ | Shadows, phones, clicking, and nothing overlapping them |
 | H6 Gentle motion | 💤 | Swings, roundabout, clapping guests. Only if wanted |
@@ -27,9 +27,9 @@ Goal: put people into the 3D model in two places, so the site feels alive and sh
 
 - The people exist only in the preview tool. The website and the exported model files do not contain them yet.
 - The figures are stylised: capsule bodies, no faces, flat colours. They match the low-poly cars and buildings, but they are not photo-real.
-- Counts today: 27 figures in the play area (18 children, 9 adults) and roughly 100 at the wedding (the couple, 7 more on the stage, 5 standing on the top walkway, and the seated guests, who are placed at random and not counted exactly).
-- Weight today: about 290,000 triangles. The whole of `Structures` is 39,000, so this is far too heavy to ship as it is.
-- Nothing is committed. New files: `src/model/people.js`, `tools/people-preview.html`, `tools/people-preview.js`, `docs/previews/`. Changed: `serve.py` (one save route).
+- Counts today: 26 figures in the play area (18 children, 8 adults: 3 standing, 5 on benches) and roughly 105 at the wedding (the couple, 7 more on the stage, 5 standing and 6 seated on benches on the top walkway, and the seated guests, who are placed at random and not counted exactly).
+- Weight today: about 334,000 triangles (290,000 before H2). The whole of `Structures` is 39,000, so this is far too heavy to ship as it is.
+- H0 to H2 are committed (`8c4fbe1` and later). Files: `src/model/people.js`, `tools/people-preview.html`, `tools/people-preview.js`, `docs/previews/`, and one save route in `serve.py`.
 
 ## Scope (hard rule)
 
@@ -72,6 +72,17 @@ File: `src/model/people.js` only.
 4. Re-render with `tools/people-preview.html` and compare with the H0 images.
 
 **Done when:** the two new images show no figure passing through equipment, seats or another figure.
+
+**Done 2026-11-20.** Checked in the two approval shots and in four close-ups (play area from above and low down, the stage up close, the amphitheatre from above).
+- **Swing:** the mother now stands 1.3 m behind the seat and half a step to the side, out of its path.
+- **Stage edge:** guests on the lowest tier sit 0.28 m further back, so knees and feet stay clear of the raised stage.
+- **Seated dresses:** seated women get one piece over the lap and down the shins instead of two trouser legs.
+- **Benches:** parents sit only on benches the model really has. The preview reads them from the `Benches` mesh; the play area has 4, not the 5 the H0 preview assumed (`furniture.js` tries five; one is not built, and why was not looked into). `buildPeople({ benches })` takes the list; without it the five from `furniture.js` are assumed, so H4 must pass the real list from `buildSite.js`.
+- **Walkway benches:** the four benches on the amphitheatre's top walkway now have 6 guests seated on them; the standing guests moved so they do not stand in front of the benches.
+- **Other overlaps found in the close-ups and fixed:** the cheering child at the foot of the slide stood inside the roundabout; the mother and toddler stood against the swing frame's leg; two running children crossed the slide's landing.
+- **Refinements:** tapered chests with rounded shoulders and narrower waists; wider hips on women; a hair bun on about a third of the women without a scarf; two new seated poses (hands in lap, taking a photo) and a few guests turned towards a neighbour; the father of the bride in grey instead of off-white, so he no longer blends into the bride.
+- **Images:** `docs/previews/people-play-area.jpg` and `people-wedding.jpg` are the H2 versions; `h0-people-play-area.jpg` and `h0-people-wedding.jpg` keep the H0 versions for comparison.
+- **Cost:** the extra parts raised the count from 290,000 to 334,000 triangles. H3 has to cut further than planned.
 
 ### H3 Make them light
 File: `src/model/people.js` only. Target: **45,000 triangles or fewer in total, and at most 150 KB added to the download (gzip).**
