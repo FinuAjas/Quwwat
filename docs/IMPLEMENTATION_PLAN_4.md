@@ -7,7 +7,7 @@ Goal: put people into the 3D model in two places, so the site feels alive and sh
 
 **Nothing else on the site may change.** Each task below is one step and one commit.
 
-## Status — created 2026-11-14
+## Status — created 2026-11-14, finished 2026-11-21
 
 **Legend:** ✅ Done · ⏳ Pending · 💤 Optional
 
@@ -21,7 +21,7 @@ Goal: put people into the 3D model in two places, so the site feels alive and sh
 | H5 Make them behave in the page | ✅ | Clicking a person opens their hotspot; mother and toddler moved out of the cars' path; no phone rule needed (see the notes under H5) |
 | H6 Gentle motion | ✅ | Swings rock, the roundabout turns, 22 guests clap; still for reduced motion (see the notes under H6) |
 | H7 Text and thumbnails | ✅ | Amphitheatre text mentions weddings; live stills show the people; two live close-ups added to the gallery (see the notes under H7) |
-| H8 Rebuild and verify | ⏳ | Rebuild the model and posters, check size, speed and "nothing else changed" |
+| H8 Rebuild and verify | ✅ | Model rebuilt unchanged, posters re-rendered, budgets pass, nothing changed outside the two places, low tier no slower (see the notes under H8) |
 
 ## Where things stand
 
@@ -201,6 +201,16 @@ Only if wanted after seeing H5. It needs the moving figures as separate meshes, 
 2. Nothing else changed: run `tools/plan3-snapshot.html?set=people-after` and compare it with `tools/plan3/people-before/` (taken in H4, before the re-export). Differences are allowed only at the play area and the amphitheatre. `tools/plan3_diff.py` compares only Plan 3's own `before` / `after` sets and masks Plan 3's work area, so it first needs options for the two people sets and a mask round the two places (the play area lies outside Plan 3's area).
 3. Frame rate on the low tier (`?tier=low`) is no worse than before H4.
 4. Update the status table in this plan and commit.
+
+**Done 2026-11-21.**
+1. **Rebuild:** the two pages that `tools/build_assets.py` opens were opened in the Browser pane instead of the default browser: `tools/model-builder.html?save`, then `/?tier=ultra&poster`. The three model files came out byte-identical to the committed ones, so they match the source. The two posters were re-rendered and now show the people (as small specks at this distance; the movers in their rest pose): desktop 158 → 172 KB, phone 117 → 122 KB. `python tools/build_assets.py --report`: first view 1,593 KB (budget 2,200), whole page 2,690 KB (budget 6,000), model on disk 4.79 MB (budget 10): all pass. Before Plan 4 they were 1,576 KB, 2,327 KB and 3.85 MB.
+2. **Nothing else changed:**
+   - `tools/plan3_diff.py` has two new options: `--sets BEFORE AFTER` and `--area people` (a circle of 11 m round the play area and 12 m round the amphitheatre, plus `--margin`, default 3 m; difference images in `tools/plan3/diff-people/`). Plan 3's own use is unchanged.
+   - `tools/plan3-snapshot.html?set=people-after` was run twice: between the two fresh page loads no pixel differed by more than 1 level of 255 in any of the 21 views, so any larger difference is a real change.
+   - `python tools/plan3_diff.py --sets people-before people-after --area people`: **0 pixels changed outside the two places** in all three top views (with sun shadows, without, and the wide view including the forest); inside them 2,540, 1,573 and 480 pixels. Exit code 0.
+   - Model groups: only `Structures` (the play equipment split into more meshes, the same 38,648 triangles) and the new `People` (5 meshes, 38,026 triangles) differ; terrain, roads, parking, furniture, rocks and vegetation are identical.
+   - The perspective views are not masked; the ones checked by eye (Main Building and Swimming Pool presets) change only at the play area and the amphitheatre.
+3. **Low tier:** the build before H4 (commit `ce578bd`, checked out in a temporary folder and served on a second port) against today's, same 1270×800 canvas, `?tier=low`, two runs each. The people add 3–5% of the triangles (opening view 755,217 → 793,241) and up to 10 draw calls where the play area is in view; time per frame is no worse (opening view 2.39 / 1.91 ms before, 3.03 / 1.34 ms now; the spread between two runs of one build is larger than the difference between builds). The motion costs 0.007 ms a frame. Measured on this computer's GPU, not a phone.
 
 ## Files that will change
 `src/model/people.js`, `src/model/buildSite.js`, `src/model/furniture.js` (bench list), `tools/model-builder.js`,
