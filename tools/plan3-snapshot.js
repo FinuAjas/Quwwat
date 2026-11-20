@@ -63,7 +63,7 @@ async function run() {
     win.document.head.appendChild(s);
   });
   const THREE = await fromPage('three');
-  const { renderer, scene, camera, lights, site, foliage, hotspots } = hero;
+  const { renderer, scene, camera, lights, site, foliage, hotspots, motion } = hero;
   const configModule = await fromPage('./src/hero/config.js');
   const CONFIG = configModule.CONFIG;
 
@@ -73,6 +73,7 @@ async function run() {
   for (const name of HIDE) { const o = scene.getObjectByName(name); if (o) o.visible = false; }
   lights.update(T);
   site.update(T);
+  motion?.update(T); // swings, roundabout and clapping (Plan 4, H6), at the same frozen time
   camera.updateMatrixWorld();
   foliage.update(T - 5, camera); foliage.update(T, camera); // finishes the forest's grow-in animation, if it was running
   log(`Scene frozen at t = ${T} s; hidden: ${HIDE.join(', ')}`);

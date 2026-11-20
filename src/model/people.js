@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { FEATURES, PADS, toY } from './layout.js';
+import { FEATURES, PADS, HOTSPOTS, toY } from './layout.js';
 import { merge, prep, paint, mulberry32, mergeVertices } from './geom.js';
+import { PLAY } from './play.js';
 
 /**
  * People, for life and scale: children at the play equipment (with a few parents), and a wedding in the
@@ -147,7 +148,7 @@ function figure(o) {
   }
 
   // arms
-  const hands = [];
+  const hands = [], clapParts = [];
   [p.armL ?? [0.05, 0.1, 0.12], p.armR ?? [-0.05, 0.1, 0.12]].forEach(([sw, out, bend, inward = 0], i) => {
     const side = i ? 1 : -1;
     const sh = [side * shoulderW, neck[1] - H * 0.035, neck[2]];
@@ -155,11 +156,18 @@ function figure(o) {
     const u = dir(sw + lean, 0), f = dir(sw + bend + lean, inward);
     const elbow = [sh[0] + u.x * upper, sh[1] + u.y * upper, sh[2] + u.z * upper];
     const wrist = [elbow[0] + f.x * fore, elbow[1] + f.y * fore, elbow[2] + f.z * fore];
-    parts.push(seg(sh, elbow, limbR * 1.05, o.top), seg(elbow, wrist, limbR * 0.9, o.sleeves === 'long' ? o.top : o.skin));
-    if (!far) parts.push(gem(wrist, limbR * 1.15, o.skin));
+    const forearm = seg(elbow, wrist, limbR * 0.9, o.sleeves === 'long' ? o.top : o.skin);
+    parts.push(seg(sh, elbow, limbR * 1.05, o.top), forearm);
+    if (o.clap) clapParts.push({ geo: forearm, elbow, wrist, side });
+    if (!far) {
+      const hand = gem(wrist, limbR * 1.15, o.skin);
+      parts.push(hand);
+      if (o.clap) clapParts.push({ geo: hand, elbow, wrist, side, whole: true });
+    }
     hands.push(wrist);
   });
   o.extras?.(parts, { H, head, headR, neck, pelvisY, hands, shoulderW });
+  if (o.clap) addClap(parts, clapParts, limbR);
   return merge(parts);
 }
 
@@ -177,8 +185,40 @@ function finish(geo) {
 }
 
 /** Places a figure geometry: seat/foot point [x, y, z] and heading (yaw 0 = facing +Z). */
+/**
+ * Clapping (Plan 4, H6): every part of the figure gets a `sway` vertex attribute; on the forearms and hands xyz is how
+ * far that vertex moves towards the middle of the body at full stroke (nothing at the elbow, all of it at the hand, so
+ * the forearm turns about the elbow), w is this figure's phase. src/hero/motion.js moves them in the vertex shader,
+ * by up to that much either way: in until the hands meet, out to twice the gap.
+ */
+let clapRand = mulberry32(5150); // its own stream, so the clappers do not change anyone's colours
+function addClap(parts, clapParts, limbR) {
+  const phase = clapRand() * Math.PI * 2, byGeo = new Map(clapParts.map((c) => [c.geo, c]));
+  for (const g of parts) {
+    const p = g.attributes.position, n = p.count, s = new Float32Array(n * 4), c = byGeo.get(g);
+    for (let i = 0; i < n; i++) s[i * 4 + 3] = phase;
+    if (c) {
+      const [ex, ey, ez] = c.elbow, ax = c.wrist[0] - ex, ay = c.wrist[1] - ey, az = c.wrist[2] - ez, len2 = ax * ax + ay * ay + az * az;
+      const reach = Math.max(0.04, Math.abs(c.wrist[0]) - limbR * 1.1); // half the gap between the hands at rest (they meet in the middle), at least 4 cm
+      for (let i = 0; i < n; i++) {
+        const t = c.whole ? 1 : Math.min(1, Math.max(0, ((p.getX(i) - ex) * ax + (p.getY(i) - ey) * ay + (p.getZ(i) - ez) * az) / len2));
+        s[i * 4] = -c.side * reach * t;
+      }
+    }
+    g.setAttribute('sway', new THREE.BufferAttribute(s, 4));
+  }
+}
+
 let figures = 0; // figures placed by the current buildPeople() call, for the build stats
-function put(list, geo, [x, y, z], yaw = 0) { figures++; list.push(geo.rotateY(yaw).translate(x, y, z)); }
+function put(list, geo, [x, y, z], yaw = 0) {
+  figures++;
+  const s = geo.attributes.sway; // clap directions turn with the figure (rotateY only turns positions and normals)
+  if (s && yaw) {
+    const c = Math.cos(yaw), n = Math.sin(yaw);
+    for (let i = 0; i < s.count; i++) { const sx = s.getX(i), sz = s.getZ(i); s.setXYZ(i, sx * c + sz * n, s.getY(i), -sx * n + sz * c); }
+  }
+  list.push(geo.rotateY(yaw).translate(x, y, z));
+}
 
 // ---------- who they are ----------
 function kid(rand, pose, o = {}) {
@@ -212,8 +252,13 @@ function defaultPlayBenches() {
 }
 
 // ---------- play area ----------
+/**
+ * The play area's people: { still, swings: [one geometry per swing], riders }. The children on the swings and the
+ * roundabout are their own geometries, with their origin at that equipment's pivot (src/model/play.js), so they move
+ * with it.
+ */
 function playPeople(rand, benches) {
-  const list = [], G = 0.2; // top of the play surface (structures.js)
+  const list = [], swingKids = PLAY.swings.seats.map(() => []), riders = [], G = PLAY.G; // G: top of the play surface
   // slide and tower
   const tx = -2.2, tz = -1.2;
   put(list, kid(rand, 'slide', { h: 1.12 }), [tx, G + 0.83, tz + 0.8 + 1.5], 0);
@@ -221,8 +266,8 @@ function playPeople(rand, benches) {
   put(list, kid(rand, 'reachUp', { h: 1.05 }), [tx, G, tz - 1.75], 0);              // waiting at the ladder
   put(list, kid(rand, 'cheer', { h: 1.2 }), [tx - 1.0, G, tz + 0.8 + 3.3], Math.PI / 2); // beside the foot of the slide, clear of the roundabout
   // swings: two children, one pushed by a parent
-  const sx0 = 2.5, sz0 = 1.9;
-  for (const c of [-0.8, 0.8]) put(list, kid(rand, 'swing', { h: 1.1 + rand() * 0.15 }), [sx0 + c, G + 0.56, sz0 + 0.14], 0);
+  const { x0: sx0, z0: sz0 } = PLAY.swings;
+  PLAY.swings.seats.forEach((c, i) => put(swingKids[i], kid(rand, 'swing', { h: 1.1 + rand() * 0.15 }), [sx0 + c, G + 0.56, sz0 + 0.14], 0));
   put(list, woman(rand, 'push'), [sx0 - 1.12, G, sz0 - 1.3], 0.22); // behind the seat and half a step aside, out of its path
   // see-saw
   const wx = 1.9, wz = -2.9, wr = 0.45;
@@ -230,8 +275,9 @@ function playPeople(rand, benches) {
     put(list, kid(rand, 'seesaw', { h: 1.08 }), [wx + Math.cos(wr) * s * 1.48, G + 0.6 + s * 0.24, wz - Math.sin(wr) * s * 1.48], Math.atan2(-s * Math.cos(wr), s * Math.sin(wr)));
   }
   // roundabout: two riding, one running round with it
-  const rx = -1.2, rz = 3.5;
-  for (const a of [0.9, 3.9]) put(list, kid(rand, 'sitWave', { h: 1.1 }), [rx + Math.cos(a) * 0.72, G + 0.35, rz + Math.sin(a) * 0.72], Math.atan2(Math.cos(a), Math.sin(a)));
+  const { x: rx, z: rz } = PLAY.roundabout;
+  // on the deck's edge (radius 1.15), facing out, so their legs hang over it instead of through it
+  for (const a of [0.9, 3.9]) put(riders, kid(rand, 'sitWave', { h: 1.1 }), [rx + Math.cos(a) * 0.95, G + 0.35, rz + Math.sin(a) * 0.95], Math.atan2(Math.cos(a), Math.sin(a)));
   put(list, kid(rand, 'run', { h: 1.25 }), [rx + Math.cos(2.4) * 1.75, G, rz + Math.sin(2.4) * 1.75], Math.atan2(-Math.sin(2.4), Math.cos(2.4)));
   // spring riders
   put(list, kid(rand, 'ride', { h: 0.98 }), [3.9, G + 0.84, -0.4], 0.5);
@@ -244,15 +290,17 @@ function playPeople(rand, benches) {
   put(list, kid(rand, 'walk', { h: 1.1 }), [0.9, G, -4.6], -1.6);
   list.push(ball([0.15, G + 0.13, -4.3], 0.13, 0xe8462f, [1, 1, 1], 8, 5));
   // toddler holding a parent's hand, and a parent taking a photo
-  put(list, woman(rand, 'holdDown'), [4.85, G, 4.1], -2.3);          // clear of the swing frame's leg
-  put(list, kid(rand, 'reachUp', { h: 0.86 }), [4.5, G, 3.75], -2.3);
+  // in front of the swings, beyond their reach, and 5 m from the middle: the moving cars cut across the play area's
+  // east edge (their route, not the road, is off there; see Plan 4, H5)
+  put(list, woman(rand, 'holdDown'), [2.3, G, 4.75], -2.3);
+  put(list, kid(rand, 'reachUp', { h: 0.86 }), [1.95, G, 4.4], -2.3);
   put(list, man(rand, 'photo'), [-0.4, G, 5.3], Math.PI * 0.92);
   // parents on the benches round the edge: only on benches the model really has (local frame; see buildPeople)
   const seats = [[[-0.4, woman], [0.35, man]], [[0.3, woman]], [[-0.3, man]], [[0.2, woman]], []];
   benches.forEach((b, i) => {
     for (const [off, who] of seats[i % seats.length]) sitOnBench(list, who(rand, pick(rand, ['sit', 'sitLap', 'sitWave'])), b, off);
   });
-  return finish(merge(list));
+  return { still: finish(merge(list)), swings: swingKids.map((l) => merge(l)), riders: merge(riders) };
 }
 
 // ---------- wedding in the amphitheatre ----------
@@ -313,8 +361,8 @@ function weddingPeople(rand) {
       const turned = rand() < 0.14 ? (rand() < 0.5 ? -0.6 : 0.6) : 0;        // a few are talking to a neighbour
       const yaw = Math.atan2(-x, -z - 0.57) + (rand() - 0.5) * 0.25 + turned; // towards the couple
       const q = rand(), pose = q < 0.24 ? 'sitClap' : q < 0.32 ? 'sitWave' : q < 0.52 ? 'sitLap' : q < 0.6 ? 'sitPhoto' : 'sit';
-      const far = i > 0; // the lowest tier is seen up close beside the couple; the others in the crowd
-      const g = rand() < 0.14 ? kid(rand, pose, { h: 1.05 + rand() * 0.25, far }) : adult(rand, pose, { far });
+      const far = i > 0, clap = pose === 'sitClap'; // far: the lowest tier is seen up close beside the couple; the others in the crowd
+      const g = rand() < 0.14 ? kid(rand, pose, { h: 1.05 + rand() * 0.25, far, clap }) : adult(rand, pose, { far, clap });
       put(list, g, [x, y, z], yaw);
     }
   }
@@ -327,8 +375,13 @@ function weddingPeople(rand) {
   const rb = f.r0 + f.tiers * f.tierDepth + f.walkway / 2;
   [24, 68, 112, 152].forEach((d, i) => {
     const t = (d * Math.PI) / 180, x = rb * Math.cos(t), z = -rb * Math.sin(t), b = { x, y: yw, z, yaw: Math.atan2(-x, -z) };
-    for (const off of i % 2 ? [-0.38, 0.38] : [0.3]) sitOnBench(list, adult(rand, pick(rand, ['sit', 'sitLap', 'sitClap']), { far: true }), b, off);
+    for (const off of i % 2 ? [-0.38, 0.38] : [0.3]) {
+      const pose = pick(rand, ['sit', 'sitLap', 'sitClap']);
+      sitOnBench(list, adult(rand, pose, { far: true, clap: pose === 'sitClap' }), b, off);
+    }
   });
+  // everything in one mesh needs the same attributes: no clapping for the rest
+  for (const g of list) if (!g.attributes.sway) g.setAttribute('sway', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 4), 4));
   return finish(merge(list));
 }
 
@@ -340,12 +393,15 @@ function weddingPeople(rand) {
  */
 export function buildPeople({ benches = null } = {}) {
   figures = 0;
+  clapRand = mulberry32(5150);
   const group = new THREE.Group(); group.name = 'People';
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0 }); mat.name = 'People';
   const padY = (id) => toY(PADS.find((p) => p.id === id).elev);
-  const add = (name, geo, pos, y, rot) => {
+  // hotspotZone: the hotspot these people belong to, so clicking one opens it (src/hero/hotspots.js)
+  const zone = (group) => HOTSPOTS.find((h) => h.group === group).id;
+  const add = (name, geo, pos, y, rot, extra) => {
     const m = new THREE.Mesh(geo, mat);
-    m.name = name; m.userData = { castShadow: true, receiveShadow: true };
+    m.name = name; m.userData = { castShadow: true, receiveShadow: true, ...extra };
     m.position.set(pos[0], y, pos[1]); m.rotation.y = rot;
     group.add(m);
     return m;
@@ -355,8 +411,16 @@ export function buildPeople({ benches = null } = {}) {
     ? benches.map((b) => ({ x: b.x - pg.pos[0], y: b.y - py, z: b.z - pg.pos[1], yaw: b.yaw })).filter((b) => Math.hypot(b.x, b.z) < pg.radius + 3.5)
       .sort((a, b) => Math.atan2(a.z, a.x) - Math.atan2(b.z, b.x))
     : defaultPlayBenches();
-  add('People_PlayArea', playPeople(mulberry32(4117), near), pg.pos, py, 0);
-  add('People_Wedding', weddingPeople(mulberry32(9203)), FEATURES.amphitheatre.pos, padY('amphitheatre'), FEATURES.amphitheatre.rot);
+  const play = playPeople(mulberry32(4117), near), playZone = zone('RecreationZone');
+  add('People_PlayArea', play.still, pg.pos, py, 0, { hotspotZone: playZone });
+  // the children on the swings and the roundabout: origin at the equipment's pivot, the same motion, and no shadow
+  // (the shadow map is drawn once, so theirs would stay behind)
+  const { x0, z0, beam } = PLAY.swings, { x: rx, z: rz } = PLAY.roundabout;
+  PLAY.swings.seats.forEach((c, i) => add(`People_Swing_${i}`, finish(play.swings[i].translate(-(x0 + c), -(PLAY.G + beam), -z0)),
+    [pg.pos[0] + x0 + c, pg.pos[1] + z0], py + PLAY.G + beam, 0, { hotspotZone: playZone, motion: PLAY.motion.swings[i], castShadow: false }));
+  add('People_Roundabout', finish(play.riders.translate(-rx, -PLAY.G, -rz)), [pg.pos[0] + rx, pg.pos[1] + rz], py + PLAY.G, 0,
+    { hotspotZone: playZone, motion: PLAY.motion.roundabout, castShadow: false });
+  add('People_Wedding', weddingPeople(mulberry32(9203)), FEATURES.amphitheatre.pos, padY('amphitheatre'), FEATURES.amphitheatre.rot, { hotspotZone: zone('Amphitheater') });
   let tris = 0;
   group.traverse((o) => { if (o.isMesh) tris += o.geometry.index.count / 3; });
   return { group, counts: { people: figures, peopleTris: Math.round(tris) } };

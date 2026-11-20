@@ -17,6 +17,7 @@ import { createTraffic, createBirds } from './life.js';
 import { createSurfaces } from './surfaces.js';
 import { createGrass } from './grass.js';
 import { createFountain } from './fountain.js';
+import { createMotion } from './motion.js';
 
 /**
  * The interactive 3D hero. Loaded on demand by main.js (after the WebGL / data-saver checks and the
@@ -45,6 +46,8 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   const site = await loadSite(renderer, (p) => onProgress(p * 0.8));
   foliage.apply(site.root);
   surfaces.apply(site.root);
+  const motion = createMotion();
+  motion.add(site.root); // the swings and the roundabout (the children on them arrive with the details file)
   scene.add(site.root);
   const heightAt = createHeightSampler(site.terrain);
   const traffic = createTraffic(scene, site, heightAt, lights.sun);
@@ -80,9 +83,11 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   const partsReady = site.loadExtras(async (part) => {
     const plants = foliage.apply(part);
     surfaces.apply(part);
+    motion.add(part); // before compiling: clapping guests get their own shader
     await compileFor(part, camera, scene); // compile off-screen first, so adding it doesn't hitch
     if (revealed && plants.first) foliage.growIn();
     scene.add(part);
+    hotspots.addParts(part); // the people: clicking one opens the hotspot they belong to
     renderer.shadowMap.needsUpdate = true;
   });
 
@@ -114,6 +119,7 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
     mist.update(t, camera);
     lights.update(t);
     traffic.update(t);
+    motion.update(t);
     birds.update(t);
     grass.update(t, camera);
     fountain.update(t, camera, renderer.domElement.height);
@@ -136,6 +142,6 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   rig.intro();
   renderer.setAnimationLoop(frame);
   revealed = true;
-  window.__hero = { renderer, scene, camera, rig, lights, site, perf, heightAt, hotspots, popups, page, post, traffic, birds, grass, foliage, partsReady };
+  window.__hero = { renderer, scene, camera, rig, lights, site, perf, heightAt, hotspots, popups, page, post, traffic, birds, grass, foliage, motion, partsReady };
   return { onViewChange };
 }

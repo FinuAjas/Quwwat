@@ -57,7 +57,7 @@ async function run() {
   });
   const THREE = await fromPage('three');
   const { buildPeople } = await fromPage(`./src/model/people.js?v=${Date.now()}`);
-  const { renderer, scene, camera, lights, site, foliage, hotspots, post, grass } = hero;
+  const { renderer, scene, camera, lights, site, foliage, hotspots, post, grass, motion } = hero;
 
   renderer.setAnimationLoop(null);
   hotspots.clear?.();
@@ -78,6 +78,7 @@ async function run() {
   const loaded = scene.getObjectByName('People');
   if (loaded) { loaded.visible = false; log('The model\'s own people are hidden; showing src/model/people.js'); }
   const { group: people, counts } = buildPeople({ benches: benches.length ? benches : null });
+  motion?.add(people); // the children on the swings and roundabout move, the guests clap (frozen at T below)
   log(`Figures: ${counts.people}`);
   people.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   scene.add(people);
@@ -96,7 +97,7 @@ async function run() {
     lights.fitShadows([near], 16);
     renderer.shadowMap.needsUpdate = true;
     for (let i = 0; i < 3; i++) {
-      lights.update(T); site.update(T); grass?.update(T, camera); foliage.update(T, camera);
+      lights.update(T); site.update(T); motion?.update(T); grass?.update(T, camera); foliage.update(T, camera);
       post.update(T, target, 40);
       post.render();
     }

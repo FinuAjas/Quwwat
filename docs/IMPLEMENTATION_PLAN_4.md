@@ -18,8 +18,8 @@ Goal: put people into the 3D model in two places, so the site feels alive and sh
 | H2 Fix and refine the figures | ✅ | Flaws fixed, figures refined, both images re-rendered (see the notes under H2) |
 | H3 Make them light | ✅ | 334,000 → 38,000 triangles; about 343 KB to download once H4 drops the stored normals (see the notes under H3) |
 | H4 Put them in the model | ✅ | `People` group in the site build and in `mountain-courtyard-details.glb`; nothing else in the model changed (see the notes under H4) |
-| H5 Make them behave in the page | ⏳ | Shadows, phones, clicking, and nothing overlapping them |
-| H6 Gentle motion | 💤 | Swings, roundabout, clapping guests. Only if wanted |
+| H5 Make them behave in the page | ✅ | Clicking a person opens their hotspot; mother and toddler moved out of the cars' path; no phone rule needed (see the notes under H5) |
+| H6 Gentle motion | ✅ | Swings rock, the roundabout turns, 22 guests clap; still for reduced motion (see the notes under H6) |
 | H7 Text and thumbnails | ⏳ | Hotspot text mentions weddings and events; preset thumbnails re-rendered |
 | H8 Rebuild and verify | ⏳ | Rebuild the model and posters, check size, speed and "nothing else changed" |
 
@@ -139,11 +139,48 @@ Check each point on the live page and fix where needed.
 
 **Done when:** all six points are checked on desktop and in the phone-size view.
 
+**Done 2026-11-20.** Checked on the live page (high tier on desktop, low tier, and a 375×812 touch view).
+1. **Shadows:** the people cast and receive shadows. Rendered with and without their shadows, 17,473 pixels change at the play area and 26,667 at the wedding (two identical renders: 0). The page re-renders its static shadow map when the details file arrives (`app.js`), so they are in it.
+2. **Phones (low tier): no rule added.** Measured with `?tier=low`: the people add 2.3–4.8% of a frame's triangles (38,026 of 784,251 in the opening view) and 1–2 draw calls; frame time on this computer did not change beyond noise. Their shadows cost nothing per frame, because the shadow map is drawn once. Thinning the crowd or dropping their shadows would not buy a measurable frame rate, so neither is done. Measured on a desktop GPU, not a phone; the proportions are what carry over.
+3. **Materials:** neither `surfaces.js` nor `foliage.js` touches the `People` material: it is in no surface list, the meshes are not flagged vegetation, and the material keeps three.js's default shader.
+4. **Clicking: fixed.** Clicks only tested the zones and the terrain, so a ray went straight through a person, and a guest seen against the hillside (the top walkway, from the parking drive) cleared the Amphitheatre instead of opening it. Now:
+   - `src/model/people.js`: each people mesh carries `userData.hotspotZone` (`recreation-zone`, `amphitheater`, looked up in `HOTSPOTS`).
+   - `src/hero/hotspots.js`: `addParts(root)` registers meshes with that tag; `pick()` tests them only when the ray could change the answer (not when it already lands on their own zone), as each test costs about 1 ms.
+   - `src/hero/app.js`: calls `hotspots.addParts(part)` when each extra file arrives.
+   - Tested with synthetic clicks and taps through the page's own handlers: walkway guest against the hillside → Amphitheatre (was: cleared); guest on the tiers → Amphitheatre; running child → Children's Play Area; parent on a bench → Children's Play Area; empty lawn → clears, as before.
+   - Hover cost (desktop, per frame while the mouse moves): over the seats 2.0 ms, as before; over a guest seen against the hillside 4.1 ms (the people's share about 1.3 ms); over empty lawn 0.04 ms.
+5. **Overlaps:**
+   - **Cars at the play area: fixed by moving people.** Replaying one car over a whole lap, a car body passed 0.24 m *into* the mother holding the toddler at the play area's east edge. The cars' route there is off, not the road: the car footprint comes within 5.5 m of the play area's centre, and the surface reaches 6.8 m, so cars already cut about 1.3 m across the yellow surface and the rim. The mother and toddler now stand in front of the swings, beyond their reach, about 5 m from the centre: the nearest car now passes 1.31 m away. The route itself (`CONFIG.traffic.loop`) is outside this plan and is left as it was.
+   - **Cars at the wedding:** they drive along the stage's open side and pass 1.62 m from the nearest person.
+   - **Grass:** of 360 tufts round the play area, one stands under a bench: 0.26 m tall, under the backrest, below the 0.46 m seat. No tuft reaches a person.
+6. **Hotspot labels:** the anchors are 2.25 m (Amphitheatre) and 2.94 m (Children's Play Area) above the tallest head.
+- **Phone-size view (375×812, touch):** the people load with shading and shadows; taps on a walkway guest and a running child open their hotspots, and a tap on empty lawn clears; both hotspots frame the people, with the pop-up as a bottom sheet. This desktop GPU still gets the high tier in that view; a real phone may get the low tier (point 2).
+- **Re-exported** the model for the zone tags and the moved figures: only the details file changed, its 19 other nodes are identical, and the two people meshes keep their vertex and triangle counts. `docs/previews/people-play-area.jpg` re-rendered for the moved mother and toddler.
+- **Seen in passing, not part of this plan:** (a) the moving cars' route cuts across the play area's east edge (above); (b) in the portrait view, opening the Children's Play Area straight after the Amphitheatre lands the camera inside a palm tree, because the camera keeps its viewing direction; opened first, the play area frames well. Both happen without the people.
+
 ### H6 Gentle motion (optional)
 Only if wanted after seeing H5. It needs the moving figures as separate meshes, so decide before H3 is final.
 
 - Swings sway, the roundabout turns slowly, a few guests clap.
 - Runs from the page's animation loop like the cars in `src/hero/life.js`; off when the visitor prefers reduced motion.
+
+**Done 2026-11-21** (asked for after H5).
+- **What moves:** the two swings, with the children on them, rock about the beam (0.30 rad every 3.0 s and 0.24 rad every 3.15 s, so they drift in and out of step); the roundabout and its two riders turn once every 16 s; the 22 guests posed clapping clap 1.7 times a second (forearms turn about the elbow, hands meet in the middle).
+- **Model:**
+  - New `src/model/play.js`: positions and motion settings of the moving equipment, shared by `structures.js` and `people.js`, so the equipment and the children on it cannot drift apart.
+  - `src/model/structures.js`: each swing (chains and seat) and the roundabout (deck, hub and handles) is its own group, with its origin at the pivot and `userData.motion`. This touches the play equipment, which the scope rule otherwise forbids: H6 asked for it, and the geometry is unchanged (below).
+  - `src/model/people.js`: the children on the swings and the roundabout are their own meshes (`People_Swing_0`, `People_Swing_1`, `People_Roundabout`) with the same pivots and motion. Clapping guests carry a `sway` vertex attribute on their forearms and hands (exported as `_SWAY`; 0 everywhere else).
+- **Page:** new `src/hero/motion.js` reads `userData.motion` and the `sway` attribute (a shader patch on its own copy of the People material, for the wedding only). `app.js` registers each loaded file and calls `motion.update(t)` every frame; it is `__hero.motion`. Visitors who prefer reduced motion get the model's pose, still, and no shader patch. The snapshot tool and the people preview freeze the motion at their fixed time.
+- **Shadows:** the shadow map is drawn once, so the swings and the children on the swings and the roundabout no longer cast shadows (theirs would stay behind while they move). The roundabout keeps its own: a turning disc casts the same shadow. This is the one visible change at rest: the small shadows of the swing seats and the swinging children are gone.
+- **Fixed in passing:** the roundabout's riders sat 0.72 m from the hub, so their shins went through the deck (white shoes showed under it). They now sit on its edge, 0.95 m out, with their legs over the side.
+- **Checked:**
+  - Core file: all 108 nodes outside the play area identical; inside it, the same triangles per material in the same places in world space (only split into more meshes). Vegetation file identical. Details file: its 19 other nodes identical.
+  - Rest pose against renders taken before H6: the amphitheatre and its people identical; at the play area only the removed swing shadows differ (the background trees differ between page loads with the forest's level of detail, which H6 does not touch).
+  - Frames at different times: swings, chains, seats and children move as one; the swing just reaches the pushing mother's hands; the riders turn with the deck and clear the man beside it; the clapping forearms stay attached at the elbow.
+  - Reduced motion: with the preference set, a test object does not move and no shader is patched; without it, the same object swings its full 0.3 rad.
+  - Clicking a child at the far end of a swing opens the Children's Play Area (the click box for moving people is 1.2 m bigger).
+  - Validator: no failures; draw calls 125 → 134 (budget 150); materials warning unchanged at 42.
+- **Cost:** moving everything takes 0.002 ms a frame. Triangles unchanged. The details file grew 823 → 1,097 KB on disk but only 417 → 418 KB gzipped (the clap attribute is mostly zeros); `motion.js` adds 3 KB to the first view. Whole page 2,675 KB (budget 6,000).
 
 ### H7 Text and thumbnails
 1. `src/hero/content.js`: add one sentence to the Amphitheatre text about weddings and community events.
@@ -157,9 +194,11 @@ Only if wanted after seeing H5. It needs the moving figures as separate meshes, 
 4. Update the status table in this plan and commit.
 
 ## Files that will change
-`src/model/people.js`, `src/model/buildSite.js`, `tools/model-builder.js`, `src/hero/config.js` (low-tier rule),
-`src/hero/hotspots.js` (only if clicking needs it), `src/hero/content.js` (one sentence), the rebuilt model files and
-posters, and this plan. Already added by H0: the preview tool, the `serve.py` save route and `docs/previews/`.
+`src/model/people.js`, `src/model/buildSite.js`, `src/model/furniture.js` (bench list), `tools/model-builder.js`,
+`src/hero/hotspots.js` and `src/hero/app.js` (H5: clicking people), `src/hero/content.js` (one sentence), the rebuilt model
+files and posters, and this plan. H6 added `src/model/play.js` and `src/hero/motion.js` and changed `src/model/structures.js`
+(moving play equipment). Tools: the preview tool and its `serve.py` save route (H0), `docs/previews/`, and the
+`people-before` / `people-after` snapshot sets (H4). No low-tier rule was needed in `src/hero/config.js` (H5).
 
 ## Decisions
 All decided by the owner: 1 to 5 on 2026-11-14 (H1), 6 on 2026-11-20 (H3).
