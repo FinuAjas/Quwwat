@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildSite } from '../src/model/buildSite.js';
 
 const statsEl = document.getElementById('stats');
@@ -44,7 +45,8 @@ root.traverse((o) => {
   tris += n * (o.isInstancedMesh ? o.count : 1);
 });
 statsEl.textContent = `build   ${stats.ms} ms\nmeshes  ${meshes}\ntris    ${(tris / 1e6).toFixed(2)} M\ntrees   ${stats.trees}\ncars    ${stats.cars}
-rocks   ${stats.rocks}`;
+rocks   ${stats.rocks}
+people  ${stats.people} (${stats.peopleTris} tris)`;
 
 // The model is delivered as three files, so the page can show the site before the forest has arrived:
 // the core loads first (CONFIG.models.core), the others stream in after it (CONFIG.models.extras).
@@ -52,7 +54,7 @@ rocks   ${stats.rocks}`;
 const PARTS = [
   { file: 'mountain-courtyard.glb', name: 'MountainCourtyard', groups: null },
   { file: 'mountain-courtyard-vegetation.glb', name: 'MountainCourtyard_Vegetation', groups: ['Vegetation'] },
-  { file: 'mountain-courtyard-details.glb', name: 'MountainCourtyard_Details', groups: ['Furniture', 'Rocks'] },
+  { file: 'mountain-courtyard-details.glb', name: 'MountainCourtyard_Details', groups: ['Furniture', 'Rocks', 'People'] },
 ];
 const listed = new Set(PARTS.flatMap((p) => p.groups ?? []));
 
@@ -63,6 +65,16 @@ async function exportParts() {
   const normal = terrain.geometry.getAttribute('normal');
   terrain.geometry.deleteAttribute('normal');
   terrain.userData.recomputeNormals = true;
+  // The people too, and without their normals far more vertices are shared, so merge them again (Plan 4, H3:
+  // about 419 -> 343 KB gzipped). loader.js rebuilds normals on meshes flagged recomputeNormals.
+  const people = [];
+  root.getObjectByName('People')?.traverse((o) => { if (o.isMesh) people.push({ mesh: o, geometry: o.geometry, userData: o.userData }); });
+  for (const p of people) {
+    const g = p.geometry.clone();
+    g.deleteAttribute('normal');
+    p.mesh.geometry = mergeVertices(g);
+    p.mesh.userData = { ...p.userData, recomputeNormals: true };
+  }
   const order = [...root.children], out = [];
   try {
     for (const part of PARTS) {
@@ -75,6 +87,7 @@ async function exportParts() {
   } finally {
     for (const child of order) root.add(child); // back under the model root, original order
     terrain.geometry.setAttribute('normal', normal);
+    for (const p of people) { p.mesh.geometry.dispose(); p.mesh.geometry = p.geometry; p.mesh.userData = p.userData; }
   }
   return out;
 }

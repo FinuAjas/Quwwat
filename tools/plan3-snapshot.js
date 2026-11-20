@@ -17,7 +17,9 @@ import { PLAN3_AREA_PX, PX } from '../src/model/layout.js';
  * between frames and how many differ from the previous run, which is the tolerance the comparison must allow.
  */
 const params = new URLSearchParams(location.search);
-const SET = params.get('set') === 'after' ? 'after' : 'before';
+// before / after: Plan 3. people-before / people-after: Plan 4 (the model before H4 adds the people, and after H8).
+const SETS = ['before', 'after', 'people-before', 'people-after'];
+const SET = SETS.includes(params.get('set')) ? params.get('set') : 'before';
 const T = 1000;                       // the frozen scene time, in seconds
 const HIDE = ['Mist', 'Traffic', 'Birds', 'Grass', 'HotspotRing', 'Fountain_Particles'];
 const SKIP_COUNT = new Set([...HIDE, 'SkyDome', 'Ridges']);

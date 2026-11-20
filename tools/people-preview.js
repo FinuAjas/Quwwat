@@ -74,7 +74,11 @@ async function run() {
     }
   }
   log(`Benches in the model: ${benches.length}`);
-  const people = buildPeople({ benches: benches.length ? benches : null });
+  // Since H4 the model files carry their own people: hide them and show the ones built from src/model/people.js.
+  const loaded = scene.getObjectByName('People');
+  if (loaded) { loaded.visible = false; log('The model\'s own people are hidden; showing src/model/people.js'); }
+  const { group: people, counts } = buildPeople({ benches: benches.length ? benches : null });
+  log(`Figures: ${counts.people}`);
   people.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   scene.add(people);
   const m = await measure(people);

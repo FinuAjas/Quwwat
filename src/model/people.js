@@ -177,7 +177,8 @@ function finish(geo) {
 }
 
 /** Places a figure geometry: seat/foot point [x, y, z] and heading (yaw 0 = facing +Z). */
-function put(list, geo, [x, y, z], yaw = 0) { list.push(geo.rotateY(yaw).translate(x, y, z)); }
+let figures = 0; // figures placed by the current buildPeople() call, for the build stats
+function put(list, geo, [x, y, z], yaw = 0) { figures++; list.push(geo.rotateY(yaw).translate(x, y, z)); }
 
 // ---------- who they are ----------
 function kid(rand, pose, o = {}) {
@@ -335,8 +336,10 @@ function weddingPeople(rand) {
  * Group "People": one mesh per place, in the same local frames as the structures they stand on.
  * benches: the model's benches as world { x, y, z, yaw } (y = the ground under the bench). Those round the play area
  * get parents sitting on them; without the list, the five that furniture.js places there are assumed.
+ * Returns { group, counts: { people, peopleTris } }.
  */
 export function buildPeople({ benches = null } = {}) {
+  figures = 0;
   const group = new THREE.Group(); group.name = 'People';
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0 }); mat.name = 'People';
   const padY = (id) => toY(PADS.find((p) => p.id === id).elev);
@@ -354,5 +357,7 @@ export function buildPeople({ benches = null } = {}) {
     : defaultPlayBenches();
   add('People_PlayArea', playPeople(mulberry32(4117), near), pg.pos, py, 0);
   add('People_Wedding', weddingPeople(mulberry32(9203)), FEATURES.amphitheatre.pos, padY('amphitheatre'), FEATURES.amphitheatre.rot);
-  return group;
+  let tris = 0;
+  group.traverse((o) => { if (o.isMesh) tris += o.geometry.index.count / 3; });
+  return { group, counts: { people: figures, peopleTris: Math.round(tris) } };
 }

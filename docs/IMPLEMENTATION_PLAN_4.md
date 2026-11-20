@@ -17,7 +17,7 @@ Goal: put people into the 3D model in two places, so the site feels alive and sh
 | H1 Approve the look | ✅ | Stylised figures, attire and crowd as in the preview, arch and petals kept, always visible (see Decisions) |
 | H2 Fix and refine the figures | ✅ | Flaws fixed, figures refined, both images re-rendered (see the notes under H2) |
 | H3 Make them light | ✅ | 334,000 → 38,000 triangles; about 343 KB to download once H4 drops the stored normals (see the notes under H3) |
-| H4 Put them in the model | ⏳ | Add the `People` group to the site build and the exported model files |
+| H4 Put them in the model | ✅ | `People` group in the site build and in `mountain-courtyard-details.glb`; nothing else in the model changed (see the notes under H4) |
 | H5 Make them behave in the page | ⏳ | Shadows, phones, clicking, and nothing overlapping them |
 | H6 Gentle motion | 💤 | Swings, roundabout, clapping guests. Only if wanted |
 | H7 Text and thumbnails | ⏳ | Hotspot text mentions weddings and events; preset thumbnails re-rendered |
@@ -25,11 +25,11 @@ Goal: put people into the 3D model in two places, so the site feels alive and sh
 
 ## Where things stand
 
-- The people exist only in the preview tool. The website and the exported model files do not contain them yet.
+- Since H4 the people are part of the model: the `People` group is in `mountain-courtyard-details.glb`, which the page loads after the first view, with the furniture and rocks.
 - The figures are stylised: capsule bodies, no faces, flat colours. They match the low-poly cars and buildings, but they are not photo-real.
 - Counts today: 26 figures in the play area (18 children, 8 adults: 3 standing, 5 on benches) and roughly 105 at the wedding (the couple, 7 more on the stage, 5 standing and 6 seated on benches on the top walkway, and the seated guests, who are placed at random and not counted exactly).
-- Weight today: about 38,000 triangles and 30,500 vertices after H3 (334,000 triangles after H2). Download cost about 343 KB gzipped once H4 drops the stored normals.
-- H0 to H2 are committed (`8c4fbe1` and later). Files: `src/model/people.js`, `tools/people-preview.html`, `tools/people-preview.js`, `docs/previews/`, and one save route in `serve.py`.
+- Weight today: 38,026 triangles; 23,765 vertices as stored in the model file, without normals (334,000 triangles after H2). The details file grew from 72 to 417 KB gzipped.
+- Each task is committed on its own on `p3-south-area`. Files: `src/model/people.js`, `tools/people-preview.html`, `tools/people-preview.js`, `docs/previews/`, one save route in `serve.py`, and from H4 the build and export changes listed under H4.
 
 ## Scope (hard rule)
 
@@ -114,6 +114,19 @@ File: `src/model/people.js` only. Target: **45,000 triangles or fewer in total, 
 
 **Done when:** the people are visible on the normal page, loaded from the model files, and `tools/validate-model.html` passes.
 
+**Done 2026-11-20.**
+- **Baseline for H8, taken first:** before the re-export, `tools/plan3-snapshot.html?set=people-before` saved 21 images and a manifest (with the three model files' SHA-256) to `tools/plan3/people-before/`. The images are git-ignored like Plan 3's; the manifest is kept. The snapshot tool and `serve.py` accept two new set names, `people-before` and `people-after`, so Plan 3's own `before` / `after` images are left alone.
+- `src/model/furniture.js`: `buildFurniture` also returns `benches`, where each bench was really built.
+- `src/model/people.js`: `buildPeople` returns `{ group, counts: { people, peopleTris } }`.
+- `src/model/buildSite.js`: builds the people after the rocks, with the real bench list, and adds the `People` group. The build stats gain `people` (124 figures) and `peopleTris` (38,026).
+- `tools/model-builder.js`: `People` goes into `mountain-courtyard-details.glb`. At export the two meshes lose their normals, are merged again (30,487 → 23,765 vertices) and are flagged `recomputeNormals`; the originals are put back afterwards. The builder's stats panel lists the people.
+- `tools/people-preview.js`: hides the model's own people and shows the ones built from `src/model/people.js`, so source changes can still be previewed before a re-export.
+- **Re-exported** with `tools/model-builder.html?save`. **Nothing else changed:** the core and vegetation files are byte-identical (same SHA-256 as in the baseline manifest). In the details file all 19 existing nodes (furniture, rocks, gate signs) are identical in transforms, vertex data, materials, textures and instancing, checked node by node against the previous file. The only new nodes are `People`, `People_PlayArea` (6,423 vertices, 10,396 triangles) and `People_Wedding` (17,342 vertices, 27,630 triangles).
+- **Size:** details file 134 → 823 KB on disk, 72 → 417 KB gzipped (+345 KB; H3 estimated 343 KB). Whole page 2,327 → 2,671 KB (budget 6,000); first view unchanged at 1,576 KB; model on disk 3.85 → 4.52 MB (budget 10). `python tools/build_assets.py --report` passes all three budgets.
+- **Live page:** both meshes load from the details file with rebuilt normals and cast and receive shadows. Opening the Children's Play Area and Amphitheatre hotspots shows the children, parents and wedding guests.
+- **Validator:** no failures. One warning, materials 42 against a budget of 40: it was already there at 41 before H4, and the people's material adds one. (Wall_Stone, Timber_Frame and Boundary_Wall are each counted twice, because they are used in both the core and the details file.)
+- **Not done here:** the poster images still show the site without people; they are re-rendered in H8. The H5 checks (clicking, phones, overlaps) are not done yet.
+
 ### H5 Make them behave in the page
 Check each point on the live page and fix where needed.
 
@@ -139,7 +152,7 @@ Only if wanted after seeing H5. It needs the moving figures as separate meshes, 
 
 ### H8 Rebuild and verify
 1. `python tools/build_assets.py`: rebuilds the model files and the poster images and prints the size report. Budgets: first view 2,200 KB, whole page 6,000 KB, model on disk 10 MB.
-2. Nothing else changed: run `tools/plan3-snapshot.html?set=after` and `python tools/plan3_diff.py` against a snapshot taken before H4. Differences are allowed only at the play area and the amphitheatre.
+2. Nothing else changed: run `tools/plan3-snapshot.html?set=people-after` and compare it with `tools/plan3/people-before/` (taken in H4, before the re-export). Differences are allowed only at the play area and the amphitheatre. `tools/plan3_diff.py` compares only Plan 3's own `before` / `after` sets and masks Plan 3's work area, so it first needs options for the two people sets and a mask round the two places (the play area lies outside Plan 3's area).
 3. Frame rate on the low tier (`?tier=low`) is no worse than before H4.
 4. Update the status table in this plan and commit.
 
