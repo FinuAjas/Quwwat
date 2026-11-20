@@ -18,6 +18,7 @@ import { createSurfaces } from './surfaces.js';
 import { createGrass } from './grass.js';
 import { createFountain } from './fountain.js';
 import { createMotion } from './motion.js';
+import { CONFIG } from './config.js';
 
 /**
  * The interactive 3D hero. Loaded on demand by main.js (after the WebGL / data-saver checks and the
@@ -99,17 +100,24 @@ export async function startHero({ hero, page, onProgress = () => {}, onStatus = 
   }
   // Once the whole model is in: render stills from the camera presets for the thumbnails and the Site Images
   // gallery (optional: never block the scene). If the scene is live by then, re-draw the current view at once.
-  partsReady.then(() => {
-    // every carousel shot in index.html (data-preset) gets a still
-    const names = [...hero.querySelectorAll('.shot')].map((s) => s.dataset.preset);
-    const stills = capturePresets(renderer, scene, camera, names, { large: [1280, 800], render: post.render });
+  const still = (names) => { // renders now (camera borrowed and put back), encodes later; the live view is re-drawn at once
+    const pending = capturePresets(renderer, scene, camera, names, { large: [1280, 800], render: post.render });
     if (revealed) post.render();
-    return stills;
-  }).then((captures) => {
-    applyThumbnails(hero, captures);
-    const shots = [...hero.querySelectorAll('.shot')].map((s) => [s.dataset.preset, `${s.textContent.trim()} — 3D view`]);
-    page.addImages(shots.filter(([k]) => captures[k]).map(([k, caption]) => ({ src: captures[k].large, caption })));
-  }).catch((err) => console.warn('Preset thumbnails could not be rendered', err));
+    return pending;
+  };
+  partsReady.then(() => still([...hero.querySelectorAll('.shot')].map((s) => s.dataset.preset))) // every carousel shot in index.html (data-preset)
+    .then(async (captures) => {
+      applyThumbnails(hero, captures);
+      // the gallery's close-ups (CONFIG.closeups) in a later task, so the page never stalls for all the stills at once
+      await new Promise((r) => setTimeout(r, 0));
+      Object.assign(captures, await still(Object.keys(CONFIG.closeups ?? {})));
+      const shots = [...hero.querySelectorAll('.shot')].map((s) => [s.dataset.preset, `${s.textContent.trim()} — 3D view`]);
+      const closeups = Object.entries(CONFIG.closeups ?? {});
+      page.addImages(shots.filter(([k]) => captures[k]).flatMap(([k, caption]) => [
+        { src: captures[k].large, caption },
+        ...closeups.filter(([c, v]) => v.after === k && captures[c]).map(([c, v]) => ({ src: captures[c].large, caption: v.caption, alt: v.alt })),
+      ]));
+    }).catch((err) => console.warn('Preset thumbnails could not be rendered', err));
 
   const clock = new THREE.Clock();
   function frame() {

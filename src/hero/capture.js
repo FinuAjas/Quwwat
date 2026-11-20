@@ -32,7 +32,7 @@ export async function capturePresets(renderer, scene, camera, names, { thumb = [
   camera.fov = CONFIG.camera.fov;
   camera.updateProjectionMatrix();
   for (const name of names) {
-    const p = CONFIG.presets[name];
+    const p = CONFIG.presets[name] ?? CONFIG.closeups?.[name]; // the gallery's close-ups are framed the same way
     if (!p) continue;
     camera.position.fromArray(p.position);
     camera.lookAt(target.fromArray(p.target));

@@ -20,7 +20,7 @@ Goal: put people into the 3D model in two places, so the site feels alive and sh
 | H4 Put them in the model | ✅ | `People` group in the site build and in `mountain-courtyard-details.glb`; nothing else in the model changed (see the notes under H4) |
 | H5 Make them behave in the page | ✅ | Clicking a person opens their hotspot; mother and toddler moved out of the cars' path; no phone rule needed (see the notes under H5) |
 | H6 Gentle motion | ✅ | Swings rock, the roundabout turns, 22 guests clap; still for reduced motion (see the notes under H6) |
-| H7 Text and thumbnails | ⏳ | Hotspot text mentions weddings and events; preset thumbnails re-rendered |
+| H7 Text and thumbnails | ✅ | Amphitheatre text mentions weddings; live stills show the people; two live close-ups added to the gallery (see the notes under H7) |
 | H8 Rebuild and verify | ⏳ | Rebuild the model and posters, check size, speed and "nothing else changed" |
 
 ## Where things stand
@@ -186,6 +186,15 @@ Only if wanted after seeing H5. It needs the moving figures as separate meshes, 
 1. `src/hero/content.js`: add one sentence to the Amphitheatre text about weddings and community events.
 2. The preset thumbnails and the Site Images gallery are rendered from the live scene, so they pick up the people on their own; check the `recreation` preset shows the play area well.
 3. Decide whether the two preview images go into the Site Images gallery.
+
+**Done 2026-11-21.**
+1. **Text:** the Amphitheatre pop-up now ends: "Its stage and tiers also make a natural setting for weddings and family celebrations." (It already mentioned community events.) Like the rest of `content.js`, this is placeholder copy to be replaced with approved text before launch.
+2. **Thumbnails and stills:** they are rendered from the live scene, so they show the people (and the motion at that moment) with no change. At a 16:9 desktop size the Recreation Zone view shows the play area with the children and parents, beside the pool; the Amphitheatre view shows the full tiers, with the couple small and seen from behind the timber backdrop (that camera looks from the parking drive). The stills are a 16:10 crop of the visitor's own window, so on narrow windows and phones they lose the edges, as every still already did: the play area sits at the Recreation Zone still's left edge.
+3. **Gallery (owner's choice: live close-ups):** two close-ups are rendered in the page like the preset stills, so nothing is downloaded and they always match the model:
+   - `CONFIG.closeups` in `src/hero/config.js`: "Children's Play Area — close-up" (the play area from beside the swings) and "A wedding in the Amphitheatre — close-up" (from over the seats, facing the couple under the arch), each with alt text and shown right after the Recreation Zone and Amphitheatre stills (gallery images 5 and 8 of 12).
+   - `src/hero/capture.js` frames them like the presets; `src/hero/app.js` renders them in a separate step after the thumbnails, so the page's one-off pause for rendering stills does not grow (on this computer: 119 ms for the nine presets, then 56 ms for the two close-ups; encoding runs in the background).
+   - The existing presets and the carousel are unchanged.
+   - Checked on the page at 1440×810: 12 gallery images in that order, all 9 carousel thumbnails filled, no console errors, and the new sentence in the Amphitheatre pop-up.
 
 ### H8 Rebuild and verify
 1. `python tools/build_assets.py`: rebuilds the model files and the poster images and prints the size report. Budgets: first view 2,200 KB, whole page 6,000 KB, model on disk 10 MB.

@@ -102,6 +102,12 @@ export const CONFIG = {
     introSkipSeconds: 0.7,              // a skipped intro fast-forwards to the end in this time
   },
 
+  // Close-ups for the Site Images gallery only (Plan 4, H7): rendered from the live scene like the preset stills, each
+  // shown right after the still of the preset named in `after`. [target], [position] as for the presets.
+  closeups: {
+    'play-closeup': { target: [-75, 8.3, -31.6], position: [-65.5, 13.8, -18], after: 'recreation', caption: "Children's Play Area — close-up", alt: 'Children playing on the slide, swings and roundabout, with parents on the benches' },
+    'wedding-closeup': { target: [-33.4, 5.4, 8.6], position: [-45.8, 17.6, -4.8], after: 'amphitheater', caption: 'A wedding in the Amphitheatre — close-up', alt: 'A bride and groom under a flower arch on the amphitheatre stage, with guests on the tiers' },
+  },
   // Camera presets: [target], [position]. `mobile` overrides apply to portrait/narrow screens.
   // The desktop positions below are brought DESKTOP_ZOOM times closer to their targets (see `closer`).
   presets: {
