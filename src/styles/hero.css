@@ -307,6 +307,10 @@ button { font: inherit; color: inherit; }
 .hero__copy > * { animation: rise .9s var(--ease) both; }
 .hero__copy > :nth-child(2) { animation-delay: .12s; }
 .hero__copy > :nth-child(3) { animation-delay: .24s; }
+.hero__copy > :nth-child(4) { animation-delay: .36s; }
+.hero__copy { max-width: 520px; }
+.hero__about { margin: 14px 0 0; font-size: clamp(13px, .95vw, 15px); line-height: 1.6; color: var(--ink-soft); text-shadow: 0 1px 12px rgba(0, 0, 0, .5); }
+@media (max-width: 760px) { .hero__about { font-size: 12.5px; line-height: 1.5; margin-top: 10px; } }
 .nav { animation: rise .8s var(--ease) both; }
 
 /* carousel: richer glass, lit active shot, slow zoom on hover */
