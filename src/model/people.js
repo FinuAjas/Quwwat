@@ -1,12 +1,16 @@
 import * as THREE from 'three';
 import { FEATURES, PADS, toY } from './layout.js';
-import { merge, prep, paint, mulberry32 } from './geom.js';
+import { merge, prep, paint, mulberry32, mergeVertices } from './geom.js';
 
 /**
  * People, for life and scale: children at the play equipment (with a few parents), and a wedding in the
  * amphitheatre (bride and groom on the stage, family beside them, guests on the tiers).
- * Each figure is posed from a few joint angles and built from capsules; all figures of one place are merged
- * into a single vertex-coloured mesh. Local frame of a figure: feet at y = 0, facing +Z.
+ * Each figure is posed from a few joint angles and built from low-poly parts (five-sided spindles for limbs, small
+ * spheres for heads); all figures of one place are merged into one indexed, vertex-coloured mesh.
+ * Local frame of a figure: feet at y = 0, facing +Z.
+ *
+ * Weight (Plan 4, H3): a near figure is about 400 triangles, a far one (`far: true`, seated guests on the upper tiers)
+ * about 250: far figures have no hands, feet or neck and four-sided limbs.
  */
 const SKIN = [0xc68e63, 0xb57a50, 0xd3a077, 0xa9683f, 0xddb08a];
 const HAIR = [0x17120f, 0x241a14, 0x2e2018, 0x0f0d0c];
@@ -21,13 +25,29 @@ const pick = (rand, list) => list[Math.floor(rand() * list.length)];
 const part = (g, color) => paint(prep(g), color);
 const Y = new THREE.Vector3(0, 1, 0);
 
-/** Capsule from a to b (arrays), radius r; sx widens it sideways (for torsos). */
-function limb(a, b, r, color, sx = 1, sz = 1) {
-  return span(a, b, (len) => new THREE.CapsuleGeometry(r, len, 2, 7), color, sx, sz);
+/**
+ * Spindle along Y: an n-sided tube of length len with a low point at each end (r * 0.75 beyond the end), smooth
+ * normals. 4n triangles: the cheap stand-in for a capsule (a three.js capsule with the fewest segments is 50).
+ */
+function spindle(r, len, n) {
+  const pos = [0, -len / 2 - r * 0.75, 0], idx = [];
+  for (const y of [-len / 2, len / 2]) for (let i = 0; i < n; i++) { const t = (i / n) * Math.PI * 2; pos.push(r * Math.sin(t), y, r * Math.cos(t)); }
+  pos.push(0, len / 2 + r * 0.75, 0);
+  const top = 2 * n + 1, B = (i) => 1 + (i % n), T = (i) => 1 + n + (i % n);
+  for (let i = 0; i < n; i++) idx.push(0, B(i + 1), B(i), B(i), B(i + 1), T(i + 1), B(i), T(i + 1), T(i), top, T(i), T(i + 1));
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals(); // while still indexed, so the shading stays smooth after prep()
+  return g;
 }
-/** Tapered trunk from a (radius ra) to b (radius rb): chests and waists. */
-function trunk(a, b, ra, rb, color, sx = 1, sz = 1) {
-  return span(a, b, (len) => new THREE.CylinderGeometry(rb, ra, len, 9, 1), color, sx, sz);
+/** Limb from a to b (arrays), radius r, n sides; sx / sz widen it (for hips, laps and hair). */
+function limb(a, b, r, color, sx = 1, sz = 1, n = 5) {
+  return span(a, b, (len) => spindle(r, len, n), color, sx, sz);
+}
+/** Tapered trunk from a (radius ra) to b (radius rb): chests and waists. Open ends unless closed (far figures). */
+function trunk(a, b, ra, rb, color, sx = 1, sz = 1, closed = false) {
+  return span(a, b, (len) => new THREE.CylinderGeometry(rb, ra, len, 6, 1, !closed), color, sx, sz);
 }
 function span(a, b, make, color, sx, sz) {
   const A = new THREE.Vector3().fromArray(a), B = new THREE.Vector3().fromArray(b), d = B.clone().sub(A), len = d.length();
@@ -37,7 +57,8 @@ function span(a, b, make, color, sx, sz) {
   g.translate((A.x + B.x) / 2, (A.y + B.y) / 2, (A.z + B.z) / 2);
   return part(g, color);
 }
-const ball = (c, r, color, s = [1, 1, 1]) => part(new THREE.SphereGeometry(r, 10, 8).scale(...s).translate(...c), color);
+const ball = (c, r, color, s = [1, 1, 1], w = 6, h = 4) => part(new THREE.SphereGeometry(r, w, h).scale(...s).translate(...c), color);
+const gem = (c, r, color) => part(new THREE.OctahedronGeometry(r, 0).translate(...c), color); // 8 triangles: hands, small flowers
 
 const POSES = {
   stand: {},
@@ -66,11 +87,12 @@ const POSES = {
 
 /**
  * One figure. o: { h, pose, skin, hair, top, bottom, shoes, sleeves ('short' | 'long'), skirt (hem radius, 0 = none),
- * skirtColor, scarf (colour), longHair, child, extras(parts, joints) }.
+ * skirtColor, scarf (colour), longHair, bun, female, child, far, extras(parts, joints) }.
  */
 function figure(o) {
   const H = o.h, p = { ...POSES.stand, ...(typeof o.pose === 'string' ? POSES[o.pose] : o.pose) };
-  const child = o.child, parts = [];
+  const child = o.child, far = !!o.far, parts = [], n = far ? 4 : 5;
+  const seg = (a, b, r, color, sx, sz) => limb(a, b, r, color, sx, sz, n);
   const headR = H * (child ? 0.082 : 0.066), limbR = H * (child ? 0.034 : 0.031);
   const thigh = H * 0.245, shin = H * 0.235, torsoLen = H * (child ? 0.27 : 0.29), hipW = H * 0.055, shoulderW = H * (child ? 0.105 : 0.118);
   const upper = H * 0.165, fore = H * 0.15;
@@ -84,41 +106,44 @@ function figure(o) {
   const longSkirt = o.skirt && !p.sit;
 
   // legs
+  const lap = o.skirt && p.sit && !child; // seated in a dress: one piece over the lap and shins (below) replaces the legs
   legs.forEach(([t, k], i) => {
     const x = (i ? 1 : -1) * hipW, s = t - k;
     const hip = [x, pelvisY, 0], knee = [x, hip[1] - thigh * Math.cos(t), thigh * Math.sin(t)];
     const ankle = [x, knee[1] - shin * Math.cos(s), knee[2] + shin * Math.sin(s)];
     const legColor = o.skirt ? (o.skirtColor ?? o.bottom) : o.bottom;
-    parts.push(limb(hip, knee, limbR * 1.35, legColor), limb(knee, ankle, limbR * 1.1, o.skirt && !o.child ? legColor : (o.shorts ? o.skin : legColor)));
+    if (!lap && !longSkirtHidesLegs(o, p)) parts.push(seg(hip, knee, limbR * 1.35, legColor), seg(knee, ankle, limbR * 1.1, o.skirt && !o.child ? legColor : (o.shorts ? o.skin : legColor)));
+    if (far) return;
     const toe = [x, ankle[1] + Math.sin(s) * H * 0.07 - limbR * 0.2, ankle[2] + Math.cos(s) * H * 0.07];
-    parts.push(limb([x, ankle[1] - limbR * 0.3, ankle[2]], toe, limbR * 1.05, o.shoes ?? 0x2a2622));
+    parts.push(limb([x, ankle[1] - limbR * 0.3, ankle[2]], toe, limbR * 1.05, o.shoes ?? 0x2a2622, 1, 1, 4));
   });
-  if (o.skirt && p.sit && !child) { // seated in a dress: one piece over the lap and down the shins, instead of two trouser legs
+  if (lap) {
     const [t, k] = legs[0], s = t - k, c = o.skirtColor ?? o.bottom;
     const knee = [0, pelvisY - thigh * Math.cos(t), thigh * Math.sin(t)], hem = [0, knee[1] - shin * 0.8 * Math.cos(s), knee[2] + shin * 0.8 * Math.sin(s)];
-    parts.push(limb([0, pelvisY, -limbR], knee, limbR * 1.5, c, 2.5, 1), limb(knee, hem, limbR * 1.35, c, 2.5, 1));
+    parts.push(seg([0, pelvisY, -limbR], knee, limbR * 1.5, c, 2.5, 1), seg(knee, hem, limbR * 1.35, c, 2.5, 1));
   }
-  if (longSkirt) { // dress or gown: a cone from the waist to the hem
+  if (longSkirt) { // dress or gown: a cone from the waist to the hem (open at both ends: the waist and the ground hide them)
     const top = pelvisY + H * 0.1, hem = o.skirtHem ?? H * 0.05, r = o.skirt;
-    parts.push(part(new THREE.CylinderGeometry(H * 0.085, r, top - hem, 14, 1).translate(0, (top + hem) / 2, r * 0.06), o.skirtColor ?? o.bottom));
+    parts.push(part(new THREE.CylinderGeometry(H * 0.085, r, top - hem, r > 0.4 ? 14 : 9, 1, true).translate(0, (top + hem) / 2, r * 0.06), o.skirtColor ?? o.bottom));
   }
 
   // torso, neck, head
   const waist = [0, pelvisY + H * 0.02, 0];
   const wide = child ? 1.3 : o.female ? 1.38 : 1.62, chest = [neck[0], neck[1] - H * 0.03, neck[2]];
-  parts.push(trunk(waist, chest, H * (child ? 0.064 : 0.058), H * 0.073, o.top, wide, 0.84));          // narrower at the waist
-  parts.push(ball(chest, H * 0.073, o.top, [wide, 0.5, 0.84]));                                           // rounded shoulders
-  parts.push(limb(pelvis, waist, H * 0.064, o.skirt ? (o.skirtColor ?? o.bottom) : o.bottom, o.female ? 1.55 : 1.35, 0.95));
+  parts.push(trunk(waist, chest, H * (child ? 0.064 : 0.058), H * 0.073, o.top, wide, 0.84, far));     // narrower at the waist
+  if (!far) parts.push(ball(chest, H * 0.073, o.top, [wide, 0.5, 0.84], 6, 3));                          // rounded shoulders
+  parts.push(seg(pelvis, waist, H * 0.064, o.skirt ? (o.skirtColor ?? o.bottom) : o.bottom, o.female ? 1.55 : 1.35, 0.95));
   const head = [0, neck[1] + headR * 1.25, neck[2] + headR * 0.12];
-  parts.push(limb(neck, [head[0], head[1] - headR * 0.5, head[2]], headR * 0.42, o.skin));
-  parts.push(ball(head, headR, o.skin, [0.92, 1.1, 0.98]));
+  if (!far) parts.push(limb(neck, [head[0], head[1] - headR * 0.5, head[2]], headR * 0.42, o.skin, 1, 1, 4));
+  parts.push(far ? ball(head, headR, o.skin, [0.92, 1.1, 0.98], 6, 4) : ball(head, headR, o.skin, [0.92, 1.1, 0.98], 7, 5));
+  const cap = (r, w, h, theta) => new THREE.SphereGeometry(r, w, h, 0, Math.PI * 2, 0, theta);
   if (o.scarf) { // head scarf: covers the hair and drapes over the shoulders
-    parts.push(part(new THREE.SphereGeometry(headR * 1.13, 12, 8, 0, Math.PI * 2, 0, 2.15).rotateX(-0.62).translate(head[0], head[1] + headR * 0.05, head[2] - headR * 0.06), o.scarf));
-    parts.push(part(new THREE.CylinderGeometry(headR * 0.95, shoulderW * 1.25, H * 0.13, 12, 1).scale(1, 1, 0.8).translate(neck[0], neck[1] - H * 0.02, neck[2]), o.scarf));
+    parts.push(part(cap(headR * 1.13, far ? 6 : 8, far ? 3 : 4, 2.15).rotateX(-0.62).translate(head[0], head[1] + headR * 0.05, head[2] - headR * 0.06), o.scarf));
+    parts.push(part(new THREE.CylinderGeometry(headR * 0.95, shoulderW * 1.25, H * 0.13, far ? 6 : 8, 1, true).scale(1, 1, 0.8).translate(neck[0], neck[1] - H * 0.02, neck[2]), o.scarf));
   } else {
-    parts.push(part(new THREE.SphereGeometry(headR * 1.07, 12, 8, 0, Math.PI * 2, 0, 1.75).rotateX(-0.5).translate(head[0], head[1] + headR * 0.08, head[2] - headR * 0.04), o.hair));
-    if (o.bun) parts.push(ball([0, head[1] + headR * 0.25, head[2] - headR * 0.95], headR * 0.5, o.hair));
-    else if (o.longHair) parts.push(limb([0, head[1], head[2] - headR * 0.75], [0, neck[1] - H * 0.12, neck[2] - H * 0.06], headR * 0.55, o.hair, 1.25, 0.6));
+    parts.push(part(cap(headR * 1.07, far ? 6 : 8, far ? 2 : 3, 1.75).rotateX(-0.5).translate(head[0], head[1] + headR * 0.08, head[2] - headR * 0.04), o.hair));
+    if (o.bun) parts.push(ball([0, head[1] + headR * 0.25, head[2] - headR * 0.95], headR * 0.5, o.hair, [1, 1, 1], 5, 3));
+    else if (o.longHair) parts.push(limb([0, head[1], head[2] - headR * 0.75], [0, neck[1] - H * 0.12, neck[2] - H * 0.06], headR * 0.55, o.hair, 1.25, 0.6, 4));
   }
 
   // arms
@@ -130,12 +155,25 @@ function figure(o) {
     const u = dir(sw + lean, 0), f = dir(sw + bend + lean, inward);
     const elbow = [sh[0] + u.x * upper, sh[1] + u.y * upper, sh[2] + u.z * upper];
     const wrist = [elbow[0] + f.x * fore, elbow[1] + f.y * fore, elbow[2] + f.z * fore];
-    parts.push(limb(sh, elbow, limbR * 1.05, o.top), limb(elbow, wrist, limbR * 0.9, o.sleeves === 'long' ? o.top : o.skin));
-    parts.push(ball(wrist, limbR * 1.05, o.skin));
+    parts.push(seg(sh, elbow, limbR * 1.05, o.top), seg(elbow, wrist, limbR * 0.9, o.sleeves === 'long' ? o.top : o.skin));
+    if (!far) parts.push(gem(wrist, limbR * 1.15, o.skin));
     hands.push(wrist);
   });
   o.extras?.(parts, { H, head, headR, neck, pelvisY, hands, shoulderW });
   return merge(parts);
+}
+
+/** A standing adult in a full-length dress: the cone hides the thighs and shins, so they are not built. */
+function longSkirtHidesLegs(o, p) { return o.skirt && !p.sit && !o.child && (o.skirtHem ?? o.h * 0.05) <= o.h * 0.06 && !p.lean && !p.legL; }
+
+/**
+ * Last step for one place: positions rounded to the millimetre (they compress far better in the model file and the
+ * error is invisible), then shared vertices merged so the geometry is stored indexed.
+ */
+function finish(geo) {
+  const a = geo.attributes.position.array;
+  for (let i = 0; i < a.length; i++) a[i] = Math.round(a[i] * 1000) / 1000;
+  return mergeVertices(geo);
 }
 
 /** Places a figure geometry: seat/foot point [x, y, z] and heading (yaw 0 = facing +Z). */
@@ -203,7 +241,7 @@ function playPeople(rand, benches) {
   put(list, kid(rand, 'run', { h: 1.22 }), [0.45, G, -0.75], 2.3);
   put(list, kid(rand, 'cheer', { h: 1.18 }), [-0.6, G, -3.9], 0.9);
   put(list, kid(rand, 'walk', { h: 1.1 }), [0.9, G, -4.6], -1.6);
-  list.push(part(new THREE.SphereGeometry(0.13, 12, 8).translate(0.15, G + 0.13, -4.3), 0xe8462f));
+  list.push(ball([0.15, G + 0.13, -4.3], 0.13, 0xe8462f, [1, 1, 1], 8, 5));
   // toddler holding a parent's hand, and a parent taking a photo
   put(list, woman(rand, 'holdDown'), [4.85, G, 4.1], -2.3);          // clear of the swing frame's leg
   put(list, kid(rand, 'reachUp', { h: 0.86 }), [4.5, G, 3.75], -2.3);
@@ -213,7 +251,7 @@ function playPeople(rand, benches) {
   benches.forEach((b, i) => {
     for (const [off, who] of seats[i % seats.length]) sitOnBench(list, who(rand, pick(rand, ['sit', 'sitLap', 'sitWave'])), b, off);
   });
-  return merge(list);
+  return finish(merge(list));
 }
 
 // ---------- wedding in the amphitheatre ----------
@@ -225,12 +263,13 @@ function weddingPeople(rand) {
     h: 1.6, pose: 'bouquet', skin: SKIN[2], hair: HAIR[0], top: IVORY, bottom: IVORY, sleeves: 'long', skirt: 0.52, skirtHem: 0.0, skirtColor: IVORY, scarf: 0xfbf7ee,
     extras(parts, j) {
       // veil down the back, train on the floor, gold trim at the hem and a bouquet in the hands
-      parts.push(part(new THREE.CylinderGeometry(j.headR * 0.9, 0.42, 1.25, 12, 1, true).scale(1, 1, 0.5).translate(0, j.head[1] - 0.58, j.head[2] - 0.2), 0xfdfaf2));
-      parts.push(part(new THREE.CylinderGeometry(0.3, 0.75, 0.05, 14).scale(1, 1, 1.5).translate(0, 0.03, -0.75), IVORY));
-      parts.push(part(new THREE.TorusGeometry(0.52, 0.02, 5, 20).rotateX(Math.PI / 2).translate(0, 0.04, 0.03), GOLD));
+      parts.push(part(new THREE.CylinderGeometry(j.headR * 0.9, 0.42, 1.25, 10, 1, true).scale(1, 1, 0.5).translate(0, j.head[1] - 0.58, j.head[2] - 0.2), 0xfdfaf2));
+      parts.push(part(new THREE.CylinderGeometry(0.3, 0.75, 0.05, 12, 1, true).scale(1, 1, 1.5).translate(0, 0.03, -0.75), IVORY));
+      parts.push(part(new THREE.CircleGeometry(0.3, 12).rotateX(-Math.PI / 2).scale(1, 1, 1.5).translate(0, 0.055, -0.75), IVORY));
+      parts.push(part(new THREE.TorusGeometry(0.52, 0.02, 3, 16).rotateX(Math.PI / 2).translate(0, 0.04, 0.03), GOLD));
       const b = [(j.hands[0][0] + j.hands[1][0]) / 2, j.hands[0][1] + 0.04, j.hands[0][2] + 0.05];
-      for (const [dx, dy, dz, c] of [[0, 0.03, 0, 0xd9304a], [0.06, 0, 0.02, 0xf4e9e2], [-0.06, 0, 0.02, 0xf07a9a], [0, -0.03, 0.05, 0xf4e9e2], [0.02, 0.06, 0.04, 0xf07a9a]]) parts.push(ball([b[0] + dx, b[1] + dy, b[2] + dz], 0.055, c));
-      parts.push(ball([b[0], b[1] - 0.06, b[2]], 0.07, 0x3d7a44));
+      for (const [dx, dy, dz, c] of [[0, 0.03, 0, 0xd9304a], [0.06, 0, 0.02, 0xf4e9e2], [-0.06, 0, 0.02, 0xf07a9a], [0, -0.03, 0.05, 0xf4e9e2], [0.02, 0.06, 0.04, 0xf07a9a]]) parts.push(gem([b[0] + dx, b[1] + dy, b[2] + dz], 0.06, c));
+      parts.push(gem([b[0], b[1] - 0.06, b[2]], 0.075, 0x3d7a44));
     },
   });
   put(list, bride, [-0.42, S, -1.9], Math.PI);
@@ -239,18 +278,18 @@ function weddingPeople(rand) {
     extras(parts, j) { // shirt front, tie and a buttonhole flower
       parts.push(part(new THREE.BoxGeometry(0.1, 0.3, 0.03).translate(0, j.neck[1] - 0.2, 0.105), 0xf7f5ef));
       parts.push(part(new THREE.BoxGeometry(0.035, 0.26, 0.035).translate(0, j.neck[1] - 0.2, 0.115), 0x8c1c2c));
-      parts.push(ball([-0.11, j.neck[1] - 0.13, 0.11], 0.03, 0xf4e9e2));
+      parts.push(gem([-0.11, j.neck[1] - 0.13, 0.11], 0.035, 0xf4e9e2));
     },
   });
   put(list, groom, [0.42, S, -1.9], Math.PI);
 
   // flower arch on the backdrop behind the couple, petals on the aisle
   const flowers = [0xf4e9e2, 0xf07a9a, 0xd9304a, 0xf6c7d2, 0x4f8f56];
-  for (let i = 0; i <= 40; i++) {
-    const t = i / 40, a = Math.PI * t, x = Math.cos(a) * 1.75, y = S + 0.2 + Math.sin(a) * 3.0;
-    for (let k = 0; k < 3; k++) list.push(ball([x + (rand() - 0.5) * 0.22, y + (rand() - 0.5) * 0.22, -0.42 + (rand() - 0.5) * 0.16], 0.09 + rand() * 0.06, pick(rand, flowers)));
+  for (let i = 0; i <= 38; i++) { // 20-triangle blooms, two at each step round the arch
+    const t = i / 38, a = Math.PI * t, x = Math.cos(a) * 1.75, y = S + 0.2 + Math.sin(a) * 3.0;
+    for (let k = 0; k < 2; k++) list.push(part(new THREE.IcosahedronGeometry(0.12 + rand() * 0.06, 0).translate(x + (rand() - 0.5) * 0.24, y + (rand() - 0.5) * 0.24, -0.42 + (rand() - 0.5) * 0.16), pick(rand, flowers)));
   }
-  for (let i = 0; i < 70; i++) list.push(part(new THREE.CylinderGeometry(0.045, 0.045, 0.012, 5).translate((rand() - 0.5) * 1.3, S + 0.01, -2.4 - rand() * 1.6), pick(rand, flowers)));
+  for (let i = 0; i < 70; i++) list.push(part(new THREE.CircleGeometry(0.045, 5).rotateX(-Math.PI / 2).translate((rand() - 0.5) * 1.3, S + 0.012, -2.4 - rand() * 1.6), pick(rand, flowers)));
 
   // family beside the couple, flower girls in front, a photographer
   put(list, woman(rand, 'stand', { scarf: 0xe6cf9a }), [-1.75, S, -1.6], Math.PI - 0.35);
@@ -273,7 +312,8 @@ function weddingPeople(rand) {
       const turned = rand() < 0.14 ? (rand() < 0.5 ? -0.6 : 0.6) : 0;        // a few are talking to a neighbour
       const yaw = Math.atan2(-x, -z - 0.57) + (rand() - 0.5) * 0.25 + turned; // towards the couple
       const q = rand(), pose = q < 0.24 ? 'sitClap' : q < 0.32 ? 'sitWave' : q < 0.52 ? 'sitLap' : q < 0.6 ? 'sitPhoto' : 'sit';
-      const g = rand() < 0.14 ? kid(rand, pose, { h: 1.05 + rand() * 0.25 }) : adult(rand, pose);
+      const far = i > 0; // the lowest tier is seen up close beside the couple; the others in the crowd
+      const g = rand() < 0.14 ? kid(rand, pose, { h: 1.05 + rand() * 0.25, far }) : adult(rand, pose, { far });
       put(list, g, [x, y, z], yaw);
     }
   }
@@ -286,9 +326,9 @@ function weddingPeople(rand) {
   const rb = f.r0 + f.tiers * f.tierDepth + f.walkway / 2;
   [24, 68, 112, 152].forEach((d, i) => {
     const t = (d * Math.PI) / 180, x = rb * Math.cos(t), z = -rb * Math.sin(t), b = { x, y: yw, z, yaw: Math.atan2(-x, -z) };
-    for (const off of i % 2 ? [-0.38, 0.38] : [0.3]) sitOnBench(list, adult(rand, pick(rand, ['sit', 'sitLap', 'sitClap'])), b, off);
+    for (const off of i % 2 ? [-0.38, 0.38] : [0.3]) sitOnBench(list, adult(rand, pick(rand, ['sit', 'sitLap', 'sitClap']), { far: true }), b, off);
   });
-  return merge(list);
+  return finish(merge(list));
 }
 
 /**

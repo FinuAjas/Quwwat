@@ -16,7 +16,7 @@ Goal: put people into the 3D model in two places, so the site feels alive and sh
 | H0 Preview | ✅ | Figures built in `src/model/people.js`; two approval images in `docs/previews/` (see the notes under H0) |
 | H1 Approve the look | ✅ | Stylised figures, attire and crowd as in the preview, arch and petals kept, always visible (see Decisions) |
 | H2 Fix and refine the figures | ✅ | Flaws fixed, figures refined, both images re-rendered (see the notes under H2) |
-| H3 Make them light | ⏳ | Cut from 334,000 triangles to about 45,000 or fewer |
+| H3 Make them light | ✅ | 334,000 → 38,000 triangles; about 343 KB to download once H4 drops the stored normals (see the notes under H3) |
 | H4 Put them in the model | ⏳ | Add the `People` group to the site build and the exported model files |
 | H5 Make them behave in the page | ⏳ | Shadows, phones, clicking, and nothing overlapping them |
 | H6 Gentle motion | 💤 | Swings, roundabout, clapping guests. Only if wanted |
@@ -28,7 +28,7 @@ Goal: put people into the 3D model in two places, so the site feels alive and sh
 - The people exist only in the preview tool. The website and the exported model files do not contain them yet.
 - The figures are stylised: capsule bodies, no faces, flat colours. They match the low-poly cars and buildings, but they are not photo-real.
 - Counts today: 26 figures in the play area (18 children, 8 adults: 3 standing, 5 on benches) and roughly 105 at the wedding (the couple, 7 more on the stage, 5 standing and 6 seated on benches on the top walkway, and the seated guests, who are placed at random and not counted exactly).
-- Weight today: about 334,000 triangles (290,000 before H2). The whole of `Structures` is 39,000, so this is far too heavy to ship as it is.
+- Weight today: about 38,000 triangles and 30,500 vertices after H3 (334,000 triangles after H2). Download cost about 343 KB gzipped once H4 drops the stored normals.
 - H0 to H2 are committed (`8c4fbe1` and later). Files: `src/model/people.js`, `tools/people-preview.html`, `tools/people-preview.js`, `docs/previews/`, and one save route in `serve.py`.
 
 ## Scope (hard rule)
@@ -94,9 +94,21 @@ File: `src/model/people.js` only. Target: **45,000 triangles or fewer in total, 
 
 **Done when:** the count is at or under the target and the images are still acceptable.
 
+**Done 2026-11-20.** Triangles 334,000 → 38,026 (play area 10,396, wedding 27,630); vertices 30,487.
+- **Limbs:** a five-sided spindle (20 triangles) replaces the three.js capsule (126 triangles at the old settings; 50 even at its lowest). Heads 7×5 sphere segments, hair and scarf caps 8×3 to 8×4, hands 8-triangle octahedra, feet four-sided, skirts and trunks open-ended (the waist and the ground hide the ends).
+- **Far figures** (`far: true`: seated guests on tiers 2 to 5, and the guests on the walkway benches): no hands, feet, neck or shoulder piece, four-sided limbs, closed trunk top. About 250 triangles each, against about 400 for a near figure. The lowest tier, the stage party and everyone in the play area stay near.
+- **Hidden parts not built:** seated women in a dress have no separate legs (the lap piece covers them); standing women in a full-length dress have no thighs or shins (the skirt cone covers them).
+- **Decoration:** the flower arch is 78 twenty-sided blooms (was 123 spheres of 160 triangles); petals are flat five-sided discs; the bride's veil, train, hem trim and bouquet use fewer segments.
+- **Storage:** positions are rounded to the millimetre and each place's mesh is merged into indexed geometry (`finish()` in `people.js`).
+- **Download cost, measured** with the layout the model files use (positions float32, normals int8, colours uint16, gzip): 419 KB as built; **343 KB** once the stored normals are dropped at export (added to H4 step 2). The whole page would go from 2,327 KB to about 2,670 KB, inside the 6,000 KB budget, and the people stream in after the first view with the details file.
+- **Size target replaced:** the 150 KB proposed for H3 was a guess before measuring; the owner accepted about 343 KB (Decision 6). Positions are now more than half of the file: they stay float32 because `tools/glb_quantize.py` does not quantize positions. Quantizing them (int16, with a de-quantizing scale on a child node, for these two meshes only) would cut roughly another 100 KB; it is not planned unless asked for.
+- **Look:** shading is more faceted, in keeping with the low-poly cars, rocks and buildings; the figures still read well at both preview distances and in close-ups. The flower arch is chunkier. Because the arch now draws fewer random numbers, the random colours after it changed: the two women beside the couple now wear red and pink, and guests' clothes are reshuffled. Counts and attire rules are unchanged.
+- **Tool:** `tools/people-preview.html` now prints triangles, vertices and the measured download cost; `window.__preview.measure()` repeats it.
+
 ### H4 Put them in the model
 1. `src/model/buildSite.js`: call `buildPeople()` and add the group to the root. Add `people` counts to `stats`.
 2. `tools/model-builder.js`: add `'People'` to the details part (`mountain-courtyard-details.glb`), so the first view of the site is not delayed. No new file, so `serve.py`, `config.js` and `validate-model.js` keep their three file names.
+   - At export, for the two `People_*` meshes only (as is already done for `Terrain`): remove the `normal` attribute, merge vertices again (`mergeVertices`: without normals far more of them are shared, 30,500 → 23,800), set `userData.recomputeNormals = true`, and put the original geometry back after the export. `loader.js` already rebuilds normals for meshes with that flag. Measured in H3: 419 KB → 343 KB gzipped.
 3. Re-export: with `serve.py` running, open `tools/model-builder.html?save`.
 4. Open the page and confirm the people appear in both places.
 
@@ -137,10 +149,11 @@ Only if wanted after seeing H5. It needs the moving figures as separate meshes, 
 posters, and this plan. Already added by H0: the preview tool, the `serve.py` save route and `docs/previews/`.
 
 ## Decisions
-All decided by the owner on 2026-11-14.
+All decided by the owner: 1 to 5 on 2026-11-14 (H1), 6 on 2026-11-20 (H3).
 
 1. **Figure style:** keep the stylised figures.
 2. **Wedding attire:** as shown in the preview. Bride in an ivory gown with veil and bouquet, groom in a navy suit, about half the women guests with a headscarf.
 3. **Crowd size:** as shown. Roughly 100 at the wedding and 27 in the play area.
 4. **Decoration:** keep both the flower arch and the petals.
 5. **Visibility:** people are always visible.
+6. **Download size:** about 343 KB gzipped for the people is accepted, in place of the 150 KB proposed before measuring. Quantizing positions to shrink it further is not planned.

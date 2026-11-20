@@ -9,6 +9,29 @@ const SHOTS = [
   { name: 'people-play-area', target: [-75, 8.3, -31.6], position: [-65.5, 13.8, -18], fov: 35 },
   { name: 'people-wedding', target: [-33.4, 5.4, 8.6], position: [-45.8, 17.6, -4.8], fov: 33 },
 ];
+/**
+ * Triangles, vertices and the download cost of a group, laid out the way the model files store it: positions
+ * float32, normals int8 and colours uint16 (tools/glb_quantize.py), indices uint16 or uint32, then gzip.
+ */
+async function measure(group) {
+  const chunks = [], rows = [];
+  let tris = 0, verts = 0;
+  group.traverse((o) => {
+    if (!o.isMesh) return;
+    const g = o.geometry, n = g.attributes.position.count, t = (g.index ? g.index.count : n) / 3;
+    tris += t; verts += n; rows.push(`${o.name} ${Math.round(t)}`);
+    chunks.push(new Float32Array(g.attributes.position.array));
+    const nr = g.attributes.normal?.array, cl = g.attributes.color?.array;
+    if (nr) { const q = new Int8Array(n * 4); for (let i = 0; i < n; i++) for (let k = 0; k < 3; k++) q[i * 4 + k] = Math.round(nr[i * 3 + k] * 127); chunks.push(q); }
+    if (cl) { const q = new Uint16Array(n * 4); for (let i = 0; i < n; i++) for (let k = 0; k < 3; k++) q[i * 4 + k] = Math.round(cl[i * 3 + k] * 65535); chunks.push(q); }
+    if (g.index) chunks.push(n < 65536 ? new Uint16Array(g.index.array) : new Uint32Array(g.index.array));
+  });
+  const blob = new Blob(chunks);
+  const gz = (await new Response(blob.stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()).byteLength;
+  const kb = (b) => Math.round(b / 1024);
+  return { tris: Math.round(tris), verts, rawKB: kb(blob.size), gzKB: kb(gz), text: `${Math.round(tris)} triangles (${rows.join(', ')}), ${verts} vertices, ${kb(blob.size)} KB stored, ${kb(gz)} KB gzipped` };
+}
+
 const logEl = document.getElementById('log'), shotsEl = document.getElementById('shots');
 const log = (msg) => { logEl.textContent += `\n${msg}`; };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -54,9 +77,8 @@ async function run() {
   const people = buildPeople({ benches: benches.length ? benches : null });
   people.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   scene.add(people);
-  let tris = 0;
-  people.traverse((o) => { if (o.isMesh) tris += o.geometry.attributes.position.count / 3; });
-  log(`People added: ${Math.round(tris)} triangles`);
+  const m = await measure(people);
+  log(`People added: ${m.text}`);
 
   const target = new THREE.Vector3();
   async function shoot({ name, target: t, position, fov = 35 }) {
@@ -86,7 +108,7 @@ async function run() {
   const out = [];
   for (const s of SHOTS) out.push(await shoot(s));
   log(`Saved ${out.filter((o) => o.saved).length} of ${out.length} images to docs/previews/`);
-  window.__preview = { shoot, out, hero, people, benches };
+  window.__preview = { shoot, out, hero, people, benches, measure: () => measure(people) };
 }
 
 run().catch((err) => { log(`Failed: ${err.message}`); window.__preview = { error: String(err) }; console.error(err); });
