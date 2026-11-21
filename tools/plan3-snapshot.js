@@ -17,7 +17,9 @@ import { PLAN3_AREA_PX, PX } from '../src/model/layout.js';
  * between frames and how many differ from the previous run, which is the tolerance the comparison must allow.
  */
 const params = new URLSearchParams(location.search);
-const SET = params.get('set') === 'after' ? 'after' : 'before';
+// before / after: Plan 3. people-before / people-after: Plan 4 (the model before H4 adds the people, and after H8).
+const SETS = ['before', 'after', 'people-before', 'people-after'];
+const SET = SETS.includes(params.get('set')) ? params.get('set') : 'before';
 const T = 1000;                       // the frozen scene time, in seconds
 const HIDE = ['Mist', 'Traffic', 'Birds', 'Grass', 'HotspotRing', 'Fountain_Particles'];
 const SKIP_COUNT = new Set([...HIDE, 'SkyDome', 'Ridges']);
@@ -61,7 +63,7 @@ async function run() {
     win.document.head.appendChild(s);
   });
   const THREE = await fromPage('three');
-  const { renderer, scene, camera, lights, site, foliage, hotspots } = hero;
+  const { renderer, scene, camera, lights, site, foliage, hotspots, motion } = hero;
   const configModule = await fromPage('./src/hero/config.js');
   const CONFIG = configModule.CONFIG;
 
@@ -71,6 +73,7 @@ async function run() {
   for (const name of HIDE) { const o = scene.getObjectByName(name); if (o) o.visible = false; }
   lights.update(T);
   site.update(T);
+  motion?.update(T); // swings, roundabout and clapping (Plan 4, H6), at the same frozen time
   camera.updateMatrixWorld();
   foliage.update(T - 5, camera); foliage.update(T, camera); // finishes the forest's grow-in animation, if it was running
   log(`Scene frozen at t = ${T} s; hidden: ${HIDE.join(', ')}`);

@@ -8,6 +8,7 @@ import { M } from './materials.js';
  * Site furniture, for human scale: street lamps along the roads, benches at the play area, prayer
  * hall and footpath, bollards at the west gate, and a name sign at each gate.
  * Lamps, benches and bollards are one instanced mesh each, sharing one vertex-coloured material.
+ * buildFurniture also returns `benches`: where each bench stands ({ x, y, z, yaw }, world), for the people on them.
  */
 const DARK = 0x23282c, TEAK = 0x7a4b2d, CREAM = 0xf3e6c0;
 const part = (g, color) => paint(prep(g), color);
@@ -193,5 +194,6 @@ export function buildFurniture(heightAt, world, legacy) {
     obstacles.push({ x, z, r: 3 });
     legacy.obstacles.push({ x, z, r: 3 });
   }
-  return { group, counts: { lamps: lamps.length, benches: benches.length, bollards: bollards.length } };
+  const benchSpots = benches.map((o) => ({ x: o.x, y: o.y ?? heightAt(o.x, o.z), z: o.z, yaw: o.yaw })); // as the instances are placed above
+  return { group, counts: { lamps: lamps.length, benches: benches.length, bollards: bollards.length }, benches: benchSpots };
 }

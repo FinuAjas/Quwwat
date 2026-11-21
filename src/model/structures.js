@@ -5,6 +5,7 @@ import { roadQuery, roadData } from './terrain.js';
 import { building, FLOOR } from './architecture.js';
 import { M } from './materials.js';
 import { blockedBy } from './legacy.js';
+import { PLAY } from './play.js';
 
 /** Obstacles for vegetation placement: circles {x,z,r} and oriented boxes {x,z,hx,hz,rot}. */
 export const obstacles = [];
@@ -17,6 +18,15 @@ function mesh(geoms, mat, name, shadow = true) {
   return m;
 }
 function place(group, [x, z], y, rot = 0) { group.position.set(x, y, z); group.rotation.y = rot; return group; }
+/**
+ * A moving part (Plan 4, H6): a group with its origin at `pivot` and userData.motion, holding one mesh per material,
+ * shifted so they stay where they were built. parts: [[geometries, material, name suffix], ...].
+ */
+function mover(name, pivot, motion, parts, shadow) {
+  const g = new THREE.Group(); g.name = name; g.position.set(...pivot); g.userData = { motion };
+  for (const [geoms, mat, label] of parts) g.add(mesh(geoms.map((p) => p.translate(-pivot[0], -pivot[1], -pivot[2])), mat, `${name}_${label}`, shadow));
+  return g;
+}
 const cyl = (rTop, rBot, h, x, y, z, sides = 8) => new THREE.CylinderGeometry(rTop, rBot, h, sides).translate(x, y, z);
 const UP = new THREE.Vector3(0, 1, 0);
 /** Round bar between two points. */
@@ -156,7 +166,7 @@ function playground() {
   const surf = new THREE.CylinderGeometry(f.radius, f.radius, 0.3, 48); surf.translate(0, 0.05, 0);
   const rim = new THREE.CylinderGeometry(f.radius + 0.9, f.radius + 0.9, 0.24, 48); rim.translate(0, 0.0, 0);
   g.add(mesh(surf, M.playSurface, 'Play_Surface'), mesh(rim, M.kerb, 'Play_Rim'));
-  const G = 0.2; // top of the play surface
+  const G = PLAY.G; // top of the play surface
   const red = [], blue = [], green = [], yellow = [], steel = [];
 
   // play tower: four posts, deck, guard rails, pyramid roof, ladder, slide with side rails
@@ -172,14 +182,16 @@ function playground() {
   for (const s of [-1, 1]) blue.push(prep(new THREE.BoxGeometry(0.05, 0.22, chuteLen).rotateX(chuteRot).translate(tx + s * 0.38, G + 0.88, tz + 0.8 + 1.45)));
   blue.push(box(0.72, 0.06, 0.6, tx, G + 0.08, tz + 0.8 + 3.1));
 
-  // swing set: A-frames, top beam, chains and seats
-  const sx0 = 2.5, sz0 = 1.9;
-  for (const e of [-1.7, 1.7]) for (const s of [-1, 1]) steel.push(bar([sx0 + e, G + 2.5, sz0], [sx0 + e, G, sz0 + s * 0.95], 0.05));
-  steel.push(bar([sx0 - 1.8, G + 2.5, sz0], [sx0 + 1.8, G + 2.5, sz0], 0.055));
-  for (const c of [-0.8, 0.8]) {
-    for (const s of [-0.22, 0.22]) steel.push(bar([sx0 + c + s, G + 2.5, sz0], [sx0 + c + s, G + 0.55, sz0 + 0.18], 0.012, 4));
-    green.push(box(0.52, 0.05, 0.2, sx0 + c, G + 0.53, sz0 + 0.18));
-  }
+  // swing set: A-frames and top beam; each seat with its chains is a moving object hung from the beam (PLAY.motion).
+  // The swings cast no shadow: the shadow map is drawn once, so theirs would stay behind while they swing.
+  const { x0: sx0, z0: sz0, beam } = PLAY.swings;
+  for (const e of [-1.7, 1.7]) for (const s of [-1, 1]) steel.push(bar([sx0 + e, G + beam, sz0], [sx0 + e, G, sz0 + s * 0.95], 0.05));
+  steel.push(bar([sx0 - 1.8, G + beam, sz0], [sx0 + 1.8, G + beam, sz0], 0.055));
+  PLAY.swings.seats.forEach((c, i) => {
+    const chains = [-0.22, 0.22].map((s) => bar([sx0 + c + s, G + beam, sz0], [sx0 + c + s, G + 0.55, sz0 + 0.18], 0.012, 4));
+    const seat = [box(0.52, 0.05, 0.2, sx0 + c, G + 0.53, sz0 + 0.18)];
+    g.add(mover(`Play_Swing_${i}`, [sx0 + c, G + beam, sz0], PLAY.motion.swings[i], [[chains, M.metal, 'Chains'], [seat, M.playGreen, 'Seat']], false));
+  });
 
   // see-saw: beam on a pivot with handles
   const wx = 1.9, wz = -2.9, wr = 0.45;
@@ -191,13 +203,15 @@ function playground() {
     steel.push(bar([hx, hy, hz - 0.12], [hx, hy + 0.3, hz - 0.12], 0.02), bar([hx, hy, hz + 0.12], [hx, hy + 0.3, hz + 0.12], 0.02), bar([hx, hy + 0.3, hz - 0.12], [hx, hy + 0.3, hz + 0.12], 0.02));
   }
 
-  // roundabout: deck, hub and four hoop handles
-  const rx = -1.2, rz = 3.5;
-  red.push(cyl(1.15, 1.15, 0.1, rx, G + 0.28, rz, 24));
-  steel.push(cyl(0.07, 0.07, 0.95, rx, G + 0.6, rz));
-  for (let i = 0; i < 4; i++) {
-    const a = (i / 4) * Math.PI * 2 + 0.4, px = rx + Math.cos(a) * 0.95, pz = rz + Math.sin(a) * 0.95;
-    steel.push(bar([px, G + 0.33, pz], [px, G + 0.95, pz], 0.022), bar([px, G + 0.95, pz], [rx, G + 1.02, rz], 0.022));
+  // roundabout: deck, hub and four hoop handles, one moving object turning about the hub (PLAY.motion). It keeps its
+  // shadow: a turning disc casts the same one.
+  {
+    const { x: rx, z: rz } = PLAY.roundabout, deck = [cyl(1.15, 1.15, 0.1, rx, G + 0.28, rz, 24)], hub = [cyl(0.07, 0.07, 0.95, rx, G + 0.6, rz)];
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + 0.4, px = rx + Math.cos(a) * 0.95, pz = rz + Math.sin(a) * 0.95;
+      hub.push(bar([px, G + 0.33, pz], [px, G + 0.95, pz], 0.022), bar([px, G + 0.95, pz], [rx, G + 1.02, rz], 0.022));
+    }
+    g.add(mover('Play_Roundabout', [rx, G, rz], PLAY.motion.roundabout, [[deck, M.playRed, 'Deck'], [hub, M.metal, 'Steel']], true));
   }
 
   // two spring riders
